@@ -5,7 +5,16 @@ export interface WorkoutNote {
   eventType: string;
   expectedDistance: string | null;
   expectedDistanceKm: number | null;
+  actualDistance: string | null;
+  actualDistanceKm: number | null;
   completed: string | null;
+  stravaId: number | null;
+  actualMovingTimeSeconds: number | null;
+  actualElapsedTimeSeconds: number | null;
+  averageHeartrate: number | null;
+  maxHeartrate: number | null;
+  summaryPolyline: string | null;
+  hasStravaStreams: boolean;
   allDay: boolean;
   type: string;
   body: string;

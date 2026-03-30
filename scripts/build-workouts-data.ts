@@ -7,12 +7,36 @@ import type { PlanDocument, WorkoutNote, WorkoutsData } from "../src/lib/workout
 const rootDir = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const generatedPath = path.resolve(rootDir, "src/generated/workouts.json");
 const defaultWorkoutsDir = path.resolve(rootDir, "data/training");
+const defaultStravaCacheExportPath = path.resolve(rootDir, "vault/strava/cache-export.json");
 const notesDirName = "notes";
+
+interface StravaCacheSnapshot {
+  generatedAt: string;
+  activities: Record<string, StravaCachedActivity>;
+}
+
+interface StravaCachedActivity {
+  activityId: number;
+  name: string | null;
+  sportType: string | null;
+  startDate: string | null;
+  distanceMeters: number | null;
+  distanceKm: number | null;
+  movingTimeSeconds: number | null;
+  elapsedTimeSeconds: number | null;
+  totalElevationGainMeters: number | null;
+  averageHeartrate: number | null;
+  maxHeartrate: number | null;
+  summaryPolyline: string | null;
+  detailFetchedAt: string | null;
+  hasStreams: boolean;
+}
 
 async function main() {
   const dataDir = await resolveWorkoutsDir();
   const notesDir = path.join(dataDir, notesDirName);
   await assertNotesDirectory(notesDir);
+  const stravaCache = await readStravaCacheSnapshot();
   const fileNames = (await fs.readdir(notesDir))
     .filter((fileName) => fileName.endsWith(".md"))
     .sort((left, right) => left.localeCompare(right));
@@ -29,7 +53,7 @@ async function main() {
     const sourcePath = path.relative(dataDir, filePath).replaceAll("\\", "/");
     const fileContent = await fs.readFile(filePath, "utf8");
 
-    workouts.push(buildWorkoutNote(fileName, fileContent, sourcePath));
+    workouts.push(buildWorkoutNote(fileName, fileContent, sourcePath, stravaCache.activities));
   }
 
   if (!welcome) {
@@ -82,6 +106,38 @@ async function resolveWorkoutsDir() {
   return resolvedPath;
 }
 
+async function readStravaCacheSnapshot(): Promise<StravaCacheSnapshot> {
+  try {
+    const fileContent = await fs.readFile(defaultStravaCacheExportPath, "utf8");
+    const parsed = JSON.parse(fileContent) as Partial<StravaCacheSnapshot>;
+    if (!parsed || typeof parsed !== "object" || typeof parsed.activities !== "object") {
+      throw new Error("expected activities object");
+    }
+
+    return {
+      generatedAt:
+        typeof parsed.generatedAt === "string" && parsed.generatedAt.length > 0
+          ? parsed.generatedAt
+          : new Date(0).toISOString(),
+      activities: parsed.activities as Record<string, StravaCachedActivity>,
+    };
+  } catch (error) {
+    const nodeError = error as NodeJS.ErrnoException;
+    if (nodeError?.code === "ENOENT") {
+      return {
+        generatedAt: new Date(0).toISOString(),
+        activities: {},
+      };
+    }
+
+    throw new Error(
+      `Unable to read Strava cache export at ${defaultStravaCacheExportPath}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+}
+
 async function assertNotesDirectory(notesDir: string) {
   try {
     const stats = await fs.stat(notesDir);
@@ -130,18 +186,49 @@ function buildPlanDocument(fileContent: string, sourcePath: string): PlanDocumen
   };
 }
 
-function buildWorkoutNote(fileName: string, fileContent: string, sourcePath: string): WorkoutNote {
+function buildWorkoutNote(
+  fileName: string,
+  fileContent: string,
+  sourcePath: string,
+  stravaActivities: Record<string, StravaCachedActivity>,
+): WorkoutNote {
   const parsed = matter(fileContent);
   const data = parsed.data;
+  const stravaId = normalizeOptionalInteger(data.stravaId, fileName, "stravaId");
+  const importedFromStrava =
+    stravaId !== null && /(^|\n)##\s+Imported from Strava\b/u.test(parsed.content);
+  const notedExpectedDistance = normalizeNullableString(data.expectedDistance);
+  const notedActualDistance = normalizeNullableString(data.actualDistance);
+  const cachedActivity = stravaId !== null ? stravaActivities[String(stravaId)] ?? null : null;
+  const expectedDistance =
+    importedFromStrava && notedActualDistance === null ? null : notedExpectedDistance;
+  const expectedDistanceKm = normalizeDistanceKm(expectedDistance);
+  const actualDistance =
+    normalizeCachedDistanceLabel(cachedActivity) ??
+    notedActualDistance ??
+    (importedFromStrava ? notedExpectedDistance : null);
+  const actualDistanceKm =
+    normalizeCachedDistanceKm(cachedActivity) ??
+    normalizeDistanceKm(notedActualDistance) ??
+    (importedFromStrava ? normalizeDistanceKm(notedExpectedDistance) : null);
 
   return {
     slug: slugify(fileName.replace(/\.md$/u, "")),
     title: expectString(data.title, fileName, "title"),
     date: normalizeDate(data.date, fileName, "date"),
     eventType: expectString(data.eventType, fileName, "eventType"),
-    expectedDistance: normalizeNullableString(data.expectedDistance),
-    expectedDistanceKm: normalizeExpectedDistanceKm(data.expectedDistance),
+    expectedDistance,
+    expectedDistanceKm,
+    actualDistance,
+    actualDistanceKm,
     completed: normalizeCompleted(data.completed, fileName),
+    stravaId,
+    actualMovingTimeSeconds: normalizeCachedInteger(cachedActivity?.movingTimeSeconds),
+    actualElapsedTimeSeconds: normalizeCachedInteger(cachedActivity?.elapsedTimeSeconds),
+    averageHeartrate: normalizeCachedNumber(cachedActivity?.averageHeartrate),
+    maxHeartrate: normalizeCachedNumber(cachedActivity?.maxHeartrate),
+    summaryPolyline: normalizeNullableString(cachedActivity?.summaryPolyline),
+    hasStravaStreams: cachedActivity?.hasStreams === true,
     allDay: expectBoolean(data.allDay, fileName, "allDay"),
     type: expectString(data.type, fileName, "type"),
     body: parsed.content.trim(),
@@ -189,7 +276,7 @@ function normalizeNullableString(value: unknown) {
   return null;
 }
 
-function normalizeExpectedDistanceKm(value: unknown) {
+function normalizeDistanceKm(value: unknown) {
   if (value === null || value === undefined) {
     return null;
   }
@@ -201,6 +288,55 @@ function normalizeExpectedDistanceKm(value: unknown) {
 
   const match = raw.match(/-?\d+(?:\.\d+)?/u);
   return match ? Number.parseFloat(match[0]) : null;
+}
+
+function normalizeCachedDistanceKm(activity: StravaCachedActivity | null) {
+  if (!activity) {
+    return null;
+  }
+
+  return normalizeCachedNumber(activity.distanceKm);
+}
+
+function normalizeCachedDistanceLabel(activity: StravaCachedActivity | null) {
+  const distanceKm = normalizeCachedDistanceKm(activity);
+  if (distanceKm === null) {
+    return null;
+  }
+
+  return `${trimTrailingZero(distanceKm)} km`;
+}
+
+function normalizeCachedNumber(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+
+  return value;
+}
+
+function normalizeCachedInteger(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+
+  return Math.trunc(value);
+}
+
+function normalizeOptionalInteger(value: unknown, fileName: string, field: string) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  if (typeof value === "number" && Number.isInteger(value) && value > 0) {
+    return value;
+  }
+
+  if (typeof value === "string" && /^\d+$/u.test(value.trim())) {
+    return Number.parseInt(value.trim(), 10);
+  }
+
+  throw new Error(`${fileName}: ${field} must be a positive integer`);
 }
 
 function normalizeCompleted(value: unknown, fileName: string) {
@@ -251,6 +387,10 @@ function normalizeDate(value: unknown, fileName: string, field: string) {
   }
 
   throw new Error(`${fileName}: ${field} must be a valid date`);
+}
+
+function trimTrailingZero(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
 await main();

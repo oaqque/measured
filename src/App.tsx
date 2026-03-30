@@ -6,11 +6,29 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { CalendarDays, FileText, NotebookText, Search, X } from "lucide-react";
+import { format } from "date-fns";
+import {
+  CalendarDays,
+  FileText,
+  ListFilter,
+  NotebookText,
+  Search,
+  X,
+} from "lucide-react";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   allWorkouts,
   availableEventTypes,
@@ -44,7 +62,7 @@ const FINGERPRINT_STROKES = [
 ] as const;
 
 export default function App() {
-  const [view, setView] = useHashView();
+  const [view, setView] = usePathView();
   const [selectedWorkoutSlug, setSelectedWorkoutSlug] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -68,12 +86,12 @@ export default function App() {
 
   useEffect(() => {
     if (selectedMonthKey.length === 0 && monthGroups[0]) {
-      setSelectedMonthKey(monthGroups[0].key);
+      setSelectedMonthKey(resolveDefaultMonthKey(monthGroups));
       return;
     }
 
     if (selectedMonthKey && !monthGroups.some((month) => month.key === selectedMonthKey)) {
-      setSelectedMonthKey(monthGroups[0]?.key ?? "");
+      setSelectedMonthKey(resolveDefaultMonthKey(monthGroups));
     }
   }, [monthGroups, selectedMonthKey]);
 
@@ -82,6 +100,61 @@ export default function App() {
       setSelectedWorkoutSlug(null);
     }
   }, [selectedWorkout, selectedWorkoutSlug]);
+
+  const navigateToView = (nextView: View) => {
+    if (nextView !== "calendar") {
+      setSelectedWorkoutSlug(null);
+    } else {
+      setSelectedMonthKey((current) => {
+        if (current && monthGroups.some((month) => month.key === current)) {
+          return current;
+        }
+
+        return resolveDefaultMonthKey(monthGroups);
+      });
+    }
+
+    setView(nextView);
+  };
+
+  const openWorkout = (slug: string) => {
+    const workout = getWorkoutBySlug(slug);
+    if (!workout) {
+      return;
+    }
+
+    setQuery("");
+    setEventType("all");
+    setStatus("all");
+    setSelectedMonthKey(workout.date.slice(0, 7));
+    setSelectedWorkoutSlug(slug);
+    setView("calendar");
+  };
+
+  const handleMarkdownLink = (href: string) => {
+    if (href === "README.md") {
+      navigateToView("plan");
+      return true;
+    }
+
+    if (href === "WELCOME.md") {
+      navigateToView("welcome");
+      return true;
+    }
+
+    if (href === "notes" || href === "notes/") {
+      navigateToView("calendar");
+      return true;
+    }
+
+    const slug = workoutHrefToSlug(href);
+    if (!slug) {
+      return false;
+    }
+
+    openWorkout(slug);
+    return true;
+  };
 
   return (
     <div className="min-h-screen bg-page text-foreground">
@@ -101,19 +174,19 @@ export default function App() {
                 active={view === "welcome"}
                 icon={<NotebookText className="size-4" />}
                 label="Welcome"
-                onClick={() => setView("welcome")}
+                onClick={() => navigateToView("welcome")}
               />
               <SidebarNavButton
                 active={view === "plan"}
                 icon={<FileText className="size-4" />}
                 label="Plan"
-                onClick={() => setView("plan")}
+                onClick={() => navigateToView("plan")}
               />
               <SidebarNavButton
                 active={view === "calendar"}
                 icon={<CalendarDays className="size-4" />}
                 label="Calendar"
-                onClick={() => setView("calendar")}
+                onClick={() => navigateToView("calendar")}
               />
             </nav>
 
@@ -129,9 +202,9 @@ export default function App() {
         <div className="relative min-w-0 lg:flex">
           <main className="min-w-0 flex-1 px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
             {view === "welcome" ? (
-              <MarkdownPage content={welcomeDocument.body} />
+              <MarkdownPage content={welcomeDocument.body} onLinkClick={handleMarkdownLink} />
             ) : view === "plan" ? (
-              <MarkdownPage content={trainingPlan.body} />
+              <MarkdownPage content={trainingPlan.body} onLinkClick={handleMarkdownLink} />
             ) : (
               <CalendarView
                 eventType={eventType}
@@ -143,7 +216,7 @@ export default function App() {
                 onEventTypeChange={setEventType}
                 onMonthChange={setSelectedMonthKey}
                 onQueryChange={setQuery}
-                onSelectWorkout={setSelectedWorkoutSlug}
+                onSelectWorkout={openWorkout}
                 onStatusChange={setStatus}
               />
             )}
@@ -186,11 +259,17 @@ export default function App() {
   );
 }
 
-function MarkdownPage({ content }: { content: string }) {
+function MarkdownPage({
+  content,
+  onLinkClick,
+}: {
+  content: string;
+  onLinkClick?: (href: string) => boolean;
+}) {
   return (
     <div className="py-2">
       <div className="markdown-prose">
-        <MarkdownContent content={content} />
+        <MarkdownContent content={content} onLinkClick={onLinkClick} />
       </div>
     </div>
   );
@@ -221,23 +300,10 @@ function CalendarView({
   onMonthChange: (value: string) => void;
   onSelectWorkout: (slug: string) => void;
 }) {
-  return (
+      return (
     <section className="py-2">
-      <div className="mb-3 flex items-center gap-2">
-        <CalendarDays className="size-4 text-muted-foreground" />
-        <p className="eyebrow">Calendar</p>
-      </div>
-
       <div className="border-t border-foreground/10 pt-5">
-        <div className="max-w-3xl">
-          <h1 className="text-3xl font-black md:text-4xl">Workout calendar</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Search titles and note bodies, filter the note set, then open any workout in the
-            right sidebar.
-          </p>
-        </div>
-
-        <div className="mt-6 grid gap-3 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,0.8fr))]">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
           <div className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -248,39 +314,20 @@ function CalendarView({
             />
           </div>
 
-          <Select value={eventType} onChange={(event) => onEventTypeChange(event.target.value)}>
-            <option value="all">All event types</option>
-            {availableEventTypes.map((item) => (
-              <option key={item} value={item}>
-                {toTitleCase(item)}
-              </option>
-            ))}
-          </Select>
+          <div className="flex items-center justify-end gap-2">
+            <MonthPicker
+              monthGroups={monthGroups}
+              selectedMonth={selectedMonth}
+              onMonthChange={onMonthChange}
+            />
 
-          <Select
-            value={status}
-            onChange={(event) => onStatusChange(event.target.value as WorkoutStatus)}
-          >
-            <option value="all">All statuses</option>
-            <option value="planned">Planned only</option>
-            <option value="completed">Completed only</option>
-          </Select>
-
-          <Select
-            disabled={monthGroups.length === 0}
-            value={selectedMonth?.key ?? ""}
-            onChange={(event) => onMonthChange(event.target.value)}
-          >
-            {monthGroups.length === 0 ? (
-              <option value="">No matching months</option>
-            ) : (
-              monthGroups.map((month) => (
-                <option key={month.key} value={month.key}>
-                  {month.label}
-                </option>
-              ))
-            )}
-          </Select>
+            <CalendarFilterMenu
+              eventType={eventType}
+              status={status}
+              onEventTypeChange={onEventTypeChange}
+              onStatusChange={onStatusChange}
+            />
+          </div>
         </div>
 
         {selectedMonth ? (
@@ -298,6 +345,152 @@ function CalendarView({
         )}
       </div>
     </section>
+  );
+}
+
+function MonthPicker({
+  monthGroups,
+  selectedMonth,
+  onMonthChange,
+}: {
+  monthGroups: MonthGroup[];
+  selectedMonth: MonthGroup | null;
+  onMonthChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selectedMonthKey = selectedMonth?.key ?? "";
+  const selectedDate = selectedMonthKey ? monthKeyToDate(selectedMonthKey) : undefined;
+  const [pickerMonth, setPickerMonth] = useState<Date>(() => selectedDate ?? new Date());
+  const allowedMonthKeys = useMemo(
+    () => new Set(monthGroups.map((month) => month.key)),
+    [monthGroups],
+  );
+
+  useEffect(() => {
+    if (selectedMonthKey) {
+      setPickerMonth(monthKeyToDate(selectedMonthKey));
+    }
+  }, [selectedMonthKey]);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          className="min-w-40 justify-between rounded-[0.35rem] px-3 py-2"
+          disabled={monthGroups.length === 0}
+          type="button"
+          variant="secondary"
+        >
+          <span>{selectedMonth?.label ?? "Pick month"}</span>
+          <CalendarDays className="size-4 text-muted-foreground" />
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent
+        align="start"
+        avoidCollisions={false}
+        className="w-auto p-0"
+        side="bottom"
+      >
+        <Calendar
+          className="rounded-[0.35rem]"
+          disabled={(date) => !allowedMonthKeys.has(format(date, "yyyy-MM"))}
+          mode="single"
+          month={pickerMonth}
+          selected={selectedDate}
+          onMonthChange={setPickerMonth}
+          onSelect={(date) => {
+            if (!date) {
+              return;
+            }
+
+            const monthKey = format(date, "yyyy-MM");
+            if (!allowedMonthKeys.has(monthKey)) {
+              return;
+            }
+
+            onMonthChange(monthKey);
+            setOpen(false);
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function CalendarFilterMenu({
+  eventType,
+  status,
+  onEventTypeChange,
+  onStatusChange,
+}: {
+  eventType: string;
+  status: WorkoutStatus;
+  onEventTypeChange: (value: string) => void;
+  onStatusChange: (value: WorkoutStatus) => void;
+}) {
+  const activeFilterCount = Number(eventType !== "all") + Number(status !== "all");
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          aria-label={
+            activeFilterCount > 0 ? `Filters active: ${activeFilterCount}` : "Open filters"
+          }
+          className="size-10 rounded-[0.35rem] p-0"
+          type="button"
+          variant="secondary"
+        >
+          <ListFilter className="size-4" />
+          <span className="sr-only">
+            {activeFilterCount > 0 ? `Filters active: ${activeFilterCount}` : "Open filters"}
+          </span>
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuLabel>Add filter</DropdownMenuLabel>
+        <DropdownMenuCheckboxItem
+          checked={status === "planned"}
+          onCheckedChange={(checked) => onStatusChange(checked ? "planned" : "all")}
+        >
+          Add filter: planned only
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem
+          checked={status === "completed"}
+          onCheckedChange={(checked) => onStatusChange(checked ? "completed" : "all")}
+        >
+          Add filter: completed only
+        </DropdownMenuCheckboxItem>
+
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Add filter</DropdownMenuLabel>
+        {availableEventTypes.map((item) => (
+          <DropdownMenuCheckboxItem
+            checked={eventType === item}
+            key={item}
+            onCheckedChange={(checked) => onEventTypeChange(checked ? item : "all")}
+          >
+            {`Add filter: ${toTitleCase(item)}`}
+          </DropdownMenuCheckboxItem>
+        ))}
+
+        {activeFilterCount > 0 ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={() => {
+                onEventTypeChange("all");
+                onStatusChange("all");
+              }}
+            >
+              Clear filters
+            </DropdownMenuItem>
+          </>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -373,8 +566,14 @@ function CalendarMonthGrid({
                             )}
                           >
                             {workout.completed ? "Completed" : "Planned"}
-                            {workout.expectedDistanceKm !== null
-                              ? ` · ${formatDistance(workout.expectedDistanceKm)}`
+                            {(workout.completed
+                              ? workout.actualDistanceKm
+                              : workout.expectedDistanceKm) !== null
+                              ? ` · ${formatDistance(
+                                  workout.completed
+                                    ? workout.actualDistanceKm
+                                    : workout.expectedDistanceKm,
+                                )}`
                               : ""}
                           </span>
                         </span>
@@ -420,7 +619,12 @@ function WorkoutDetailPanel({
       <div className="mt-5 grid gap-4 border-b border-foreground/10 pb-5 text-sm">
         <MetadataRow label="Event type" value={workout.eventType} />
         <MetadataRow label="Expected distance" value={formatDistance(workout.expectedDistanceKm)} />
+        <MetadataRow label="Actual distance" value={formatDistance(workout.actualDistanceKm)} />
         <MetadataRow label="Status" value={formatCompletedTimestamp(workout.completed)} />
+        <MetadataRow
+          label="Strava activity"
+          value={workout.stravaId === null ? "Not linked" : String(workout.stravaId)}
+        />
         <MetadataRow label="All day" value={workout.allDay ? "Yes" : "No"} />
         <MetadataRow label="Type" value={workout.type} />
         <MetadataRow label="Source file" value={workout.sourcePath} />
@@ -502,9 +706,9 @@ function BrandMark({ className }: { className?: string }) {
   );
 }
 
-function useHashView(): [View, (view: View) => void] {
+function usePathView(): [View, (view: View) => void] {
   const [view, setView] = useState<View>(() =>
-    typeof window === "undefined" ? "welcome" : getViewFromHash(window.location.hash),
+    typeof window === "undefined" ? "welcome" : getViewFromPath(window.location.pathname),
   );
 
   useEffect(() => {
@@ -512,43 +716,44 @@ function useHashView(): [View, (view: View) => void] {
       return;
     }
 
-    if (!window.location.hash) {
-      window.history.replaceState(null, "", "#welcome");
+    if (!window.location.pathname || window.location.pathname === "/index.html") {
+      window.history.replaceState(null, "", "/");
     }
 
-    const handleHashChange = () => {
-      setView(getViewFromHash(window.location.hash));
+    const handlePopState = () => {
+      setView(getViewFromPath(window.location.pathname));
     };
 
-    handleHashChange();
-    window.addEventListener("hashchange", handleHashChange);
+    handlePopState();
+    window.addEventListener("popstate", handlePopState);
 
     return () => {
-      window.removeEventListener("hashchange", handleHashChange);
+      window.removeEventListener("popstate", handlePopState);
     };
   }, []);
 
   const navigate = (nextView: View) => {
-    const nextHash =
-      nextView === "calendar" ? "#calendar" : nextView === "plan" ? "#plan" : "#welcome";
+    const nextPath =
+      nextView === "calendar" ? "/calendar" : nextView === "plan" ? "/plan" : "/";
 
-    if (window.location.hash === nextHash) {
+    if (window.location.pathname === nextPath) {
       setView(nextView);
       return;
     }
 
-    window.location.hash = nextHash;
+    window.history.pushState(null, "", nextPath);
+    setView(nextView);
   };
 
   return [view, navigate];
 }
 
-function getViewFromHash(hash: string): View {
-  if (hash === "#calendar") {
+function getViewFromPath(pathname: string): View {
+  if (pathname === "/calendar") {
     return "calendar";
   }
 
-  if (hash === "#plan") {
+  if (pathname === "/plan") {
     return "plan";
   }
 
@@ -560,6 +765,21 @@ function formatTimestamp(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function monthKeyToDate(monthKey: string) {
+  const [year, month] = monthKey.split("-").map(Number);
+  return new Date(year, month - 1, 1);
+}
+
+function resolveDefaultMonthKey(monthGroups: MonthGroup[]) {
+  const todayMonthKey = getTodayMonthKey();
+  return monthGroups.find((month) => month.key === todayMonthKey)?.key ?? monthGroups[0]?.key ?? "";
+}
+
+function getTodayMonthKey() {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function toTitleCase(value: string) {
@@ -600,4 +820,18 @@ function buildCalendarCells(month: MonthGroup) {
   }
 
   return cells;
+}
+
+function workoutHrefToSlug(href: string) {
+  const normalizedHref = href.split("#")[0]?.split("?")[0] ?? "";
+  if (!normalizedHref.startsWith("notes/") || !normalizedHref.endsWith(".md")) {
+    return null;
+  }
+
+  const fileName = decodeURIComponent(normalizedHref.slice("notes/".length));
+  return fileName
+    .replace(/\.md$/u, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, "-")
+    .replace(/^-+|-+$/gu, "");
 }
