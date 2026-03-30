@@ -1,0 +1,5 @@
+[submodule "tools/strava-mcp"]
+	path = tools/strava-mcp
+	url = https://github.com/oaqque/strava-mcp.git
+	branch = main
+	ignore = dirty

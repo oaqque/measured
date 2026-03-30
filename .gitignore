@@ -1,4 +1,7 @@
 node_modules/
 dist/
+.venv/
 src/generated/workouts.json
 *.tsbuildinfo
+/vault/strava/*.json
+/vault/strava/.session.lock
