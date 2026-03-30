@@ -1,0 +1,12 @@
+---
+title: 18 km Marathon Pace Run
+allDay: true
+type: single
+date: '2026-08-11'
+completed: false
+eventType: workout
+expectedDistance: 18 km
+---
+## Program
+
+- 18 km run including 10 x 1 km at marathon pace

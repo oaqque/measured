@@ -1,0 +1,12 @@
+---
+title: Lighter Support Gym
+allDay: true
+type: single
+date: '2026-05-14'
+completed: false
+eventType: workout
+expectedDistance: 0 km
+---
+## Program
+
+- Lighter support gym session

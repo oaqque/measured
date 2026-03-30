@@ -82,8 +82,42 @@
     }
   }
 
+  @keyframes fingerprint-stroke-draw {
+    0% {
+      stroke-dasharray: 0 1;
+      stroke-dashoffset: -1;
+      opacity: 0.18;
+    }
+
+    38% {
+      stroke-dasharray: 1 0;
+      stroke-dashoffset: -1;
+      opacity: 1;
+    }
+
+    62% {
+      stroke-dasharray: 1 0;
+      stroke-dashoffset: -1;
+      opacity: 1;
+    }
+
+    100% {
+      stroke-dasharray: 0 1;
+      stroke-dashoffset: 0;
+      opacity: 0.18;
+    }
+  }
+
   .motion-enter {
     animation: reveal-up 420ms ease-out;
+  }
+
+  .fingerprint-stroke {
+    stroke: var(--fingerprint-stroke);
+    stroke-dasharray: 0 1;
+    stroke-dashoffset: -1;
+    animation: fingerprint-stroke-draw 2s linear infinite;
+    animation-delay: var(--fingerprint-delay);
   }
 
   .surface-panel {
@@ -108,5 +142,16 @@
 
   .markdown-prose {
     @apply prose prose-neutral max-w-none text-foreground prose-headings:font-display prose-headings:text-foreground prose-h1:text-4xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-foreground prose-p:leading-7 prose-strong:text-foreground prose-li:text-foreground prose-code:rounded prose-code:bg-surface-elevated prose-code:px-1 prose-code:py-0.5 prose-pre:rounded-[1.5rem] prose-pre:bg-[#1d241b] prose-pre:text-[#f5f5ed];
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @layer components {
+    .fingerprint-stroke {
+      animation: none;
+      opacity: 1;
+      stroke-dasharray: none;
+      stroke-dashoffset: 0;
+    }
   }
 }

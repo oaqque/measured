@@ -6,7 +6,7 @@ import type { PlanDocument, WorkoutNote, WorkoutsData } from "../src/lib/workout
 
 const rootDir = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const generatedPath = path.resolve(rootDir, "src/generated/workouts.json");
-const defaultWorkoutsDir = path.resolve(rootDir, "../grasp/thoughts/training/workouts");
+const defaultWorkoutsDir = path.resolve(rootDir, "data/training");
 
 async function main() {
   const workoutsDir = await resolveWorkoutsDir();

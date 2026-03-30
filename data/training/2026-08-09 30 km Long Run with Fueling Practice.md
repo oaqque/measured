@@ -1,0 +1,12 @@
+---
+title: 30 km Long Run with Fueling Practice
+allDay: true
+type: single
+date: '2026-08-09'
+completed: false
+eventType: workout
+expectedDistance: 30 km
+---
+## Program
+
+- 30 km long run with fueling practice

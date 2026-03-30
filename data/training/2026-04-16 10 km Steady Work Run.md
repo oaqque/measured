@@ -1,0 +1,12 @@
+---
+title: 10 km Steady Work Run
+allDay: true
+type: single
+date: '2026-04-16'
+completed: false
+eventType: workout
+expectedDistance: 10 km
+---
+## Program
+
+- 10 km run including 2 x 3 km steady work
