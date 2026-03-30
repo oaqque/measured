@@ -20,6 +20,7 @@ export interface PlanDocument {
 
 export interface WorkoutsData {
   generatedAt: string;
+  welcome: PlanDocument;
   plan: PlanDocument;
   workouts: WorkoutNote[];
 }

@@ -7,31 +7,37 @@ import type { PlanDocument, WorkoutNote, WorkoutsData } from "../src/lib/workout
 const rootDir = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const generatedPath = path.resolve(rootDir, "src/generated/workouts.json");
 const defaultWorkoutsDir = path.resolve(rootDir, "data/training");
+const notesDirName = "notes";
 
 async function main() {
-  const workoutsDir = await resolveWorkoutsDir();
-  const fileNames = (await fs.readdir(workoutsDir))
+  const dataDir = await resolveWorkoutsDir();
+  const notesDir = path.join(dataDir, notesDirName);
+  await assertNotesDirectory(notesDir);
+  const fileNames = (await fs.readdir(notesDir))
     .filter((fileName) => fileName.endsWith(".md"))
     .sort((left, right) => left.localeCompare(right));
 
   const workouts: WorkoutNote[] = [];
+  let welcome: PlanDocument | null = null;
   let plan: PlanDocument | null = null;
 
-  for (const fileName of fileNames) {
-    const filePath = path.join(workoutsDir, fileName);
-    const sourcePath = path.relative(workoutsDir, filePath).replaceAll("\\", "/");
-    const fileContent = await fs.readFile(filePath, "utf8");
+  welcome = await readDocument(path.join(dataDir, "WELCOME.md"), dataDir);
+  plan = await readDocument(path.join(dataDir, "README.md"), dataDir);
 
-    if (fileName === "README.md") {
-      plan = buildPlanDocument(fileContent, sourcePath);
-      continue;
-    }
+  for (const fileName of fileNames) {
+    const filePath = path.join(notesDir, fileName);
+    const sourcePath = path.relative(dataDir, filePath).replaceAll("\\", "/");
+    const fileContent = await fs.readFile(filePath, "utf8");
 
     workouts.push(buildWorkoutNote(fileName, fileContent, sourcePath));
   }
 
+  if (!welcome) {
+    throw new Error(`Missing WELCOME.md in workouts source directory: ${dataDir}`);
+  }
+
   if (!plan) {
-    throw new Error(`Missing README.md in workouts source directory: ${workoutsDir}`);
+    throw new Error(`Missing README.md in workouts source directory: ${dataDir}`);
   }
 
   workouts.sort((left, right) =>
@@ -40,6 +46,7 @@ async function main() {
 
   const payload: WorkoutsData = {
     generatedAt: new Date().toISOString(),
+    welcome,
     plan,
     workouts,
   };
@@ -73,6 +80,30 @@ async function resolveWorkoutsDir() {
   }
 
   return resolvedPath;
+}
+
+async function assertNotesDirectory(notesDir: string) {
+  try {
+    const stats = await fs.stat(notesDir);
+    if (!stats.isDirectory()) {
+      throw new Error(`Workout notes path is not a directory: ${notesDir}`);
+    }
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      [
+        `Unable to read workout notes directory: ${notesDir}`,
+        `Expected structure: <data-root>/${notesDirName}/*.md with README.md and WELCOME.md in <data-root>`,
+        `Details: ${detail}`,
+      ].join("\n"),
+    );
+  }
+}
+
+async function readDocument(filePath: string, rootPath: string) {
+  const fileContent = await fs.readFile(filePath, "utf8");
+  const sourcePath = path.relative(rootPath, filePath).replaceAll("\\", "/");
+  return buildPlanDocument(fileContent, sourcePath);
 }
 
 function getCliFlagValue(flag: string) {

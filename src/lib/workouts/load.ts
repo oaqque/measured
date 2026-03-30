@@ -8,6 +8,7 @@ const workouts = [...workoutsData.workouts].sort((left, right) =>
 const workoutsBySlug = new Map(workouts.map((workout) => [workout.slug, workout]));
 
 export const generatedAt = workoutsData.generatedAt;
+export const welcomeDocument = workoutsData.welcome;
 export const trainingPlan = workoutsData.plan;
 export const allWorkouts = workouts;
 export const availableEventTypes = Array.from(

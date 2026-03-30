@@ -8,7 +8,7 @@
 
 @theme inline {
   --font-sans: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Fraunces Variable", ui-serif, serif;
+  --font-display: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -28,18 +28,18 @@
 }
 
 :root {
-  --radius: 1rem;
-  --page: #eff0e6;
-  --background: rgba(251, 250, 244, 0.92);
-  --foreground: #162018;
-  --primary: #25341f;
-  --primary-foreground: #f5f5ed;
-  --muted-foreground: #5f675f;
-  --ring: #4c5f3f;
-  --surface-panel: #dfe2d2;
-  --surface-panel-alt: #cbd1bc;
-  --surface-elevated: #f8f8f3;
-  --surface-hero: #b7c49b;
+  --radius: 0.35rem;
+  --page: #eef4fb;
+  --background: rgba(247, 251, 255, 0.92);
+  --foreground: #162447;
+  --primary: #1d2a6d;
+  --primary-foreground: #f4fdff;
+  --muted-foreground: #5e6c93;
+  --ring: #2388ef;
+  --surface-panel: #d6e5ff;
+  --surface-panel-alt: #bdd6ff;
+  --surface-elevated: #edf6ff;
+  --surface-hero: #8fb8f5;
 }
 
 @layer base {
@@ -141,7 +141,36 @@
   }
 
   .markdown-prose {
-    @apply prose prose-neutral max-w-none text-foreground prose-headings:font-display prose-headings:text-foreground prose-h1:text-4xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-foreground prose-p:leading-7 prose-strong:text-foreground prose-li:text-foreground prose-code:rounded prose-code:bg-surface-elevated prose-code:px-1 prose-code:py-0.5 prose-pre:rounded-[1.5rem] prose-pre:bg-[#1d241b] prose-pre:text-[#f5f5ed];
+    @apply prose prose-neutral max-w-none text-foreground prose-headings:font-display prose-headings:text-foreground prose-h1:text-4xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-foreground prose-p:leading-7 prose-strong:text-foreground prose-li:text-foreground prose-code:rounded prose-code:bg-surface-elevated prose-code:px-1 prose-code:py-0.5;
+  }
+
+  .markdown-prose code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  .markdown-prose pre {
+    overflow-x: auto;
+    border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+    border-radius: 0.5rem;
+    background: #1d2a6d;
+    color: #f4fdff;
+  }
+
+  .markdown-prose pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+  }
+
+  .markdown-prose pre code::before,
+  .markdown-prose pre code::after {
+    content: none;
+  }
+
+  .markdown-prose pre ::selection,
+  .markdown-prose pre code::selection {
+    background: #f4fdff;
+    color: #1d2a6d;
   }
 }
 
