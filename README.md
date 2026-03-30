@@ -1,6 +1,7 @@
 # measured
 
-Static workout viewer for markdown training notes.
+hi! welcome. this is my training in a git monorepo.
+join me while i work with the garage doors up.
 
 ## Setup
 
