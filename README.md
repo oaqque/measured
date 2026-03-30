@@ -26,13 +26,13 @@ or:
 pnpm run build:data -- --source /absolute/path/to/workouts
 ```
 
-## Strava MCP
+## Strava CLI
 
-This repo includes the Strava MCP server as the Git submodule at
+This repo includes the Strava CLI and MCP implementation as the Git submodule at
 `tools/strava-mcp`.
 
-The repo root also contains a small `uv` project that installs the `strava-mcp`
-CLI from that submodule into this repo's local `.venv` only.
+The repo root also contains a small `uv` project that installs the `strava`
+and `strava-mcp` CLIs from that submodule into this repo's local `.venv` only.
 
 For fresh clones, initialize the submodule first:
 
@@ -52,18 +52,23 @@ Install or refresh the local Strava CLI after submodule updates:
 uv sync
 ```
 
-Run the server from this repo's local CLI install:
+Run the direct Strava CLI from this repo's local environment:
 
 ```bash
-uv run strava-mcp --root ./vault/strava serve
+uv run strava --root ./vault/strava list
+uv run strava --root ./vault/strava profile
+uv run strava --root ./vault/strava show <activity-id>
+uv run strava --root ./vault/strava streams <activity-id> --keys heartrate watts
 ```
 
-One-time Strava auth is handled through the same local CLI install:
+Use `--json` for raw output:
 
 ```bash
-uv run strava-mcp --root ./vault/strava authorize start --launch-browser
-uv run strava-mcp --root ./vault/strava authorize complete --state '<state-from-start>'
+uv run strava --root ./vault/strava --json list --per-page 5
 ```
 
 Strava app credentials and session state now live under `vault/strava/` in this
 repo and are ignored by the parent repo.
+
+Authorization and deeper Strava CLI/MCP usage are documented in the submodule
+README at [`tools/strava-mcp/README.md`](tools/strava-mcp/README.md).
