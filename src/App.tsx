@@ -13,10 +13,12 @@ import {
   FileText,
   GripVertical,
   ListFilter,
+  Menu,
   NotebookText,
   PanelRightClose,
   PanelRightOpen,
 } from "lucide-react";
+import { MobileDetailSheet } from "@/components/MobileDetailSheet";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { RouteMap } from "@/components/RouteMap";
 import { Button } from "@/components/ui/button";
@@ -31,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   allWorkouts,
   availableEventTypes,
@@ -71,6 +74,7 @@ const RIGHT_SIDEBAR_DEFAULT_WIDTH = 520;
 
 export default function App() {
   const [view, setView] = usePathView();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [selectedWorkoutSlug, setSelectedWorkoutSlug] = useState<string | null>(null);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(296);
@@ -131,6 +135,7 @@ export default function App() {
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
       const resizeState = resizeStateRef.current;
+
       if (!resizeState) {
         return;
       }
@@ -154,10 +159,12 @@ export default function App() {
     };
 
     const handlePointerUp = () => {
-      setActiveResizePanel(null);
-      resizeStateRef.current = null;
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
+      if (resizeStateRef.current) {
+        setActiveResizePanel(null);
+        resizeStateRef.current = null;
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      }
     };
 
     window.addEventListener("pointermove", handlePointerMove);
@@ -170,6 +177,8 @@ export default function App() {
   }, []);
 
   const navigateToView = (nextView: View) => {
+    setMobileNavOpen(false);
+
     if (nextView !== "calendar") {
       setSelectedWorkoutSlug(null);
       setRightSidebarOpen(false);
@@ -238,46 +247,41 @@ export default function App() {
 
   return (
     <div className="h-screen overflow-hidden bg-page text-foreground">
+      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+        <SheetContent className="w-[min(20rem,100vw)] p-0 sm:max-w-none lg:hidden" side="left">
+          <div className="h-full overflow-y-auto bg-background/98 px-6 py-6">
+            <SidebarContent
+              generatedAtLabel={formatTimestamp(generatedAt)}
+              notesLoaded={allWorkouts.length}
+              stravaRunsLoaded={stravaRunCount}
+              view={view}
+              onNavigate={navigateToView}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <MobileDetailSheet open={rightSidebarOpen} onOpenChange={setRightSidebarOpen}>
+        {selectedWorkout ? (
+          <WorkoutDetailPanel workout={selectedWorkout} />
+        ) : (
+          <EmptyDetailState />
+        )}
+      </MobileDetailSheet>
+
       <div className="flex h-full">
         <aside
           className="hidden shrink-0 overflow-hidden border-r border-foreground/10 bg-background/55 lg:block"
           style={{ width: `${leftSidebarWidth}px` }}
         >
           <div className="h-full overflow-y-auto px-8 py-8">
-            <div className="mx-auto w-full max-w-44">
-              <BrandMark className="block h-auto w-full" />
-            </div>
-
-            <div className="mt-5 text-center">
-              <p className="text-3xl font-black md:text-4xl">measured.</p>
-            </div>
-
-            <nav className="mt-8 grid gap-2 border-t border-foreground/10 pt-6 text-sm">
-              <SidebarNavButton
-                active={view === "welcome"}
-                icon={<NotebookText className="size-4" />}
-                label="Welcome"
-                onClick={() => navigateToView("welcome")}
-              />
-              <SidebarNavButton
-                active={view === "plan"}
-                icon={<FileText className="size-4" />}
-                label="Plan"
-                onClick={() => navigateToView("plan")}
-              />
-              <SidebarNavButton
-                active={view === "calendar"}
-                icon={<CalendarDays className="size-4" />}
-                label="Calendar"
-                onClick={() => navigateToView("calendar")}
-              />
-            </nav>
-
-            <dl className="mt-8 grid gap-5 border-t border-foreground/10 pt-6 text-sm">
-              <MetadataRow label="Notes loaded" value={String(allWorkouts.length)} />
-              <MetadataRow label="Strava runs loaded" value={String(stravaRunCount)} />
-              <MetadataRow label="Generated" value={formatTimestamp(generatedAt)} />
-            </dl>
+            <SidebarContent
+              generatedAtLabel={formatTimestamp(generatedAt)}
+              notesLoaded={allWorkouts.length}
+              stravaRunsLoaded={stravaRunCount}
+              view={view}
+              onNavigate={navigateToView}
+            />
           </div>
         </aside>
 
@@ -290,6 +294,16 @@ export default function App() {
           <header className="z-20 border-b border-foreground/10 bg-background/85 backdrop-blur">
             <div className="flex h-14 items-center justify-between gap-4 px-4 md:px-6">
               <div className="flex min-w-0 items-center gap-3">
+                <Button
+                  aria-label="Open navigation"
+                  className="size-9 rounded-[0.35rem] p-0 lg:hidden"
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setMobileNavOpen(true)}
+                >
+                  <Menu className="size-4" />
+                  <span className="sr-only">Open navigation</span>
+                </Button>
                 <span className="text-sm font-black text-foreground">
                   measured.
                 </span>
@@ -301,7 +315,7 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <Button
                   aria-label={rightSidebarOpen ? "Hide details" : "Show details"}
-                  className="size-9 rounded-[0.35rem] p-0"
+                  className="hidden size-9 rounded-[0.35rem] p-0 lg:inline-flex"
                   type="button"
                   variant="secondary"
                   onClick={() => setRightSidebarOpen((current) => !current)}
@@ -339,15 +353,6 @@ export default function App() {
             </main>
 
             <div
-              aria-hidden={!rightSidebarOpen}
-              className={cn(
-                "absolute inset-0 z-30 bg-foreground/10 transition-opacity lg:hidden",
-                rightSidebarOpen ? "opacity-100" : "pointer-events-none opacity-0",
-              )}
-              onClick={() => setRightSidebarOpen(false)}
-            />
-
-            <div
               className={cn(
                 "hidden overflow-hidden lg:flex",
                 activeResizePanel === "right" ? "transition-none" : "transition-[width,opacity] duration-300 ease-out",
@@ -363,36 +368,25 @@ export default function App() {
             <aside
               aria-hidden={!rightSidebarOpen}
               className={cn(
-                "absolute bottom-0 right-0 top-0 z-40 overflow-hidden lg:static lg:z-auto",
+                "hidden overflow-hidden lg:static lg:z-auto lg:flex",
                 activeResizePanel === "right"
                   ? "transition-none"
-                  : "transition-[transform,opacity] duration-300 ease-out lg:transition-[width,opacity]",
+                  : "transition-[width,opacity] duration-300 ease-out",
                 rightSidebarOpen
-                  ? "translate-x-0 opacity-100"
-                  : "pointer-events-none translate-x-full opacity-0 lg:translate-x-0",
+                  ? "opacity-100"
+                  : "pointer-events-none opacity-0",
               )}
               style={{
                 width: rightSidebarOpen ? `${rightSidebarWidth}px` : "0px",
-                maxWidth: "100vw",
               }}
             >
               {rightSidebarOpen ? (
-                <div className="h-full w-[min(28rem,100vw)] border-l border-foreground/10 bg-background/95 backdrop-blur lg:w-full lg:bg-background/65 lg:backdrop-blur-0">
+                <div className="h-full w-full border-l border-foreground/10 bg-background/65">
                   <div className="h-full overflow-y-auto px-4 py-6 lg:px-6 lg:py-8">
                     {selectedWorkout ? (
                       <WorkoutDetailPanel workout={selectedWorkout} />
                     ) : (
-                      <div className="flex h-full items-center justify-center">
-                        <div className="max-w-xs text-center">
-                          <p className="text-sm font-black uppercase text-muted-foreground">
-                            Details
-                          </p>
-                          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                            Open a workout note from the calendar to inspect its metadata and full
-                            note content here.
-                          </p>
-                        </div>
-                      </div>
+                      <EmptyDetailState />
                     )}
                   </div>
                 </div>
@@ -400,6 +394,74 @@ export default function App() {
             </aside>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function SidebarContent({
+  generatedAtLabel,
+  notesLoaded,
+  stravaRunsLoaded,
+  view,
+  onNavigate,
+}: {
+  generatedAtLabel: string;
+  notesLoaded: number;
+  stravaRunsLoaded: number;
+  view: View;
+  onNavigate: (view: View) => void;
+}) {
+  return (
+    <>
+      <div className="mx-auto w-full max-w-44">
+        <BrandMark className="block h-auto w-full" />
+      </div>
+
+      <div className="mt-5 text-center">
+        <p className="text-3xl font-black md:text-4xl">measured.</p>
+      </div>
+
+      <nav className="mt-8 grid gap-2 border-t border-foreground/10 pt-6 text-sm">
+        <SidebarNavButton
+          active={view === "welcome"}
+          icon={<NotebookText className="size-4" />}
+          label="Welcome"
+          onClick={() => onNavigate("welcome")}
+        />
+        <SidebarNavButton
+          active={view === "plan"}
+          icon={<FileText className="size-4" />}
+          label="Plan"
+          onClick={() => onNavigate("plan")}
+        />
+        <SidebarNavButton
+          active={view === "calendar"}
+          icon={<CalendarDays className="size-4" />}
+          label="Calendar"
+          onClick={() => onNavigate("calendar")}
+        />
+      </nav>
+
+      <dl className="mt-8 grid gap-5 border-t border-foreground/10 pt-6 text-sm">
+        <MetadataRow label="Notes loaded" value={String(notesLoaded)} />
+        <MetadataRow label="Strava runs loaded" value={String(stravaRunsLoaded)} />
+        <MetadataRow label="Generated" value={generatedAtLabel} />
+      </dl>
+    </>
+  );
+}
+
+function EmptyDetailState() {
+  return (
+    <div className="flex h-full items-center justify-center">
+      <div className="max-w-xs text-center">
+        <p className="text-sm font-black uppercase text-muted-foreground">
+          Details
+        </p>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          Open a workout note from the calendar to inspect its metadata and full note content here.
+        </p>
       </div>
     </div>
   );
@@ -634,78 +696,146 @@ function CalendarMonthGrid({
   onSelectWorkout: (slug: string) => void;
 }) {
   const cells = useMemo(() => buildCalendarCells(month), [month]);
+  const monthDays = month.days;
 
   return (
     <div className="mt-8">
-      <div className="grid grid-cols-7 border-t border-l border-foreground/10 text-[10px] font-extrabold uppercase text-muted-foreground">
-        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-          <div className="border-r border-b border-foreground/10 px-2 py-1" key={day}>
-            {day}
-          </div>
+      <div className="grid gap-3 lg:hidden">
+        {monthDays.map((day) => (
+          <section
+            className="rounded-[0.35rem] border border-foreground/10 bg-background/70 px-3 py-3"
+            key={day.date}
+          >
+            <div className="flex items-baseline justify-between gap-3 border-b border-foreground/10 pb-2">
+              <div>
+                <p className="text-base font-black">{formatDayLabel(day.date)}</p>
+                <p className="text-[11px] uppercase text-muted-foreground">
+                  {formatDayWeekday(day.date)}
+                </p>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {day.workouts.length === 0 ? "Rest" : `${day.workouts.length} item${day.workouts.length === 1 ? "" : "s"}`}
+              </p>
+            </div>
+
+            {day.workouts.length > 0 ? (
+              <div className="mt-3 flex flex-col gap-2">
+                {day.workouts.map((workout) => {
+                  const selected = workout.slug === selectedWorkoutSlug;
+
+                  return (
+                    <Button
+                      className="h-auto w-full items-start justify-start rounded-[0.35rem] px-3 py-2 text-left whitespace-normal"
+                      key={workout.slug}
+                      type="button"
+                      variant={selected ? "default" : "secondary"}
+                      onClick={() => onSelectWorkout(workout.slug)}
+                    >
+                      <span className="flex w-full flex-col gap-1">
+                        <span className="text-[10px] font-extrabold uppercase opacity-70">
+                          {toTitleCase(workout.eventType)}
+                        </span>
+                        <span className="text-[13px] leading-[1.1rem]">{workout.title}</span>
+                        <span
+                          className={cn(
+                            "text-[11px] opacity-70",
+                            selected ? "text-primary-foreground" : "text-muted-foreground",
+                          )}
+                        >
+                          {workout.completed ? "Completed" : "Planned"}
+                          {(workout.completed
+                            ? workout.actualDistanceKm
+                            : workout.expectedDistanceKm) !== null
+                            ? ` · ${formatDistance(
+                                workout.completed
+                                  ? workout.actualDistanceKm
+                                  : workout.expectedDistanceKm,
+                              )}`
+                            : ""}
+                        </span>
+                      </span>
+                    </Button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-muted-foreground">Rest day.</p>
+            )}
+          </section>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 border-l border-foreground/10 sm:grid-cols-2 lg:grid-cols-7">
-        {cells.map((cell) => (
-          <div
-            className={cn(
-              "min-h-28 border-r border-b border-foreground/10 px-2 py-2",
-              cell.date ? "bg-transparent" : "bg-background/40",
-            )}
-            key={cell.key}
-          >
-            {cell.date ? (
-              <div className="flex h-full flex-col gap-1.5">
-                <div className="flex items-baseline justify-between gap-2">
-                  <p className="text-sm font-black">{Number(cell.date.slice(-2))}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {cell.workouts.length === 0 ? "Rest" : `${cell.workouts.length} item${cell.workouts.length === 1 ? "" : "s"}`}
-                  </p>
-                </div>
+      <div className="hidden lg:block">
+        <div className="grid grid-cols-7 border-t border-l border-foreground/10 text-[10px] font-extrabold uppercase text-muted-foreground">
+          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+            <div className="border-r border-b border-foreground/10 px-2 py-1" key={day}>
+              {day}
+            </div>
+          ))}
+        </div>
 
-                <div className="flex flex-col gap-1">
-                  {cell.workouts.map((workout) => {
-                    const selected = workout.slug === selectedWorkoutSlug;
+        <div className="grid grid-cols-7 border-l border-foreground/10">
+          {cells.map((cell) => (
+            <div
+              className={cn(
+                "min-h-28 border-r border-b border-foreground/10 px-2 py-2",
+                cell.date ? "bg-transparent" : "bg-background/40",
+              )}
+              key={cell.key}
+            >
+              {cell.date ? (
+                <div className="flex h-full flex-col gap-1.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-sm font-black">{Number(cell.date.slice(-2))}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {cell.workouts.length === 0 ? "Rest" : `${cell.workouts.length} item${cell.workouts.length === 1 ? "" : "s"}`}
+                    </p>
+                  </div>
 
-                    return (
-                      <Button
-                        className="h-auto w-full items-start justify-start rounded-[0.35rem] px-2 py-1.5 text-left whitespace-normal"
-                        key={workout.slug}
-                        type="button"
-                        variant={selected ? "default" : "secondary"}
-                        onClick={() => onSelectWorkout(workout.slug)}
-                      >
-                        <span className="flex w-full flex-col gap-1">
-                          <span className="text-[10px] font-extrabold uppercase opacity-70">
-                            {toTitleCase(workout.eventType)}
+                  <div className="flex flex-col gap-1">
+                    {cell.workouts.map((workout) => {
+                      const selected = workout.slug === selectedWorkoutSlug;
+
+                      return (
+                        <Button
+                          className="h-auto w-full items-start justify-start rounded-[0.35rem] px-2 py-1.5 text-left whitespace-normal"
+                          key={workout.slug}
+                          type="button"
+                          variant={selected ? "default" : "secondary"}
+                          onClick={() => onSelectWorkout(workout.slug)}
+                        >
+                          <span className="flex w-full flex-col gap-1">
+                            <span className="text-[10px] font-extrabold uppercase opacity-70">
+                              {toTitleCase(workout.eventType)}
+                            </span>
+                            <span className="text-[13px] leading-[1rem]">{workout.title}</span>
+                            <span
+                              className={cn(
+                                "text-[11px] opacity-70",
+                                selected ? "text-primary-foreground" : "text-muted-foreground",
+                              )}
+                            >
+                              {workout.completed ? "Completed" : "Planned"}
+                              {(workout.completed
+                                ? workout.actualDistanceKm
+                                : workout.expectedDistanceKm) !== null
+                                ? ` · ${formatDistance(
+                                    workout.completed
+                                      ? workout.actualDistanceKm
+                                      : workout.expectedDistanceKm,
+                                  )}`
+                                : ""}
+                            </span>
                           </span>
-                          <span className="text-[13px] leading-[1rem]">{workout.title}</span>
-                          <span
-                            className={cn(
-                              "text-[11px] opacity-70",
-                              selected ? "text-primary-foreground" : "text-muted-foreground",
-                            )}
-                          >
-                            {workout.completed ? "Completed" : "Planned"}
-                            {(workout.completed
-                              ? workout.actualDistanceKm
-                              : workout.expectedDistanceKm) !== null
-                              ? ` · ${formatDistance(
-                                  workout.completed
-                                    ? workout.actualDistanceKm
-                                    : workout.expectedDistanceKm,
-                                )}`
-                              : ""}
-                          </span>
-                        </span>
-                      </Button>
-                    );
-                  })}
+                        </Button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ) : null}
-          </div>
-        ))}
+              ) : null}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -930,6 +1060,19 @@ function formatTimestamp(value: string) {
     minute: "2-digit",
     timeZoneName: "short",
   }).format(new Date(value));
+}
+
+function formatDayLabel(value: string) {
+  return new Intl.DateTimeFormat("en-AU", {
+    day: "numeric",
+    month: "short",
+  }).format(new Date(`${value}T00:00:00`));
+}
+
+function formatDayWeekday(value: string) {
+  return new Intl.DateTimeFormat("en-AU", {
+    weekday: "long",
+  }).format(new Date(`${value}T00:00:00`));
 }
 
 function monthKeyToDate(monthKey: string) {

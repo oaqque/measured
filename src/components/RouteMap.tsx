@@ -172,7 +172,7 @@ export function RouteMap({
 
     let animationFrame = 0;
     let startTime = 0;
-    const durationMs = 1800;
+    const durationMs = 5000;
     setDrawProgress(0);
 
     const tick = (timestamp: number) => {
