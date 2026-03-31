@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { LocateFixed, Minus, Plus, Route, SwatchBook } from "lucide-react";
+import { LocateFixed, Minus, Play, Plus, Route, SwatchBook } from "lucide-react";
 import {
   CircleMarker,
   MapContainer,
@@ -29,6 +29,14 @@ type RouteLegendItem = {
   color: string;
   label: string;
   opacity?: number;
+};
+type RouteSegment = {
+  color: string;
+  index: number;
+  key: string;
+  opacity: number;
+  positions: [RouteCoordinate, RouteCoordinate];
+  weight: number;
 };
 
 const ROUTE_MODES: Array<{ id: RouteColorMode; label: string }> = [
@@ -70,6 +78,8 @@ export function RouteMap({
   const [routeStreamsLoaded, setRouteStreamsLoaded] = useState(false);
   const [mapInstance, setMapInstance] = useState<LeafletMap | null>(null);
   const [hmrEpoch, setHmrEpoch] = useState(0);
+  const [animationNonce, setAnimationNonce] = useState(0);
+  const [drawProgress, setDrawProgress] = useState(1);
 
   useEffect(() => {
     if (!import.meta.hot) {
@@ -135,6 +145,10 @@ export function RouteMap({
     () => buildRouteSegments(baseCoordinates, routeStreams, mode),
     [baseCoordinates, routeStreams, mode],
   );
+  const visibleSegments = useMemo(
+    () => trimRouteSegments(segments, drawProgress),
+    [drawProgress, segments],
+  );
   const availableModes = useMemo(() => getAvailableModes(routeStreams), [routeStreams]);
   const legendItems = useMemo(() => getLegendItems(mode), [mode]);
 
@@ -145,6 +159,41 @@ export function RouteMap({
 
     setMode("route");
   }, [availableModes, mode]);
+
+  useEffect(() => {
+    setAnimationNonce((current) => current + 1);
+  }, [activityId, generatedAt]);
+
+  useEffect(() => {
+    if (segments.length === 0) {
+      setDrawProgress(1);
+      return;
+    }
+
+    let animationFrame = 0;
+    let startTime = 0;
+    const durationMs = 1800;
+    setDrawProgress(0);
+
+    const tick = (timestamp: number) => {
+      if (startTime === 0) {
+        startTime = timestamp;
+      }
+
+      const progress = Math.min(1, (timestamp - startTime) / durationMs);
+      const easedProgress = 1 - (1 - progress) ** 2;
+      setDrawProgress(easedProgress);
+
+      if (progress < 1) {
+        animationFrame = window.requestAnimationFrame(tick);
+      }
+    };
+
+    animationFrame = window.requestAnimationFrame(tick);
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+    };
+  }, [animationNonce, segments]);
 
   if (baseCoordinates.length === 0 || !bounds) {
     return (
@@ -286,6 +335,16 @@ export function RouteMap({
             <LocateFixed className="size-4" />
             <span className="sr-only">Recenter map to route</span>
           </Button>
+          <Button
+            aria-label="Replay route animation"
+            className="size-9 border border-foreground/10 bg-background/95 p-0 shadow-sm"
+            type="button"
+            variant="secondary"
+            onClick={() => setAnimationNonce((current) => current + 1)}
+          >
+            <Play className="size-4" />
+            <span className="sr-only">Replay route animation</span>
+          </Button>
         </div>
         <MapContainer
           attributionControl
@@ -301,7 +360,7 @@ export function RouteMap({
             subdomains={["a", "b", "c", "d"]}
             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           />
-          {segments.map((segment) => (
+          {visibleSegments.map((segment) => (
             <Polyline
               key={segment.key}
               pathOptions={{
@@ -446,7 +505,7 @@ function buildRouteSegments(
   coordinates: RouteCoordinate[],
   routeStreams: WorkoutRouteStreams | null,
   mode: RouteColorMode,
-) {
+) : RouteSegment[] {
   if (mode === "pace" && canColorByNumericStream(routeStreams?.latlng, routeStreams?.velocitySmooth)) {
     return buildNumericSegments(
       routeStreams!.latlng!,
@@ -472,15 +531,30 @@ function buildRouteSegments(
     return buildBooleanSegments(routeStreams!.latlng!, routeStreams!.moving!, "moving");
   }
 
-  return [
-    {
-      color: "#1d2a6d",
-      key: "route-base",
-      opacity: 0.92,
-      positions: coordinates,
-      weight: 4,
-    },
-  ];
+  return buildSolidSegments(coordinates, "route-base", "#1d2a6d", 0.92, 4);
+}
+
+function buildSolidSegments(
+  coordinates: RouteCoordinate[],
+  keyPrefix: string,
+  color: string,
+  opacity: number,
+  weight: number,
+): RouteSegment[] {
+  const segments: RouteSegment[] = [];
+
+  for (let index = 0; index < coordinates.length - 1; index += 1) {
+    segments.push({
+      color,
+      index,
+      key: `${keyPrefix}-${index}`,
+      opacity,
+      positions: [coordinates[index], coordinates[index + 1]],
+      weight,
+    });
+  }
+
+  return segments;
 }
 
 function buildNumericSegments(
@@ -488,14 +562,8 @@ function buildNumericSegments(
   values: number[],
   colorForValue: (value: number) => string,
   keyPrefix: string,
-) {
-  const segments: Array<{
-    color: string;
-    key: string;
-    opacity: number;
-    positions: RouteCoordinate[];
-    weight: number;
-  }> = [];
+) : RouteSegment[] {
+  const segments: RouteSegment[] = [];
 
   for (let index = 0; index < coordinates.length - 1; index += 1) {
     const start = coordinates[index];
@@ -509,6 +577,7 @@ function buildNumericSegments(
     const metricValue = (startValue + finishValue) / 2;
     segments.push({
       color: colorForValue(metricValue),
+      index,
       key: `${keyPrefix}-${index}`,
       opacity: 0.98,
       positions: [start, finish],
@@ -523,14 +592,8 @@ function buildBooleanSegments(
   coordinates: RouteCoordinate[],
   values: boolean[],
   keyPrefix: string,
-) {
-  const segments: Array<{
-    color: string;
-    key: string;
-    opacity: number;
-    positions: RouteCoordinate[];
-    weight: number;
-  }> = [];
+) : RouteSegment[] {
+  const segments: RouteSegment[] = [];
 
   for (let index = 0; index < coordinates.length - 1; index += 1) {
     const state = values[index + 1] ?? values[index];
@@ -540,6 +603,7 @@ function buildBooleanSegments(
 
     segments.push({
       color: state ? "#1f63d2" : "#b4bfd8",
+      index,
       key: `${keyPrefix}-${index}`,
       opacity: state ? 0.98 : 0.72,
       positions: [coordinates[index], coordinates[index + 1]],
@@ -548,6 +612,46 @@ function buildBooleanSegments(
   }
 
   return segments;
+}
+
+function trimRouteSegments(segments: RouteSegment[], progress: number): RouteSegment[] {
+  if (segments.length === 0 || progress <= 0) {
+    return [];
+  }
+
+  if (progress >= 1) {
+    return segments;
+  }
+
+  const maxSegmentProgress = progress * segments.length;
+  const completedSegments = Math.floor(maxSegmentProgress);
+  const partialProgress = maxSegmentProgress - completedSegments;
+  const visibleSegments = segments.slice(0, completedSegments);
+
+  if (completedSegments >= segments.length || partialProgress <= 0) {
+    return visibleSegments;
+  }
+
+  const nextSegment = segments[completedSegments];
+  const [start, finish] = nextSegment.positions;
+  visibleSegments.push({
+    ...nextSegment,
+    key: `${nextSegment.key}-partial`,
+    positions: [start, interpolateCoordinate(start, finish, partialProgress)],
+  });
+
+  return visibleSegments;
+}
+
+function interpolateCoordinate(
+  start: RouteCoordinate,
+  finish: RouteCoordinate,
+  progress: number,
+): RouteCoordinate {
+  return [
+    start[0] + (finish[0] - start[0]) * progress,
+    start[1] + (finish[1] - start[1]) * progress,
+  ];
 }
 
 function canColorByNumericStream(
