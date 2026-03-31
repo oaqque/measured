@@ -2,10 +2,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
-import type { PlanDocument, WorkoutNote, WorkoutsData } from "../src/lib/workouts/schema";
+import type { PlanDocument, WorkoutNote, WorkoutRouteStreams, WorkoutsData } from "../src/lib/workouts/schema";
 
 const rootDir = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const generatedPath = path.resolve(rootDir, "src/generated/workouts.json");
+const generatedRouteStreamsDir = path.resolve(rootDir, "public/generated/workout-routes");
+const legacyGeneratedRouteStreamsPath = path.resolve(rootDir, "public/generated/workout-route-streams.json");
 const defaultWorkoutsDir = path.resolve(rootDir, "data/training");
 const defaultStravaCacheExportPath = path.resolve(rootDir, "vault/strava/cache-export.json");
 const notesDirName = "notes";
@@ -30,6 +32,15 @@ interface StravaCachedActivity {
   summaryPolyline: string | null;
   detailFetchedAt: string | null;
   hasStreams: boolean;
+  routeStreams: StravaCachedRouteStreams | null;
+}
+
+interface StravaCachedRouteStreams {
+  latlng: Array<[number, number]> | null;
+  distance: number[] | null;
+  heartrate: number[] | null;
+  velocitySmooth: number[] | null;
+  moving: boolean[] | null;
 }
 
 async function main() {
@@ -74,9 +85,11 @@ async function main() {
     plan,
     workouts,
   };
+  const routeStreamsPayload = buildRouteStreamsPayload(stravaCache.activities);
 
   await fs.mkdir(path.dirname(generatedPath), { recursive: true });
   await fs.writeFile(generatedPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+  await writeRouteStreamFiles(routeStreamsPayload);
   console.log(`Generated ${workouts.length} workout notes at ${generatedPath}`);
 }
 
@@ -321,6 +334,87 @@ function normalizeCachedInteger(value: unknown) {
   }
 
   return Math.trunc(value);
+}
+
+function normalizeRouteStreams(value: unknown): StravaCachedRouteStreams | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const candidate = value as Partial<StravaCachedRouteStreams>;
+  return {
+    latlng: normalizeCoordinateSeries(candidate.latlng),
+    distance: normalizeNumberSeries(candidate.distance),
+    heartrate: normalizeNumberSeries(candidate.heartrate),
+    velocitySmooth: normalizeNumberSeries(candidate.velocitySmooth),
+    moving: normalizeBooleanSeries(candidate.moving),
+  };
+}
+
+function buildRouteStreamsPayload(activities: Record<string, StravaCachedActivity>) {
+  return Object.fromEntries(
+    Object.entries(activities)
+      .map(([activityId, activity]) => [activityId, normalizeRouteStreams(activity.routeStreams)] as const)
+      .filter((entry): entry is [string, WorkoutRouteStreams] => entry[1] !== null),
+  );
+}
+
+async function writeRouteStreamFiles(routeStreamsByActivity: Record<string, WorkoutRouteStreams>) {
+  await fs.rm(legacyGeneratedRouteStreamsPath, { force: true });
+  await fs.rm(generatedRouteStreamsDir, { force: true, recursive: true });
+  await fs.mkdir(generatedRouteStreamsDir, { recursive: true });
+
+  await Promise.all(
+    Object.entries(routeStreamsByActivity).map(async ([activityId, routeStreams]) => {
+      const outputPath = path.join(generatedRouteStreamsDir, `${activityId}.json`);
+      await fs.writeFile(outputPath, `${JSON.stringify(routeStreams, null, 2)}\n`, "utf8");
+    }),
+  );
+}
+
+function normalizeCoordinateSeries(value: unknown): Array<[number, number]> | null {
+  if (!Array.isArray(value) || value.length === 0) {
+    return null;
+  }
+
+  const coordinates = value
+    .map((item) => {
+      if (!Array.isArray(item) || item.length !== 2) {
+        return null;
+      }
+
+      const latitude = normalizeCachedNumber(item[0]);
+      const longitude = normalizeCachedNumber(item[1]);
+      if (latitude === null || longitude === null) {
+        return null;
+      }
+
+      return [latitude, longitude] as [number, number];
+    })
+    .filter((item): item is [number, number] => item !== null);
+
+  return coordinates.length > 1 ? coordinates : null;
+}
+
+function normalizeNumberSeries(value: unknown): number[] | null {
+  if (!Array.isArray(value) || value.length === 0) {
+    return null;
+  }
+
+  const items = value
+    .map((item) => normalizeCachedNumber(item))
+    .filter((item): item is number => item !== null);
+
+  return items.length > 1 ? items : null;
+}
+
+function normalizeBooleanSeries(value: unknown): boolean[] | null {
+  if (!Array.isArray(value) || value.length === 0) {
+    return null;
+  }
+
+  const items = value.filter((item): item is boolean => typeof item === "boolean");
+  return items.length > 1 ? items : null;
 }
 
 function normalizeOptionalInteger(value: unknown, fileName: string, field: string) {

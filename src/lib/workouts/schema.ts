@@ -1,3 +1,11 @@
+export interface WorkoutRouteStreams {
+  latlng: Array<[number, number]> | null;
+  distance: number[] | null;
+  heartrate: number[] | null;
+  velocitySmooth: number[] | null;
+  moving: boolean[] | null;
+}
+
 export interface WorkoutNote {
   slug: string;
   title: string;

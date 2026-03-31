@@ -43,6 +43,10 @@ _FRONTMATTER_PATTERN = re.compile(r"(?ms)\A---\n(.*?)\n---")
 _STRAVA_ID_PATTERN = re.compile(r"(?m)^stravaId:\s*['\"]?(\d+)['\"]?\s*$")
 
 
+class StravaRateLimitExceededError(RuntimeError):
+    """Raised when Strava returns HTTP 429."""
+
+
 @dataclass(slots=True)
 class RateWindow:
     limit: int
@@ -436,16 +440,19 @@ def hydrate_missing_streams(
         if not rate_state.can_spend(STREAM_RESERVE_REQUESTS):
             break
         activity_id = int(row["activity_id"])
-        payload, headers = api_get_json(
-            path=f"/activities/{activity_id}/streams",
-            access_token=access_token,
-            query={
-                "keys": ",".join(STANDARD_STREAM_TYPES),
-                "key_by_type": "true",
-                "resolution": "medium",
-                "series_type": "time",
-            },
-        )
+        try:
+            payload, headers = api_get_json(
+                path=f"/activities/{activity_id}/streams",
+                access_token=access_token,
+                query={
+                    "keys": ",".join(STANDARD_STREAM_TYPES),
+                    "key_by_type": "true",
+                    "resolution": "medium",
+                    "series_type": "time",
+                },
+            )
+        except StravaRateLimitExceededError:
+            break
         rate_state.update(headers)
         request_count += 1
         if not isinstance(payload, dict):
@@ -658,6 +665,9 @@ def write_export(connection: sqlite3.Connection, export_path: Path) -> None:
                 "summaryPolyline": row["summary_polyline"],
                 "detailFetchedAt": row["detail_fetched_at"],
                 "hasStreams": bool(row["has_streams"]),
+                "routeStreams": load_exportable_streams(
+                    connection=connection, activity_id=int(row["activity_id"])
+                ),
             }
             for row in rows
         },
@@ -688,12 +698,48 @@ def api_get_json(
             headers = {key.lower(): value for key, value in response.headers.items()}
     except urllib_error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
+        if exc.code == 429:
+            raise StravaRateLimitExceededError(
+                f"Strava API request failed ({exc.code}) for {url}: {body}"
+            ) from exc
         raise RuntimeError(f"Strava API request failed ({exc.code}) for {url}: {body}") from exc
     except urllib_error.URLError as exc:
         raise RuntimeError(f"Unable to reach Strava API for {url}: {exc.reason}") from exc
     if not isinstance(payload, (dict, list)):
         raise RuntimeError(f"Strava API response for {url} was not a JSON object or array.")
     return payload, headers
+
+
+def load_exportable_streams(
+    *, connection: sqlite3.Connection, activity_id: int
+) -> dict[str, Any] | None:
+    row = connection.execute(
+        """
+        SELECT stream_json
+        FROM activity_streams
+        WHERE activity_id = ?
+        ORDER BY fetched_at DESC
+        LIMIT 1
+        """,
+        (activity_id,),
+    ).fetchone()
+    if row is None:
+        return None
+
+    try:
+        payload = json.loads(row["stream_json"])
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(payload, dict):
+        return None
+
+    return {
+        "latlng": _stream_data(payload.get("latlng")),
+        "distance": _stream_data(payload.get("distance")),
+        "heartrate": _stream_data(payload.get("heartrate")),
+        "velocitySmooth": _stream_data(payload.get("velocity_smooth")),
+        "moving": _stream_data(payload.get("moving")),
+    }
 
 
 def iso_now() -> str:
@@ -768,6 +814,13 @@ def _as_optional_int(value: Any) -> int | None:
         return int(str(value))
     except ValueError:
         return None
+
+
+def _stream_data(value: Any) -> list[Any] | None:
+    if not isinstance(value, dict):
+        return None
+    data = value.get("data")
+    return data if isinstance(data, list) else None
 
 
 def _meters_to_km(value: Any) -> float | None:

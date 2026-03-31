@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { MarkdownContent } from "@/components/MarkdownContent";
+import { RouteMap } from "@/components/RouteMap";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -69,14 +70,15 @@ const FINGERPRINT_STROKES = [
 const LEFT_SIDEBAR_MIN_WIDTH = 240;
 const LEFT_SIDEBAR_MAX_WIDTH = 420;
 const RIGHT_SIDEBAR_MIN_WIDTH = 320;
-const RIGHT_SIDEBAR_MAX_WIDTH = 560;
+const RIGHT_SIDEBAR_MAX_WIDTH = 960;
+const RIGHT_SIDEBAR_DEFAULT_WIDTH = 520;
 
 export default function App() {
   const [view, setView] = usePathView();
   const [selectedWorkoutSlug, setSelectedWorkoutSlug] = useState<string | null>(null);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(296);
-  const [rightSidebarWidth, setRightSidebarWidth] = useState(380);
+  const [rightSidebarWidth, setRightSidebarWidth] = useState(RIGHT_SIDEBAR_DEFAULT_WIDTH);
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
   const [eventType, setEventType] = useState<string>("all");
@@ -364,7 +366,7 @@ export default function App() {
                     "absolute bottom-0 right-0 top-0 z-40 w-[min(28rem,100vw)] border-l border-foreground/10 bg-background/95 backdrop-blur transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 lg:bg-background/65 lg:backdrop-blur-0",
                     rightSidebarOpen ? "translate-x-0" : "translate-x-full",
                   )}
-                  style={{ width: `${rightSidebarWidth}px` }}
+                  style={{ width: `${rightSidebarWidth}px`, maxWidth: "100vw" }}
                 >
                   <div className="h-full overflow-y-auto px-4 py-6 lg:px-6 lg:py-8">
                     {selectedWorkout ? (
@@ -769,6 +771,17 @@ function WorkoutDetailPanel({
         <MetadataRow label="Type" value={workout.type} />
         <MetadataRow label="Source file" value={workout.sourcePath} />
       </div>
+
+      {workout.summaryPolyline ? (
+        <div className="mt-5 border-b border-foreground/10 pb-5">
+          <RouteMap
+            activityId={workout.stravaId}
+            hasStravaStreams={workout.hasStravaStreams}
+            polyline={workout.summaryPolyline}
+            title={workout.title}
+          />
+        </div>
+      ) : null}
 
       <div className="markdown-prose mt-5 flex-1">
         <MarkdownContent content={workout.body} />
