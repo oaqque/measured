@@ -1,5 +1,4 @@
 import {
-  useDeferredValue,
   useEffect,
   useMemo,
   useRef,
@@ -17,8 +16,6 @@ import {
   NotebookText,
   PanelRightClose,
   PanelRightOpen,
-  Search,
-  X,
 } from "lucide-react";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { RouteMap } from "@/components/RouteMap";
@@ -33,7 +30,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   allWorkouts,
@@ -79,11 +75,10 @@ export default function App() {
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(296);
   const [rightSidebarWidth, setRightSidebarWidth] = useState(RIGHT_SIDEBAR_DEFAULT_WIDTH);
-  const [query, setQuery] = useState("");
-  const deferredQuery = useDeferredValue(query);
   const [eventType, setEventType] = useState<string>("all");
   const [status, setStatus] = useState<WorkoutStatus>("all");
   const [selectedMonthKey, setSelectedMonthKey] = useState("");
+  const [activeResizePanel, setActiveResizePanel] = useState<ActiveResizePanel | null>(null);
   const resizeStateRef = useRef<{
     panel: ActiveResizePanel;
     startX: number;
@@ -93,11 +88,11 @@ export default function App() {
   const filteredWorkouts = useMemo(
     () =>
       filterWorkouts({
-        query: deferredQuery,
+        query: "",
         eventType,
         status,
       }),
-    [deferredQuery, eventType, status],
+    [eventType, status],
   );
   const monthGroups = useMemo(() => groupWorkoutsByMonth(filteredWorkouts), [filteredWorkouts]);
   const selectedWorkout = selectedWorkoutSlug ? getWorkoutBySlug(selectedWorkoutSlug) : null;
@@ -159,6 +154,7 @@ export default function App() {
     };
 
     const handlePointerUp = () => {
+      setActiveResizePanel(null);
       resizeStateRef.current = null;
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
@@ -196,7 +192,6 @@ export default function App() {
       return;
     }
 
-    setQuery("");
     setEventType("all");
     setStatus("all");
     setSelectedMonthKey(workout.date.slice(0, 7));
@@ -211,6 +206,7 @@ export default function App() {
       startX: event.clientX,
       startWidth: panel === "left" ? leftSidebarWidth : rightSidebarWidth,
     };
+    setActiveResizePanel(panel);
     document.body.style.cursor = "col-resize";
     document.body.style.userSelect = "none";
   };
@@ -294,7 +290,7 @@ export default function App() {
           <header className="z-20 border-b border-foreground/10 bg-background/85 backdrop-blur">
             <div className="flex h-14 items-center justify-between gap-4 px-4 md:px-6">
               <div className="flex min-w-0 items-center gap-3">
-                <span className="text-sm font-black tracking-[-0.04em] text-foreground">
+                <span className="text-sm font-black text-foreground">
                   measured.
                 </span>
                 <span className="hidden text-sm text-muted-foreground md:inline">
@@ -304,7 +300,8 @@ export default function App() {
 
               <div className="flex items-center gap-2">
                 <Button
-                  className="h-9 rounded-[0.35rem] px-3"
+                  aria-label={rightSidebarOpen ? "Hide details" : "Show details"}
+                  className="size-9 rounded-[0.35rem] p-0"
                   type="button"
                   variant="secondary"
                   onClick={() => setRightSidebarOpen((current) => !current)}
@@ -314,9 +311,7 @@ export default function App() {
                   ) : (
                     <PanelRightOpen className="size-4" />
                   )}
-                  <span className="hidden sm:inline">
-                    {rightSidebarOpen ? "Hide details" : "Show details"}
-                  </span>
+                  <span className="sr-only">{rightSidebarOpen ? "Hide details" : "Show details"}</span>
                 </Button>
               </div>
             </div>
@@ -332,13 +327,11 @@ export default function App() {
                 <CalendarView
                   eventType={eventType}
                   monthGroups={monthGroups}
-                  query={query}
                   selectedMonth={selectedMonth}
                   selectedWorkoutSlug={selectedWorkoutSlug}
                   status={status}
                   onEventTypeChange={setEventType}
                   onMonthChange={setSelectedMonthKey}
-                  onQueryChange={setQuery}
                   onSelectWorkout={openWorkout}
                   onStatusChange={setStatus}
                 />
@@ -354,33 +347,44 @@ export default function App() {
               onClick={() => setRightSidebarOpen(false)}
             />
 
-            {rightSidebarOpen ? (
-              <>
-                <ResizeHandle
-                  className="hidden lg:flex"
-                  onPointerDown={(event) => startResize("right", event)}
-                />
+            <div
+              className={cn(
+                "hidden overflow-hidden lg:flex",
+                activeResizePanel === "right" ? "transition-none" : "transition-[width,opacity] duration-300 ease-out",
+                rightSidebarOpen ? "w-4 opacity-100" : "pointer-events-none w-0 opacity-0",
+              )}
+            >
+              <ResizeHandle
+                className="flex"
+                onPointerDown={(event) => startResize("right", event)}
+              />
+            </div>
 
-                <aside
-                  className={cn(
-                    "absolute bottom-0 right-0 top-0 z-40 w-[min(28rem,100vw)] border-l border-foreground/10 bg-background/95 backdrop-blur transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 lg:bg-background/65 lg:backdrop-blur-0",
-                    rightSidebarOpen ? "translate-x-0" : "translate-x-full",
-                  )}
-                  style={{ width: `${rightSidebarWidth}px`, maxWidth: "100vw" }}
-                >
+            <aside
+              aria-hidden={!rightSidebarOpen}
+              className={cn(
+                "absolute bottom-0 right-0 top-0 z-40 overflow-hidden lg:static lg:z-auto",
+                activeResizePanel === "right"
+                  ? "transition-none"
+                  : "transition-[transform,opacity] duration-300 ease-out lg:transition-[width,opacity]",
+                rightSidebarOpen
+                  ? "translate-x-0 opacity-100"
+                  : "pointer-events-none translate-x-full opacity-0 lg:translate-x-0",
+              )}
+              style={{
+                width: rightSidebarOpen ? `${rightSidebarWidth}px` : "0px",
+                maxWidth: "100vw",
+              }}
+            >
+              {rightSidebarOpen ? (
+                <div className="h-full w-[min(28rem,100vw)] border-l border-foreground/10 bg-background/95 backdrop-blur lg:w-full lg:bg-background/65 lg:backdrop-blur-0">
                   <div className="h-full overflow-y-auto px-4 py-6 lg:px-6 lg:py-8">
                     {selectedWorkout ? (
-                      <WorkoutDetailPanel
-                        workout={selectedWorkout}
-                        onClose={() => {
-                          setSelectedWorkoutSlug(null);
-                          setRightSidebarOpen(false);
-                        }}
-                      />
+                      <WorkoutDetailPanel workout={selectedWorkout} />
                     ) : (
                       <div className="flex h-full items-center justify-center">
                         <div className="max-w-xs text-center">
-                          <p className="text-sm font-black uppercase tracking-[0.14em] text-muted-foreground">
+                          <p className="text-sm font-black uppercase text-muted-foreground">
                             Details
                           </p>
                           <p className="mt-3 text-sm leading-6 text-muted-foreground">
@@ -391,9 +395,9 @@ export default function App() {
                       </div>
                     )}
                   </div>
-                </aside>
-              </>
-            ) : null}
+                </div>
+              ) : null}
+            </aside>
           </div>
         </div>
       </div>
@@ -418,58 +422,42 @@ function MarkdownPage({
 }
 
 function CalendarView({
-  query,
   eventType,
   status,
   monthGroups,
   selectedMonth,
   selectedWorkoutSlug,
-  onQueryChange,
   onEventTypeChange,
   onStatusChange,
   onMonthChange,
   onSelectWorkout,
 }: {
-  query: string;
   eventType: string;
   status: WorkoutStatus;
   monthGroups: MonthGroup[];
   selectedMonth: MonthGroup | null;
   selectedWorkoutSlug: string | null;
-  onQueryChange: (value: string) => void;
   onEventTypeChange: (value: string) => void;
   onStatusChange: (value: WorkoutStatus) => void;
   onMonthChange: (value: string) => void;
   onSelectWorkout: (slug: string) => void;
 }) {
-      return (
+  return (
     <section className="py-2">
       <div className="border-t border-foreground/10 pt-5">
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="pl-11"
-              placeholder="Search workout notes"
-              value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
-            />
-          </div>
+        <div className="flex items-center justify-end gap-2">
+          <MonthPicker
+            monthGroups={monthGroups}
+            selectedMonth={selectedMonth}
+            onMonthChange={onMonthChange}
+          />
 
-          <div className="flex items-center justify-end gap-2">
-            <MonthPicker
-              monthGroups={monthGroups}
-              selectedMonth={selectedMonth}
-              onMonthChange={onMonthChange}
-            />
-
-            <CalendarFilterMenu
-              eventType={eventType}
-              status={status}
-              onEventTypeChange={onEventTypeChange}
-              onStatusChange={onStatusChange}
-            />
-          </div>
+          <CalendarFilterMenu
+            eventType={eventType}
+            status={status}
+            onEventTypeChange={onEventTypeChange}
+            onStatusChange={onStatusChange}
+          />
         </div>
 
         {selectedMonth ? (
@@ -481,7 +469,7 @@ function CalendarView({
         ) : (
           <div className="border-t border-foreground/10 py-10">
             <p className="text-sm text-muted-foreground">
-              No workouts match the current search and filter set.
+              No workouts match the current filter set.
             </p>
           </div>
         )}
@@ -518,7 +506,7 @@ function MonthPicker({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          className="min-w-40 justify-between rounded-[0.35rem] px-3 py-2"
+          className="h-10 min-w-40 justify-between rounded-[0.35rem] px-3 py-0"
           disabled={monthGroups.length === 0}
           type="button"
           variant="secondary"
@@ -529,7 +517,7 @@ function MonthPicker({
       </PopoverTrigger>
 
       <PopoverContent
-        align="start"
+        align="end"
         avoidCollisions={false}
         className="w-auto p-0"
         side="bottom"
@@ -580,7 +568,7 @@ function CalendarFilterMenu({
           aria-label={
             activeFilterCount > 0 ? `Filters active: ${activeFilterCount}` : "Open filters"
           }
-          className="size-10 rounded-[0.35rem] p-0"
+          className="h-10 w-10 rounded-[0.35rem] p-0"
           type="button"
           variant="secondary"
         >
@@ -649,15 +637,6 @@ function CalendarMonthGrid({
 
   return (
     <div className="mt-8">
-      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-black md:text-3xl">{month.label}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {month.days.reduce((sum, day) => sum + day.workouts.length, 0)} workouts in view.
-          </p>
-        </div>
-      </div>
-
       <div className="grid grid-cols-7 border-t border-l border-foreground/10 text-[10px] font-extrabold uppercase text-muted-foreground">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
           <div className="border-r border-b border-foreground/10 px-2 py-1" key={day}>
@@ -734,10 +713,8 @@ function CalendarMonthGrid({
 
 function WorkoutDetailPanel({
   workout,
-  onClose,
 }: {
   workout: WorkoutNote;
-  onClose: () => void;
 }) {
   return (
     <div className="flex h-full flex-col">
@@ -747,15 +724,6 @@ function WorkoutDetailPanel({
           <h2 className="mt-2 text-2xl font-black">{workout.title}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{formatDisplayDate(workout.date)}</p>
         </div>
-        <Button
-          className="ml-auto size-9 shrink-0 rounded-[0.35rem] p-0"
-          type="button"
-          variant="secondary"
-          onClick={onClose}
-        >
-          <X className="size-4" />
-          <span className="sr-only">Close note</span>
-        </Button>
       </div>
 
       <div className="mt-5 grid gap-4 border-b border-foreground/10 pb-5 text-sm">
@@ -776,6 +744,7 @@ function WorkoutDetailPanel({
         <div className="mt-5 border-b border-foreground/10 pb-5">
           <RouteMap
             activityId={workout.stravaId}
+            generatedAt={generatedAt}
             hasStravaStreams={workout.hasStravaStreams}
             polyline={workout.summaryPolyline}
             title={workout.title}

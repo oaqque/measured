@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { Route, SwatchBook } from "lucide-react";
+import { LocateFixed, Minus, Plus, Route, SwatchBook } from "lucide-react";
 import {
   CircleMarker,
   MapContainer,
+  Marker,
   Polyline,
   TileLayer,
-  ZoomControl,
   useMap,
 } from "react-leaflet";
-import { latLngBounds, type LatLngBoundsExpression } from "leaflet";
+import { divIcon, latLngBounds, type LatLngBoundsExpression, type Map as LeafletMap } from "leaflet";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { WorkoutRouteStreams } from "@/lib/workouts/schema";
-import { loadRouteStreamsForActivity } from "@/lib/workouts/routes";
+import { clearRouteStreamsCache, loadRouteStreamsForActivity } from "@/lib/workouts/routes";
 import { cn } from "@/lib/utils";
 
 type RouteCoordinate = [number, number];
@@ -38,21 +38,54 @@ const ROUTE_MODES: Array<{ id: RouteColorMode; label: string }> = [
   { id: "moving", label: "Moving" },
 ];
 
+const START_MARKER_RADIUS = 9;
+const FINISH_FLAG_ICON = divIcon({
+  className: "route-finish-flag",
+  html: [
+    '<div style="position:relative;width:34px;height:34px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35));">',
+    '<span style="position:absolute;left:9px;top:2px;width:3px;height:27px;border-radius:999px;background:#162447;"></span>',
+    '<span style="position:absolute;left:12px;top:4px;width:18px;height:12px;background:#f97316;clip-path:polygon(0 0,100% 18%,74% 50%,100% 100%,0 100%);border-radius:1px;"></span>',
+    "</div>",
+  ].join(""),
+  iconAnchor: [10, 30],
+  iconSize: [34, 34],
+});
+
 export function RouteMap({
   activityId,
   className,
+  generatedAt,
   hasStravaStreams,
   polyline,
   title,
 }: {
   activityId: number | null;
   className?: string;
+  generatedAt: string;
   hasStravaStreams: boolean;
   polyline: string;
   title: string;
 }) {
   const [routeStreams, setRouteStreams] = useState<WorkoutRouteStreams | null>(null);
   const [routeStreamsLoaded, setRouteStreamsLoaded] = useState(false);
+  const [mapInstance, setMapInstance] = useState<LeafletMap | null>(null);
+  const [hmrEpoch, setHmrEpoch] = useState(0);
+
+  useEffect(() => {
+    if (!import.meta.hot) {
+      return;
+    }
+
+    const handleAfterUpdate = () => {
+      clearRouteStreamsCache();
+      setHmrEpoch((current) => current + 1);
+    };
+
+    import.meta.hot.on("vite:afterUpdate", handleAfterUpdate);
+    return () => {
+      import.meta.hot?.off("vite:afterUpdate", handleAfterUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,7 +99,7 @@ export function RouteMap({
     }
 
     setRouteStreamsLoaded(false);
-    loadRouteStreamsForActivity(activityId)
+    loadRouteStreamsForActivity(activityId, `${generatedAt}:${hmrEpoch}`)
       .then((payload) => {
         if (cancelled) {
           return;
@@ -85,7 +118,7 @@ export function RouteMap({
     return () => {
       cancelled = true;
     };
-  }, [activityId, hasStravaStreams]);
+  }, [activityId, generatedAt, hasStravaStreams, hmrEpoch]);
 
   const [mode, setMode] = useState<RouteColorMode>("route");
   const streamedCoordinates = routeStreams?.latlng ?? null;
@@ -215,7 +248,45 @@ export function RouteMap({
           Loading route stream data…
         </div>
       ) : null}
-      <div className="h-64 w-full">
+      <div className="relative h-64 w-full">
+        <div className="absolute top-[10px] right-[10px] z-[500] flex flex-col gap-1">
+          <Button
+            aria-label="Zoom in"
+            className="size-9 border border-foreground/10 bg-background/95 p-0 shadow-sm"
+            type="button"
+            variant="secondary"
+            onClick={() => mapInstance?.zoomIn()}
+          >
+            <Plus className="size-4" />
+            <span className="sr-only">Zoom in</span>
+          </Button>
+          <Button
+            aria-label="Zoom out"
+            className="size-9 border border-foreground/10 bg-background/95 p-0 shadow-sm"
+            type="button"
+            variant="secondary"
+            onClick={() => mapInstance?.zoomOut()}
+          >
+            <Minus className="size-4" />
+            <span className="sr-only">Zoom out</span>
+          </Button>
+          <Button
+            aria-label="Recenter map to route"
+            className="size-9 border border-foreground/10 bg-background/95 p-0 shadow-sm"
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              if (!mapInstance) {
+                return;
+              }
+
+              flyToRouteBounds(mapInstance, bounds);
+            }}
+          >
+            <LocateFixed className="size-4" />
+            <span className="sr-only">Recenter map to route</span>
+          </Button>
+        </div>
         <MapContainer
           attributionControl
           className="h-full w-full"
@@ -230,7 +301,6 @@ export function RouteMap({
             subdomains={["a", "b", "c", "d"]}
             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           />
-          <ZoomControl position="topright" />
           {segments.map((segment) => (
             <Polyline
               key={segment.key}
@@ -248,25 +318,17 @@ export function RouteMap({
             center={start}
             pathOptions={{
               color: "#f4fdff",
-              fillColor: "#1f63d2",
+              fillColor: "#f97316",
               fillOpacity: 1,
-              weight: 2,
+              weight: 2.5,
             }}
-            radius={4}
+            radius={START_MARKER_RADIUS}
           />
           {!sameEndpoint ? (
-            <CircleMarker
-              center={finish}
-              pathOptions={{
-                color: "#162447",
-                fillColor: "#8fb8f5",
-                fillOpacity: 1,
-                weight: 2,
-              }}
-              radius={4}
-            />
+            <Marker icon={FINISH_FLAG_ICON} position={finish} />
           ) : null}
-          <MapViewportSync bounds={bounds} start={start} />
+          <MapInstanceBridge onReady={setMapInstance} />
+          <MapViewportSync bounds={bounds} />
         </MapContainer>
       </div>
     </div>
@@ -275,30 +337,19 @@ export function RouteMap({
 
 function MapViewportSync({
   bounds,
-  start,
 }: {
   bounds: LatLngBoundsExpression;
-  start: RouteCoordinate;
 }) {
   const map = useMap();
 
   useEffect(() => {
-    map.setView(start, 3, { animate: false });
-    map.invalidateSize();
-    map.fitBounds(bounds, {
-      animate: false,
-      padding: [20, 20],
-    });
-  }, [bounds, map, start]);
+    fitRouteBounds(map, bounds, false);
+  }, [bounds, map]);
 
   useEffect(() => {
     const container = map.getContainer();
     const resizeObserver = new ResizeObserver(() => {
-      map.invalidateSize();
-      map.fitBounds(bounds, {
-        animate: false,
-        padding: [20, 20],
-      });
+      fitRouteBounds(map, bounds, false);
     });
     resizeObserver.observe(container);
 
@@ -308,6 +359,40 @@ function MapViewportSync({
   }, [bounds, map]);
 
   return null;
+}
+
+function MapInstanceBridge({
+  onReady,
+}: {
+  onReady: (map: LeafletMap) => void;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    onReady(map);
+  }, [map, onReady]);
+
+  return null;
+}
+
+function fitRouteBounds(
+  map: LeafletMap,
+  bounds: LatLngBoundsExpression,
+  animate: boolean,
+) {
+  map.invalidateSize();
+  map.fitBounds(bounds, {
+    animate,
+    padding: [20, 20],
+  });
+}
+
+function flyToRouteBounds(map: LeafletMap, bounds: LatLngBoundsExpression) {
+  map.invalidateSize();
+  map.flyToBounds(bounds, {
+    duration: 0.45,
+    padding: [20, 20],
+  });
 }
 
 function getAvailableModes(routeStreams: WorkoutRouteStreams | null): RouteColorMode[] {

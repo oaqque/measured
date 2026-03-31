@@ -20,7 +20,7 @@ export function Calendar({
         month: "relative",
         month_caption: "relative mx-9 flex h-10 items-center justify-center",
         caption_label:
-          "text-center text-sm font-semibold leading-none whitespace-nowrap tracking-[-0.02em] text-foreground",
+          "text-center text-sm font-semibold leading-none whitespace-nowrap text-foreground",
         nav: "absolute inset-y-0 inset-x-0 flex items-center justify-between",
         button_previous:
           "absolute top-0 left-0 inline-flex size-9 shrink-0 items-center justify-center rounded-[0.3rem] bg-transparent p-0 text-muted-foreground transition-colors hover:bg-surface-panel-alt/45 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-35",
