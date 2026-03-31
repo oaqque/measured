@@ -2,16 +2,21 @@ import {
   useDeferredValue,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
 import { format } from "date-fns";
 import {
   CalendarDays,
   FileText,
+  GripVertical,
   ListFilter,
   NotebookText,
+  PanelRightClose,
+  PanelRightOpen,
   Search,
   X,
 } from "lucide-react";
@@ -48,6 +53,7 @@ import { cn } from "@/lib/utils";
 type View = "welcome" | "plan" | "calendar";
 type MonthGroup = ReturnType<typeof groupWorkoutsByMonth>[number];
 type WorkoutStatus = WorkoutFilters["status"];
+type ActiveResizePanel = "left" | "right";
 
 const FINGERPRINT_STROKES = [
   { color: "#1d2a6d", d: "M2 12a10 10 0 0 1 18-6" },
@@ -60,15 +66,27 @@ const FINGERPRINT_STROKES = [
   { color: "#c6fbff", d: "M8.65 22c.21-.66.45-1.32.57-2" },
   { color: "#ffffff", d: "M2 16h.01" },
 ] as const;
+const LEFT_SIDEBAR_MIN_WIDTH = 240;
+const LEFT_SIDEBAR_MAX_WIDTH = 420;
+const RIGHT_SIDEBAR_MIN_WIDTH = 320;
+const RIGHT_SIDEBAR_MAX_WIDTH = 560;
 
 export default function App() {
   const [view, setView] = usePathView();
   const [selectedWorkoutSlug, setSelectedWorkoutSlug] = useState<string | null>(null);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
+  const [leftSidebarWidth, setLeftSidebarWidth] = useState(296);
+  const [rightSidebarWidth, setRightSidebarWidth] = useState(380);
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
   const [eventType, setEventType] = useState<string>("all");
   const [status, setStatus] = useState<WorkoutStatus>("all");
   const [selectedMonthKey, setSelectedMonthKey] = useState("");
+  const resizeStateRef = useRef<{
+    panel: ActiveResizePanel;
+    startX: number;
+    startWidth: number;
+  } | null>(null);
 
   const filteredWorkouts = useMemo(
     () =>
@@ -81,6 +99,10 @@ export default function App() {
   );
   const monthGroups = useMemo(() => groupWorkoutsByMonth(filteredWorkouts), [filteredWorkouts]);
   const selectedWorkout = selectedWorkoutSlug ? getWorkoutBySlug(selectedWorkoutSlug) : null;
+  const stravaRunCount = useMemo(
+    () => allWorkouts.filter((workout) => workout.stravaId !== null).length,
+    [],
+  );
   const selectedMonth =
     monthGroups.find((month) => month.key === selectedMonthKey) ?? monthGroups[0] ?? null;
 
@@ -101,9 +123,58 @@ export default function App() {
     }
   }, [selectedWorkout, selectedWorkoutSlug]);
 
+  useEffect(() => {
+    if (!selectedWorkout) {
+      return;
+    }
+
+    setRightSidebarOpen(true);
+  }, [selectedWorkout]);
+
+  useEffect(() => {
+    const handlePointerMove = (event: PointerEvent) => {
+      const resizeState = resizeStateRef.current;
+      if (!resizeState) {
+        return;
+      }
+
+      if (resizeState.panel === "left") {
+        const nextWidth = clampNumber(
+          resizeState.startWidth + (event.clientX - resizeState.startX),
+          LEFT_SIDEBAR_MIN_WIDTH,
+          LEFT_SIDEBAR_MAX_WIDTH,
+        );
+        setLeftSidebarWidth(nextWidth);
+        return;
+      }
+
+      const nextWidth = clampNumber(
+        resizeState.startWidth - (event.clientX - resizeState.startX),
+        RIGHT_SIDEBAR_MIN_WIDTH,
+        RIGHT_SIDEBAR_MAX_WIDTH,
+      );
+      setRightSidebarWidth(nextWidth);
+    };
+
+    const handlePointerUp = () => {
+      resizeStateRef.current = null;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, []);
+
   const navigateToView = (nextView: View) => {
     if (nextView !== "calendar") {
       setSelectedWorkoutSlug(null);
+      setRightSidebarOpen(false);
     } else {
       setSelectedMonthKey((current) => {
         if (current && monthGroups.some((month) => month.key === current)) {
@@ -128,7 +199,18 @@ export default function App() {
     setStatus("all");
     setSelectedMonthKey(workout.date.slice(0, 7));
     setSelectedWorkoutSlug(slug);
+    setRightSidebarOpen(true);
     setView("calendar");
+  };
+
+  const startResize = (panel: ActiveResizePanel, event: ReactPointerEvent<HTMLDivElement>) => {
+    resizeStateRef.current = {
+      panel,
+      startX: event.clientX,
+      startWidth: panel === "left" ? leftSidebarWidth : rightSidebarWidth,
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
   };
 
   const handleMarkdownLink = (href: string) => {
@@ -157,10 +239,13 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-page text-foreground">
-      <div className="mx-auto min-h-screen w-full max-w-[110rem] lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
-        <aside className="border-b border-foreground/10 px-4 py-6 md:px-6 lg:min-h-screen lg:border-r lg:border-b-0 lg:px-8 lg:py-8">
-          <div className="lg:sticky lg:top-0 lg:pt-2">
+    <div className="h-screen overflow-hidden bg-page text-foreground">
+      <div className="flex h-full">
+        <aside
+          className="hidden shrink-0 overflow-hidden border-r border-foreground/10 bg-background/55 lg:block"
+          style={{ width: `${leftSidebarWidth}px` }}
+        >
+          <div className="h-full overflow-y-auto px-8 py-8">
             <div className="mx-auto w-full max-w-44">
               <BrandMark className="block h-auto w-full" />
             </div>
@@ -191,68 +276,123 @@ export default function App() {
             </nav>
 
             <dl className="mt-8 grid gap-5 border-t border-foreground/10 pt-6 text-sm">
-              <MetadataRow label="Workouts loaded" value={String(allWorkouts.length)} />
-              <MetadataRow label="Welcome source" value={welcomeDocument.sourcePath} />
-              <MetadataRow label="Plan source" value={trainingPlan.sourcePath} />
+              <MetadataRow label="Notes loaded" value={String(allWorkouts.length)} />
+              <MetadataRow label="Strava runs loaded" value={String(stravaRunCount)} />
               <MetadataRow label="Generated" value={formatTimestamp(generatedAt)} />
             </dl>
           </div>
         </aside>
 
-        <div className="relative min-w-0 lg:flex">
-          <main className="min-w-0 flex-1 px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
-            {view === "welcome" ? (
-              <MarkdownPage content={welcomeDocument.body} onLinkClick={handleMarkdownLink} />
-            ) : view === "plan" ? (
-              <MarkdownPage content={trainingPlan.body} onLinkClick={handleMarkdownLink} />
-            ) : (
-              <CalendarView
-                eventType={eventType}
-                monthGroups={monthGroups}
-                query={query}
-                selectedMonth={selectedMonth}
-                selectedWorkoutSlug={selectedWorkoutSlug}
-                status={status}
-                onEventTypeChange={setEventType}
-                onMonthChange={setSelectedMonthKey}
-                onQueryChange={setQuery}
-                onSelectWorkout={openWorkout}
-                onStatusChange={setStatus}
-              />
-            )}
-          </main>
+        <ResizeHandle
+          className="hidden lg:flex"
+          onPointerDown={(event) => startResize("left", event)}
+        />
 
-          <div
-            aria-hidden={!selectedWorkout}
-            className={cn(
-              "fixed inset-0 z-30 bg-foreground/10 transition-opacity lg:hidden",
-              selectedWorkout ? "opacity-100" : "pointer-events-none opacity-0",
-            )}
-            onClick={() => setSelectedWorkoutSlug(null)}
-          />
+        <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+          <header className="z-20 border-b border-foreground/10 bg-background/85 backdrop-blur">
+            <div className="flex h-14 items-center justify-between gap-4 px-4 md:px-6">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="text-sm font-black tracking-[-0.04em] text-foreground">
+                  measured.
+                </span>
+                <span className="hidden text-sm text-muted-foreground md:inline">
+                  {formatViewLabel(view)}
+                </span>
+              </div>
 
-          <aside
-            className={cn(
-              "fixed inset-y-0 right-0 z-40 w-[min(28rem,100vw)] border-l border-foreground/10 bg-background/95 px-4 py-6 backdrop-blur transition-[transform,width] duration-300 lg:static lg:z-auto lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-0",
-              selectedWorkout
-                ? "translate-x-0 lg:w-[24rem] xl:w-[28rem]"
-                : "pointer-events-none translate-x-full lg:pointer-events-none lg:w-0 lg:translate-x-0",
-            )}
-          >
-            <div
-              className={cn(
-                "h-full overflow-y-auto lg:sticky lg:top-0 lg:h-screen lg:px-6 lg:py-10",
-                selectedWorkout ? "opacity-100" : "opacity-0",
-              )}
-            >
-              {selectedWorkout ? (
-                <WorkoutDetailPanel
-                  workout={selectedWorkout}
-                  onClose={() => setSelectedWorkoutSlug(null)}
-                />
-              ) : null}
+              <div className="flex items-center gap-2">
+                <Button
+                  className="h-9 rounded-[0.35rem] px-3"
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setRightSidebarOpen((current) => !current)}
+                >
+                  {rightSidebarOpen ? (
+                    <PanelRightClose className="size-4" />
+                  ) : (
+                    <PanelRightOpen className="size-4" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {rightSidebarOpen ? "Hide details" : "Show details"}
+                  </span>
+                </Button>
+              </div>
             </div>
-          </aside>
+          </header>
+
+          <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
+            <main className="h-full min-w-0 flex-1 overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
+              {view === "welcome" ? (
+                <MarkdownPage content={welcomeDocument.body} onLinkClick={handleMarkdownLink} />
+              ) : view === "plan" ? (
+                <MarkdownPage content={trainingPlan.body} onLinkClick={handleMarkdownLink} />
+              ) : (
+                <CalendarView
+                  eventType={eventType}
+                  monthGroups={monthGroups}
+                  query={query}
+                  selectedMonth={selectedMonth}
+                  selectedWorkoutSlug={selectedWorkoutSlug}
+                  status={status}
+                  onEventTypeChange={setEventType}
+                  onMonthChange={setSelectedMonthKey}
+                  onQueryChange={setQuery}
+                  onSelectWorkout={openWorkout}
+                  onStatusChange={setStatus}
+                />
+              )}
+            </main>
+
+            <div
+              aria-hidden={!rightSidebarOpen}
+              className={cn(
+                "absolute inset-0 z-30 bg-foreground/10 transition-opacity lg:hidden",
+                rightSidebarOpen ? "opacity-100" : "pointer-events-none opacity-0",
+              )}
+              onClick={() => setRightSidebarOpen(false)}
+            />
+
+            {rightSidebarOpen ? (
+              <>
+                <ResizeHandle
+                  className="hidden lg:flex"
+                  onPointerDown={(event) => startResize("right", event)}
+                />
+
+                <aside
+                  className={cn(
+                    "absolute bottom-0 right-0 top-0 z-40 w-[min(28rem,100vw)] border-l border-foreground/10 bg-background/95 backdrop-blur transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 lg:bg-background/65 lg:backdrop-blur-0",
+                    rightSidebarOpen ? "translate-x-0" : "translate-x-full",
+                  )}
+                  style={{ width: `${rightSidebarWidth}px` }}
+                >
+                  <div className="h-full overflow-y-auto px-4 py-6 lg:px-6 lg:py-8">
+                    {selectedWorkout ? (
+                      <WorkoutDetailPanel
+                        workout={selectedWorkout}
+                        onClose={() => {
+                          setSelectedWorkoutSlug(null);
+                          setRightSidebarOpen(false);
+                        }}
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <div className="max-w-xs text-center">
+                          <p className="text-sm font-black uppercase tracking-[0.14em] text-muted-foreground">
+                            Details
+                          </p>
+                          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                            Open a workout note from the calendar to inspect its metadata and full
+                            note content here.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </aside>
+              </>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
@@ -675,6 +815,29 @@ function MetadataRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function ResizeHandle({
+  className,
+  onPointerDown,
+}: {
+  className?: string;
+  onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "group relative hidden w-4 shrink-0 cursor-col-resize items-stretch justify-center bg-transparent",
+        className,
+      )}
+      onPointerDown={onPointerDown}
+    >
+      <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-foreground/10 transition-colors group-hover:bg-primary/35" />
+      <div className="absolute left-1/2 top-1/2 flex size-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[0.35rem] bg-background/75 text-muted-foreground opacity-0 shadow-sm ring-1 ring-foreground/10 transition-opacity group-hover:opacity-100">
+        <GripVertical className="size-4" />
+      </div>
+    </div>
+  );
+}
+
 function BrandMark({ className }: { className?: string }) {
   return (
     <svg
@@ -760,10 +923,30 @@ function getViewFromPath(pathname: string): View {
   return "welcome";
 }
 
+function formatViewLabel(view: View) {
+  if (view === "plan") {
+    return "Plan";
+  }
+
+  if (view === "calendar") {
+    return "Calendar";
+  }
+
+  return "Welcome";
+}
+
+function clampNumber(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
 function formatTimestamp(value: string) {
   return new Intl.DateTimeFormat("en-AU", {
-    dateStyle: "medium",
-    timeStyle: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
   }).format(new Date(value));
 }
 
