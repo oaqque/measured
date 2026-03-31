@@ -65,10 +65,9 @@ export function MobileDetailSheet({
         side="bottom"
       >
         <div className="flex min-h-0 flex-1 flex-col">
-          <button
-            aria-label="Drag down to close details"
-            className="flex items-center justify-center px-4 pb-2 pt-3 touch-none"
-            type="button"
+          <div
+            aria-hidden="true"
+            className="flex items-center justify-center px-4 pb-2 pt-3 select-none touch-none outline-none [webkit-tap-highlight-color:transparent]"
             onPointerDown={(event) => {
               if (!contentRef.current) {
                 return;
@@ -165,7 +164,7 @@ export function MobileDetailSheet({
             }}
           >
             <span className="h-1.5 w-12 rounded-full bg-foreground/12" />
-          </button>
+          </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-2">
             {children}
           </div>
