@@ -4,8 +4,10 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type ComponentType,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type SVGProps,
   type WheelEvent as ReactWheelEvent,
 } from "react";
 import {
@@ -15,7 +17,6 @@ import {
   Dribbble,
   Dumbbell,
   FileText,
-  Footprints,
   GripVertical,
   History,
   ListFilter,
@@ -24,7 +25,6 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Trophy,
-  type LucideIcon,
 } from "lucide-react";
 import { MobileDetailSheet } from "@/components/MobileDetailSheet";
 import { MarkdownContent } from "@/components/MarkdownContent";
@@ -89,8 +89,29 @@ const RIGHT_SIDEBAR_MIN_WIDTH = 320;
 const RIGHT_SIDEBAR_MAX_WIDTH = 960;
 const RIGHT_SIDEBAR_DEFAULT_WIDTH = 520;
 const DESKTOP_CALENDAR_ROW_HEIGHT = 176;
-const EVENT_TYPE_META: Record<WorkoutEventType, { icon: LucideIcon; label: string }> = {
-  run: { icon: Footprints, label: "Run" },
+type WorkoutEventTypeIcon = ComponentType<{ className?: string }>;
+
+function SportShoeIcon({ className }: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="m15 10.42 4.8-5.07" />
+      <path d="M19 18h3" />
+      <path d="M9.5 22 21.414 9.415A2 2 0 0 0 21.2 6.4l-5.61-4.208A1 1 0 0 0 14 3v2a2 2 0 0 1-1.394 1.906L8.677 8.053A1 1 0 0 0 8 9c-.155 6.393-2.082 9-4 9a2 2 0 0 0 0 4h14" />
+    </svg>
+  );
+}
+
+const EVENT_TYPE_META: Record<WorkoutEventType, { icon: WorkoutEventTypeIcon; label: string }> = {
+  run: { icon: SportShoeIcon, label: "Run" },
   basketball: { icon: Dribbble, label: "Basketball" },
   strength: { icon: Dumbbell, label: "Strength" },
   mobility: { icon: Accessibility, label: "Mobility" },
@@ -1216,22 +1237,27 @@ function WorkoutCardContent({
   const displayDistanceKm = getWorkoutCardDistanceKm(workout);
   const eventTypeMeta = getWorkoutEventTypeMeta(workout.eventType);
   const EventTypeIcon = eventTypeMeta.icon;
+  const iconSizeClass = compact ? "size-3.5" : "size-4";
 
   return (
-    <span className="flex h-full w-full flex-col justify-between gap-1">
-      <span
-        className={cn(
-          "flex items-center gap-1 overflow-hidden text-[10px] font-semibold leading-none",
-          selected ? "text-primary-foreground/90" : "text-foreground/70",
-        )}
-      >
-        <EventTypeIcon className={cn("shrink-0", compact ? "size-3" : "size-3.5")} />
-        <span className="truncate">{eventTypeMeta.label}</span>
+    <span
+      aria-label={
+        displayDistance
+          ? `${eventTypeMeta.label}, ${displayDistance} kilometres`
+          : eventTypeMeta.label
+      }
+      className="relative flex h-full w-full"
+    >
+      <span className="absolute left-0 top-0 flex items-start justify-start">
+        <EventTypeIcon
+          aria-hidden="true"
+          className={cn(iconSizeClass, selected ? "text-primary-foreground" : "text-foreground")}
+        />
       </span>
       {displayDistance ? (
         <span
           className={cn(
-            "font-black tabular-nums",
+            "flex h-full w-full items-center justify-center font-extrabold tabular-nums",
             getWorkoutCardDistanceSizeClass(displayDistanceKm, compact),
             selected ? "text-primary-foreground" : "text-foreground",
           )}
@@ -1239,7 +1265,7 @@ function WorkoutCardContent({
           {displayDistance}
         </span>
       ) : (
-        <span />
+        <span className="h-full w-full" />
       )}
     </span>
   );
@@ -1505,7 +1531,7 @@ function getWorkoutEventTypeMeta(eventType: WorkoutEventType) {
 
 function getWorkoutCardDistance(workout: WorkoutNote) {
   const distanceKm = getWorkoutCardDistanceKm(workout);
-  if (distanceKm === null) {
+  if (distanceKm === null || distanceKm <= 0) {
     return null;
   }
 
