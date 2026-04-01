@@ -9,8 +9,7 @@ import {
   type WheelEvent as ReactWheelEvent,
 } from "react";
 import {
-  ArrowDown,
-  ArrowUp,
+  Calendar1,
   CalendarDays,
   FileText,
   GripVertical,
@@ -121,10 +120,6 @@ export default function App() {
   const planChanges = useMemo(
     () => getChangelogEntriesForFile(trainingPlan.sourcePath),
     [],
-  );
-  const selectedWorkoutChanges = useMemo(
-    () => (selectedWorkout ? getChangelogEntriesForFile(selectedWorkout.sourcePath) : []),
-    [selectedWorkout],
   );
   const changelogFocusedFile = useMemo(() => {
     if (selectedWorkout) {
@@ -324,9 +319,7 @@ export default function App() {
       <MobileDetailSheet open={!isDesktop && rightSidebarOpen} onOpenChange={setRightSidebarOpen}>
         {selectedWorkout ? (
           <WorkoutDetailPanel
-            relatedChanges={selectedWorkoutChanges}
             workout={selectedWorkout}
-            onFileClick={handleMarkdownLink}
             onLinkClick={handleMarkdownLink}
           />
         ) : (
@@ -488,9 +481,7 @@ export default function App() {
                   <div className="h-full overflow-y-auto px-4 py-6 lg:px-6 lg:py-8">
                     {selectedWorkout ? (
                       <WorkoutDetailPanel
-                        relatedChanges={selectedWorkoutChanges}
                         workout={selectedWorkout}
-                        onFileClick={handleMarkdownLink}
                         onLinkClick={handleMarkdownLink}
                       />
                     ) : (
@@ -795,21 +786,39 @@ function CalendarView({
   onStatusChange: (value: WorkoutStatus) => void;
   onSelectWorkout: (slug: string) => void;
 }) {
+  const todayDateKey = getTodayDateKey();
+
   return (
     <section className="py-2">
       <div className="border-t border-foreground/10 pt-5">
-        <div className="flex items-center justify-end gap-2">
-          <MonthPicker
-            selectedDateKey={calendarFocusDate}
-            onDateChange={onFocusDateChange}
-          />
+        <div className="flex items-center justify-end">
+          <div className="inline-flex items-stretch">
+            <Button
+              aria-label="Jump to today"
+              className="size-10 rounded-none rounded-l-[0.35rem] border-r border-foreground/10 p-0"
+              disabled={calendarFocusDate === todayDateKey}
+              type="button"
+              variant="secondary"
+              onClick={() => onFocusDateChange(todayDateKey)}
+            >
+              <Calendar1 className="size-4" />
+              <span className="sr-only">Jump to today</span>
+            </Button>
 
-          <CalendarFilterMenu
-            eventType={eventType}
-            status={status}
-            onEventTypeChange={onEventTypeChange}
-            onStatusChange={onStatusChange}
-          />
+            <MonthPicker
+              selectedDateKey={calendarFocusDate}
+              triggerClassName="rounded-none border-r border-foreground/10"
+              onDateChange={onFocusDateChange}
+            />
+
+            <CalendarFilterMenu
+              eventType={eventType}
+              status={status}
+              triggerClassName="rounded-none rounded-r-[0.35rem]"
+              onEventTypeChange={onEventTypeChange}
+              onStatusChange={onStatusChange}
+            />
+          </div>
         </div>
 
         {filteredWorkouts.length > 0 && calendarFocusDate ? (
@@ -834,9 +843,11 @@ function CalendarView({
 
 function MonthPicker({
   selectedDateKey,
+  triggerClassName,
   onDateChange,
 }: {
   selectedDateKey: string;
+  triggerClassName?: string;
   onDateChange: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -853,13 +864,12 @@ function MonthPicker({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          className="h-10 min-w-40 justify-between rounded-[0.35rem] px-3 py-0"
+          className={cn("h-10 min-w-44 justify-between rounded-[0.35rem] px-3 py-0", triggerClassName)}
           disabled={!selectedDateKey}
           type="button"
           variant="secondary"
         >
           <span>{selectedDate ? formatMonthLabel(selectedDateKey) : "Pick month"}</span>
-          <CalendarDays className="size-4 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
 
@@ -892,11 +902,13 @@ function MonthPicker({
 function CalendarFilterMenu({
   eventType,
   status,
+  triggerClassName,
   onEventTypeChange,
   onStatusChange,
 }: {
   eventType: string;
   status: WorkoutStatus;
+  triggerClassName?: string;
   onEventTypeChange: (value: string) => void;
   onStatusChange: (value: WorkoutStatus) => void;
 }) {
@@ -909,7 +921,7 @@ function CalendarFilterMenu({
           aria-label={
             activeFilterCount > 0 ? `Filters active: ${activeFilterCount}` : "Open filters"
           }
-          className="h-10 w-10 rounded-[0.35rem] p-0"
+          className={cn("size-10 rounded-[0.35rem] p-0", triggerClassName)}
           type="button"
           variant="secondary"
         >
@@ -1031,38 +1043,33 @@ function CalendarMonthGrid({
             className="rounded-[0.35rem] border border-foreground/10 bg-background/70 px-3 py-3"
             key={day.date}
           >
-            <div className="flex items-baseline justify-between gap-3 border-b border-foreground/10 pb-2">
+            <div className="border-b border-foreground/10 pb-2">
               <div>
                 <p className="text-base font-black">{formatDayLabel(day.date)}</p>
                 <p className="text-[11px] uppercase text-muted-foreground">
                   {formatDayWeekday(day.date)}
                 </p>
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                {day.workouts.length === 0 ? "Rest" : `${day.workouts.length} item${day.workouts.length === 1 ? "" : "s"}`}
-              </p>
             </div>
 
             {day.workouts.length > 0 ? (
               <div className="mt-3 flex flex-col gap-2">
                 {day.workouts.map((workout) => {
                   const selected = workout.slug === selectedWorkoutSlug;
+                  const statusTone = getWorkoutStatusTone(workout);
 
                   return (
                     <Button
-                      className="h-auto w-full items-start justify-start rounded-[0.35rem] px-3 py-2 text-left whitespace-normal"
+                      className={cn(
+                        "h-auto w-full items-start justify-start rounded-[0.35rem] px-3 py-2 text-left whitespace-normal",
+                        getWorkoutCardToneClasses(statusTone, selected),
+                      )}
                       key={workout.slug}
                       type="button"
-                      variant={selected ? "default" : "secondary"}
+                      variant="secondary"
                       onClick={() => onSelectWorkout(workout.slug)}
                     >
-                      <span className="flex w-full flex-col gap-1">
-                        <span className="text-[10px] font-extrabold uppercase opacity-70">
-                          {toTitleCase(workout.eventType)}
-                        </span>
-                        <span className="text-[13px] leading-[1.1rem]">{workout.title}</span>
-                        <WorkoutCardMeta selected={selected} workout={workout} />
-                      </span>
+                      <WorkoutCardContent selected={selected} workout={workout} />
                     </Button>
                   );
                 })}
@@ -1134,7 +1141,7 @@ function CalendarWeeksDesktop({
               key={cell.key}
             >
               <div className="flex h-full min-h-0 flex-col gap-1.5">
-                <div className="flex items-baseline justify-between gap-2">
+                <div>
                   <p
                     className={cn(
                       "text-sm font-black",
@@ -1143,36 +1150,32 @@ function CalendarWeeksDesktop({
                   >
                     {Number(cell.date.slice(-2))}
                   </p>
-                  {!cell.isOutsideRange ? (
-                    <p className="text-[11px] text-muted-foreground">
-                      {cell.workouts.length === 0 ? "Rest" : `${cell.workouts.length} item${cell.workouts.length === 1 ? "" : "s"}`}
-                    </p>
-                  ) : null}
                 </div>
 
                 {cell.workouts.length > 0 ? (
-                  <div className="flex min-h-0 flex-col gap-1 overflow-y-auto pr-1">
+                  <div
+                    className="grid min-h-0 flex-1 gap-1"
+                    style={{ gridTemplateRows: `repeat(${cell.workouts.length}, minmax(0, 1fr))` }}
+                  >
                     {cell.workouts.map((workout) => {
                       const selected = workout.slug === selectedWorkoutSlug;
+                      const compactCards = cell.workouts.length >= 3;
+                      const statusTone = getWorkoutStatusTone(workout);
 
                       return (
                         <Button
                           className={cn(
-                            "h-auto w-full items-start justify-start rounded-[0.35rem] px-2 py-1.5 text-left whitespace-normal",
+                            "h-full min-h-0 w-full items-start justify-start overflow-hidden rounded-[0.35rem] px-2 py-1.5 text-left whitespace-normal",
                             cell.isOutsideRange && "opacity-80",
+                            compactCards && "px-2 py-1",
+                            getWorkoutCardToneClasses(statusTone, selected),
                           )}
                           key={workout.slug}
                           type="button"
-                          variant={selected ? "default" : "secondary"}
+                          variant="secondary"
                           onClick={() => onSelectWorkout(workout.slug)}
                         >
-                          <span className="flex w-full flex-col gap-1">
-                            <span className="text-[10px] font-extrabold uppercase opacity-70">
-                              {toTitleCase(workout.eventType)}
-                            </span>
-                            <span className="text-[13px] leading-[1rem]">{workout.title}</span>
-                            <WorkoutCardMeta selected={selected} workout={workout} />
-                          </span>
+                          <WorkoutCardContent compact={compactCards} selected={selected} workout={workout} />
                         </Button>
                       );
                     })}
@@ -1187,64 +1190,42 @@ function CalendarWeeksDesktop({
   );
 }
 
-function WorkoutCardMeta({
+function WorkoutCardContent({
+  compact = false,
   selected,
   workout,
 }: {
+  compact?: boolean;
   selected: boolean;
   workout: WorkoutNote;
 }) {
-  const displayDistance =
-    (workout.completed ? workout.actualDistanceKm : workout.expectedDistanceKm) !== null
-      ? formatDistance(workout.completed ? workout.actualDistanceKm : workout.expectedDistanceKm)
-      : null;
-  const distanceDelta = getDistanceDelta(workout);
+  const displayDistance = getWorkoutCardDistance(workout);
+  const displayDistanceKm = getWorkoutCardDistanceKm(workout);
 
   return (
-    <span className="flex items-center justify-between gap-2">
-      <span
-        className={cn(
-          "text-[11px] opacity-70",
-          selected ? "text-primary-foreground" : "text-muted-foreground",
-        )}
-      >
-        {workout.completed ? "Completed" : "Planned"}
-        {displayDistance ? ` · ${displayDistance}` : ""}
-      </span>
-      {distanceDelta ? (
+    <span className="flex h-full w-full items-end">
+      {displayDistance ? (
         <span
           className={cn(
-            "inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold",
-            distanceDelta.direction === "up"
-              ? selected
-                ? "text-emerald-200"
-                : "text-emerald-700"
-              : selected
-                ? "text-rose-200"
-                : "text-rose-700",
+            "font-black tabular-nums",
+            getWorkoutCardDistanceSizeClass(displayDistanceKm, compact),
+            selected ? "text-primary-foreground" : "text-foreground",
           )}
         >
-          {distanceDelta.direction === "up" ? (
-            <ArrowUp className="size-3" />
-          ) : (
-            <ArrowDown className="size-3" />
-          )}
-          <span>{formatDeltaKm(distanceDelta.value)}</span>
+          {displayDistance}
         </span>
-      ) : null}
+      ) : (
+        <span />
+      )}
     </span>
   );
 }
 
 function WorkoutDetailPanel({
-  relatedChanges,
   workout,
-  onFileClick,
   onLinkClick,
 }: {
-  relatedChanges: ChangelogEntry[];
   workout: WorkoutNote;
-  onFileClick: (sourcePath: string) => void;
   onLinkClick: (href: string) => boolean;
 }) {
   return (
@@ -1279,15 +1260,6 @@ function WorkoutDetailPanel({
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-
-      <RelatedChangesSection
-        className="mt-5"
-        currentSourcePath={workout.sourcePath}
-        entries={relatedChanges}
-        onFileClick={onFileClick}
-        onLinkClick={onLinkClick}
-        title="Related changes"
-      />
 
       {workout.summaryPolyline ? (
         <div className="mt-5 border-b border-foreground/10 pb-5">
@@ -1503,25 +1475,85 @@ function clampNumber(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function getDistanceDelta(workout: WorkoutNote) {
-  if (workout.expectedDistanceKm === null || workout.actualDistanceKm === null) {
+function getWorkoutCardDistance(workout: WorkoutNote) {
+  const distanceKm = getWorkoutCardDistanceKm(workout);
+  if (distanceKm === null) {
     return null;
   }
 
-  const difference = workout.actualDistanceKm - workout.expectedDistanceKm;
-  if (Math.abs(difference) < 0.05) {
-    return null;
-  }
-
-  return {
-    direction: difference > 0 ? "up" : "down",
-    value: Math.abs(difference),
-  } as const;
+  return formatCompactDistance(distanceKm);
 }
 
-function formatDeltaKm(value: number) {
+function getWorkoutCardDistanceKm(workout: WorkoutNote) {
+  return workout.completed ? workout.actualDistanceKm : workout.expectedDistanceKm;
+}
+
+function getWorkoutCardDistanceSizeClass(distanceKm: number | null, compact: boolean) {
+  if (distanceKm === null) {
+    return compact ? "text-[12px] leading-none" : "text-[14px] leading-none";
+  }
+
+  if (distanceKm >= 42) {
+    return compact ? "text-[24px] leading-none" : "text-[34px] leading-none";
+  }
+
+  if (distanceKm >= 30) {
+    return compact ? "text-[21px] leading-none" : "text-[30px] leading-none";
+  }
+
+  if (distanceKm >= 21) {
+    return compact ? "text-[18px] leading-none" : "text-[26px] leading-none";
+  }
+
+  if (distanceKm >= 12) {
+    return compact ? "text-[16px] leading-none" : "text-[22px] leading-none";
+  }
+
+  if (distanceKm >= 8) {
+    return compact ? "text-[14px] leading-none" : "text-[18px] leading-none";
+  }
+
+  if (distanceKm >= 5) {
+    return compact ? "text-[12px] leading-none" : "text-[15px] leading-none";
+  }
+
+  return compact ? "text-[11px] leading-none" : "text-[13px] leading-none";
+}
+
+function getWorkoutStatusTone(workout: WorkoutNote) {
+  if (workout.completed) {
+    return "completed";
+  }
+
+  if (workout.date < getTodayDateKey()) {
+    return "overdue";
+  }
+
+  return "default";
+}
+
+function getWorkoutCardToneClasses(
+  tone: "completed" | "default" | "overdue",
+  selected: boolean,
+) {
+  if (selected) {
+    return "bg-primary text-primary-foreground hover:bg-primary/90";
+  }
+
+  if (tone === "completed") {
+    return "bg-emerald-100 text-emerald-950 hover:bg-emerald-200";
+  }
+
+  if (tone === "overdue") {
+    return "bg-rose-100 text-rose-950 hover:bg-rose-200";
+  }
+
+  return "bg-surface-panel-alt text-foreground hover:bg-surface-hero/65";
+}
+
+function formatCompactDistance(value: number) {
   const rounded = Math.round(value * 10) / 10;
-  return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)} km`;
+  return rounded % 1 === 0 ? `${rounded.toFixed(0)}` : `${rounded.toFixed(1)}`;
 }
 
 function formatTimestamp(value: string) {
