@@ -1,5 +1,6 @@
 export interface WorkoutRouteStreams {
   latlng: Array<[number, number]> | null;
+  altitude: number[] | null;
   distance: number[] | null;
   heartrate: number[] | null;
   velocitySmooth: number[] | null;

@@ -37,6 +37,7 @@ interface StravaCachedActivity {
 
 interface StravaCachedRouteStreams {
   latlng: Array<[number, number]> | null;
+  altitude: number[] | null;
   distance: number[] | null;
   heartrate: number[] | null;
   velocitySmooth: number[] | null;
@@ -344,6 +345,7 @@ function normalizeRouteStreams(value: unknown): StravaCachedRouteStreams | null 
   const candidate = value as Partial<StravaCachedRouteStreams>;
   return {
     latlng: normalizeCoordinateSeries(candidate.latlng),
+    altitude: normalizeNumberSeries(candidate.altitude),
     distance: normalizeNumberSeries(candidate.distance),
     heartrate: normalizeNumberSeries(candidate.heartrate),
     velocitySmooth: normalizeNumberSeries(candidate.velocitySmooth),

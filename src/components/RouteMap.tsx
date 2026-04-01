@@ -24,7 +24,7 @@ import { clearRouteStreamsCache, loadRouteStreamsForActivity } from "@/lib/worko
 import { cn } from "@/lib/utils";
 
 type RouteCoordinate = [number, number];
-type RouteColorMode = "route" | "pace" | "heartrate" | "moving";
+type RouteColorMode = "route" | "pace" | "heartrate" | "moving" | "elevation";
 type RouteLegendItem = {
   color: string;
   label: string;
@@ -44,6 +44,7 @@ const ROUTE_MODES: Array<{ id: RouteColorMode; label: string }> = [
   { id: "pace", label: "Pace" },
   { id: "heartrate", label: "Heart rate" },
   { id: "moving", label: "Moving" },
+  { id: "elevation", label: "Elevation" },
 ];
 
 const START_MARKER_RADIUS = 9;
@@ -150,7 +151,7 @@ export function RouteMap({
     [drawProgress, segments],
   );
   const availableModes = useMemo(() => getAvailableModes(routeStreams), [routeStreams]);
-  const legendItems = useMemo(() => getLegendItems(mode), [mode]);
+  const legendItems = useMemo(() => getLegendItems(mode, routeStreams), [mode, routeStreams]);
 
   useEffect(() => {
     if (availableModes.includes(mode)) {
@@ -465,10 +466,16 @@ function getAvailableModes(routeStreams: WorkoutRouteStreams | null): RouteColor
   if (canColorByBooleanStream(routeStreams?.latlng, routeStreams?.moving)) {
     modes.push("moving");
   }
+  if (canColorByNumericStream(routeStreams?.latlng, routeStreams?.altitude)) {
+    modes.push("elevation");
+  }
   return modes;
 }
 
-function getLegendItems(mode: RouteColorMode): RouteLegendItem[] {
+function getLegendItems(
+  mode: RouteColorMode,
+  routeStreams: WorkoutRouteStreams | null,
+): RouteLegendItem[] {
   if (mode === "pace") {
     return [
       { color: "#7f1d1d", label: "< 4:17 /km" },
@@ -496,6 +503,10 @@ function getLegendItems(mode: RouteColorMode): RouteLegendItem[] {
       { color: "#1f63d2", label: "Moving", opacity: 0.98 },
       { color: "#b4bfd8", label: "Stopped", opacity: 0.72 },
     ];
+  }
+
+  if (mode === "elevation") {
+    return getElevationLegendItems(routeStreams?.altitude ?? null);
   }
 
   return [{ color: "#1d2a6d", label: "Route" }];
@@ -529,6 +540,10 @@ function buildRouteSegments(
 
   if (mode === "moving" && canColorByBooleanStream(routeStreams?.latlng, routeStreams?.moving)) {
     return buildBooleanSegments(routeStreams!.latlng!, routeStreams!.moving!, "moving");
+  }
+
+  if (mode === "elevation" && canColorByNumericStream(routeStreams?.latlng, routeStreams?.altitude)) {
+    return buildElevationSegments(routeStreams!.latlng!, routeStreams!.altitude!, "elevation");
   }
 
   return buildSolidSegments(coordinates, "route-base", "#1d2a6d", 0.92, 4);
@@ -612,6 +627,24 @@ function buildBooleanSegments(
   }
 
   return segments;
+}
+
+function buildElevationSegments(
+  coordinates: RouteCoordinate[],
+  values: number[],
+  keyPrefix: string,
+): RouteSegment[] {
+  const bounds = getElevationBounds(values);
+  if (!bounds) {
+    return buildSolidSegments(coordinates, keyPrefix, "#1d2a6d", 0.92, 4);
+  }
+
+  return buildNumericSegments(
+    coordinates,
+    values,
+    (value) => elevationToColor(value, bounds.min, bounds.max),
+    keyPrefix,
+  );
 }
 
 function trimRouteSegments(segments: RouteSegment[], progress: number): RouteSegment[] {
@@ -702,6 +735,79 @@ function heartrateToColor(heartrate: number) {
     return "#ca8a04";
   }
   if (heartrate >= 135) {
+    return "#0284c7";
+  }
+  return "#1d4ed8";
+}
+
+function getElevationLegendItems(values: number[] | null): RouteLegendItem[] {
+  const bounds = getElevationBounds(values);
+  if (!bounds) {
+    return [{ color: "#1d2a6d", label: "Elevation" }];
+  }
+
+  const steps = 5;
+  const range = bounds.max - bounds.min;
+  const colors = ["#1d4ed8", "#0284c7", "#16a34a", "#ea580c", "#b91c1c"];
+
+  if (range < 1) {
+    return [{ color: colors[2], label: `${Math.round(bounds.min)} m` }];
+  }
+
+  return colors.map((color, index) => {
+    const start = bounds.min + (range * index) / steps;
+    const end = bounds.min + (range * (index + 1)) / steps;
+    const roundedStart = Math.round(start);
+    const roundedEnd = Math.round(end);
+    const label =
+      index === colors.length - 1
+        ? `${roundedStart}-${roundedEnd} m`
+        : `${roundedStart}-${roundedEnd} m`;
+
+    return { color, label };
+  });
+}
+
+function getElevationBounds(values: number[] | null) {
+  if (!values || values.length < 2) {
+    return null;
+  }
+
+  let min = Number.POSITIVE_INFINITY;
+  let max = Number.NEGATIVE_INFINITY;
+
+  values.forEach((value) => {
+    if (!Number.isFinite(value)) {
+      return;
+    }
+    min = Math.min(min, value);
+    max = Math.max(max, value);
+  });
+
+  if (!Number.isFinite(min) || !Number.isFinite(max)) {
+    return null;
+  }
+
+  return { min, max };
+}
+
+function elevationToColor(value: number, min: number, max: number) {
+  const range = max - min;
+  if (range <= 0) {
+    return "#16a34a";
+  }
+
+  const ratio = (value - min) / range;
+  if (ratio >= 0.8) {
+    return "#b91c1c";
+  }
+  if (ratio >= 0.6) {
+    return "#ea580c";
+  }
+  if (ratio >= 0.4) {
+    return "#16a34a";
+  }
+  if (ratio >= 0.2) {
     return "#0284c7";
   }
   return "#1d4ed8";

@@ -7,7 +7,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "build:data": "tsx scripts/build-workouts-data.ts",
-    "sync:strava": "uv run python scripts/sync-strava-cache.py",
+    "sync:strava": "uv run python scripts/sync-strava-cache.py --with-streams",
     "predev": "pnpm run build:data",
     "prebuild": "pnpm run build:data",
     "pretypecheck": "pnpm run build:data",

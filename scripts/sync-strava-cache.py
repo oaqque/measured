@@ -735,6 +735,7 @@ def load_exportable_streams(
 
     return {
         "latlng": _stream_data(payload.get("latlng")),
+        "altitude": _stream_data(payload.get("altitude")),
         "distance": _stream_data(payload.get("distance")),
         "heartrate": _stream_data(payload.get("heartrate")),
         "velocitySmooth": _stream_data(payload.get("velocity_smooth")),
