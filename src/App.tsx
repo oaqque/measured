@@ -59,7 +59,7 @@ import {
 import type { ChangelogEntry, WorkoutFilters, WorkoutNote } from "@/lib/workouts/schema";
 import { cn } from "@/lib/utils";
 
-type View = "welcome" | "plan" | "calendar" | "changelog";
+type View = "welcome" | "plan" | "calendar";
 type MonthGroup = ReturnType<typeof groupWorkoutsByMonth>[number];
 type WorkoutStatus = WorkoutFilters["status"];
 type ActiveResizePanel = "left" | "right";
@@ -85,6 +85,7 @@ export default function App() {
   const [view, setView] = usePathView();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [changelogOpen, setChangelogOpen] = useState(false);
   const [selectedWorkoutSlug, setSelectedWorkoutSlug] = useState<string | null>(null);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(296);
@@ -122,6 +123,21 @@ export default function App() {
     () => (selectedWorkout ? getChangelogEntriesForFile(selectedWorkout.sourcePath) : []),
     [selectedWorkout],
   );
+  const changelogFocusedFile = useMemo(() => {
+    if (selectedWorkout) {
+      return selectedWorkout.sourcePath;
+    }
+
+    if (view === "welcome") {
+      return welcomeDocument.sourcePath;
+    }
+
+    if (view === "plan") {
+      return trainingPlan.sourcePath;
+    }
+
+    return null;
+  }, [selectedWorkout, trainingPlan.sourcePath, view, welcomeDocument.sourcePath]);
   const stravaRunCount = useMemo(
     () => allWorkouts.filter((workout) => workout.stravaId !== null).length,
     [],
@@ -200,6 +216,7 @@ export default function App() {
 
   const navigateToView = (nextView: View) => {
     setMobileNavOpen(false);
+    setChangelogOpen(false);
 
     if (nextView !== "calendar") {
       setSelectedWorkoutSlug(null);
@@ -256,7 +273,7 @@ export default function App() {
     }
 
     if (normalizedHref === "changelog" || normalizedHref === "changelog/") {
-      navigateToView("changelog");
+      setChangelogOpen(true);
       return true;
     }
 
@@ -272,6 +289,11 @@ export default function App() {
 
     openWorkout(slug);
     return true;
+  };
+
+  const handleChangelogLink = (href: string) => {
+    setChangelogOpen(false);
+    return handleMarkdownLink(href);
   };
 
   return (
@@ -347,6 +369,33 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-2">
+                <Popover open={changelogOpen} onOpenChange={setChangelogOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      aria-label="Open changelog"
+                      className="size-9 rounded-[0.35rem] p-0"
+                      type="button"
+                      variant="secondary"
+                    >
+                      <History className="size-4" />
+                      <span className="sr-only">Open changelog</span>
+                    </Button>
+                  </PopoverTrigger>
+
+                  <PopoverContent
+                    align="end"
+                    className="w-[min(44rem,calc(100vw-2rem))] max-w-none overflow-hidden p-0"
+                    side="bottom"
+                  >
+                    <ChangelogPopoverPanel
+                      focusedFile={changelogFocusedFile}
+                      open={changelogOpen}
+                      onFileClick={handleChangelogLink}
+                      onLinkClick={handleChangelogLink}
+                    />
+                  </PopoverContent>
+                </Popover>
+
                 <Button
                   aria-label={rightSidebarOpen ? "Hide details" : "Show details"}
                   className="hidden size-9 rounded-[0.35rem] p-0 lg:inline-flex"
@@ -383,8 +432,6 @@ export default function App() {
                   onFileClick={handleMarkdownLink}
                   onLinkClick={handleMarkdownLink}
                 />
-              ) : view === "changelog" ? (
-                <ChangelogPage onFileClick={handleMarkdownLink} onLinkClick={handleMarkdownLink} />
               ) : (
                 <CalendarView
                   eventType={eventType}
@@ -495,12 +542,6 @@ function SidebarContent({
           label="Calendar"
           onClick={() => onNavigate("calendar")}
         />
-        <SidebarNavButton
-          active={view === "changelog"}
-          icon={<History className="size-4" />}
-          label="Changelog"
-          onClick={() => onNavigate("changelog")}
-        />
       </nav>
 
       <dl className="mt-8 grid gap-5 border-t border-foreground/10 pt-6 text-sm">
@@ -557,14 +598,34 @@ function MarkdownPage({
   );
 }
 
-function ChangelogPage({
+function ChangelogPopoverPanel({
+  focusedFile,
+  open,
   onFileClick,
   onLinkClick,
 }: {
+  focusedFile: string | null;
+  open: boolean;
   onFileClick: (sourcePath: string) => void;
   onLinkClick: (href: string) => boolean;
 }) {
   const [affectedFile, setAffectedFile] = useState("all");
+  const selectableFiles = useMemo(() => {
+    if (!focusedFile || availableChangelogAffectedFiles.includes(focusedFile)) {
+      return availableChangelogAffectedFiles;
+    }
+
+    return [focusedFile, ...availableChangelogAffectedFiles];
+  }, [focusedFile]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setAffectedFile(focusedFile ?? "all");
+  }, [focusedFile, open]);
+
   const visibleEntries = useMemo(
     () =>
       affectedFile === "all"
@@ -574,15 +635,23 @@ function ChangelogPage({
   );
 
   return (
-    <section className="py-2">
-      <div className="flex items-center justify-end border-t border-foreground/10 pt-5">
+    <section className="p-4 md:p-5">
+      <div className="flex items-center justify-between gap-4 border-b border-foreground/10 pb-4">
+        <div>
+          <p className="eyebrow">Changelog</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {affectedFile === "all"
+              ? "Training plan and note changes across the repo."
+              : `Showing changes for ${formatAffectedFileLabel(affectedFile)}.`}
+          </p>
+        </div>
         <Select
           className="h-10 min-w-56 rounded-[0.35rem] bg-surface-panel-alt px-3 py-0 pr-10"
           value={affectedFile}
           onChange={(event) => setAffectedFile(event.target.value)}
         >
           <option value="all">All affected files</option>
-          {availableChangelogAffectedFiles.map((file) => (
+          {selectableFiles.map((file) => (
             <option key={file} value={file}>
               {formatAffectedFileLabel(file)}
             </option>
@@ -592,15 +661,17 @@ function ChangelogPage({
 
       {visibleEntries.length > 0 ? (
         <ChangelogTimeline
-          className="mt-8"
+          className="mt-6 max-h-[min(70vh,48rem)] overflow-y-auto pr-1"
           entries={visibleEntries}
           onFileClick={onFileClick}
           onLinkClick={onLinkClick}
         />
       ) : (
-        <div className="mt-8 border-t border-foreground/10 py-10">
+        <div className="py-10">
           <p className="text-sm text-muted-foreground">
-            No changelog entries match the current file filter.
+            {affectedFile === "all"
+              ? "No changelog entries match the current file filter."
+              : `No changelog entries apply to ${formatAffectedFileLabel(affectedFile)} yet.`}
           </p>
         </div>
       )}
@@ -1309,7 +1380,11 @@ function usePathView(): [View, (view: View) => void] {
       return;
     }
 
-    if (!window.location.pathname || window.location.pathname === "/index.html") {
+    if (
+      !window.location.pathname ||
+      window.location.pathname === "/index.html" ||
+      window.location.pathname === "/changelog"
+    ) {
       window.history.replaceState(null, "", "/");
     }
 
@@ -1331,9 +1406,7 @@ function usePathView(): [View, (view: View) => void] {
         ? "/calendar"
         : nextView === "plan"
           ? "/plan"
-          : nextView === "changelog"
-            ? "/changelog"
-            : "/";
+          : "/";
 
     if (window.location.pathname === nextPath) {
       setView(nextView);
@@ -1381,18 +1454,10 @@ function getViewFromPath(pathname: string): View {
     return "plan";
   }
 
-  if (pathname === "/changelog") {
-    return "changelog";
-  }
-
   return "welcome";
 }
 
 function formatViewLabel(view: View) {
-  if (view === "changelog") {
-    return "Changelog";
-  }
-
   if (view === "plan") {
     return "Plan";
   }
