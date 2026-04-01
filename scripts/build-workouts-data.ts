@@ -2,7 +2,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
-import type { PlanDocument, WorkoutNote, WorkoutRouteStreams, WorkoutsData } from "../src/lib/workouts/schema";
+import type {
+  ChangelogEntry,
+  PlanDocument,
+  WorkoutNote,
+  WorkoutRouteStreams,
+  WorkoutsData,
+} from "../src/lib/workouts/schema";
 
 const rootDir = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const generatedPath = path.resolve(rootDir, "src/generated/workouts.json");
@@ -10,6 +16,7 @@ const generatedRouteStreamsDir = path.resolve(rootDir, "public/generated/workout
 const legacyGeneratedRouteStreamsPath = path.resolve(rootDir, "public/generated/workout-route-streams.json");
 const defaultWorkoutsDir = path.resolve(rootDir, "data/training");
 const defaultStravaCacheExportPath = path.resolve(rootDir, "vault/strava/cache-export.json");
+const changelogDirName = "changelog";
 const notesDirName = "notes";
 
 interface StravaCacheSnapshot {
@@ -47,11 +54,13 @@ interface StravaCachedRouteStreams {
 async function main() {
   const dataDir = await resolveWorkoutsDir();
   const notesDir = path.join(dataDir, notesDirName);
+  const changelogDir = path.join(dataDir, changelogDirName);
   await assertNotesDirectory(notesDir);
   const stravaCache = await readStravaCacheSnapshot();
   const fileNames = (await fs.readdir(notesDir))
     .filter((fileName) => fileName.endsWith(".md"))
     .sort((left, right) => left.localeCompare(right));
+  const changelogEntries = await readChangelogEntries(changelogDir, dataDir);
 
   const workouts: WorkoutNote[] = [];
   let welcome: PlanDocument | null = null;
@@ -84,6 +93,7 @@ async function main() {
     generatedAt: new Date().toISOString(),
     welcome,
     plan,
+    changelog: changelogEntries,
     workouts,
   };
   const routeStreamsPayload = buildRouteStreamsPayload(stravaCache.activities);
@@ -176,6 +186,39 @@ async function readDocument(filePath: string, rootPath: string) {
   return buildPlanDocument(fileContent, sourcePath);
 }
 
+async function readChangelogEntries(changelogDir: string, rootPath: string): Promise<ChangelogEntry[]> {
+  try {
+    const stats = await fs.stat(changelogDir);
+    if (!stats.isDirectory()) {
+      throw new Error(`Changelog path is not a directory: ${changelogDir}`);
+    }
+  } catch (error) {
+    const nodeError = error as NodeJS.ErrnoException;
+    if (nodeError?.code === "ENOENT") {
+      return [];
+    }
+
+    throw error;
+  }
+
+  const fileNames = (await fs.readdir(changelogDir))
+    .filter((fileName) => fileName.endsWith(".md"))
+    .sort((left, right) => left.localeCompare(right));
+
+  const entries = await Promise.all(
+    fileNames.map(async (fileName) => {
+      const filePath = path.join(changelogDir, fileName);
+      const sourcePath = path.relative(rootPath, filePath).replaceAll("\\", "/");
+      const fileContent = await fs.readFile(filePath, "utf8");
+      return buildChangelogEntry(fileName, fileContent, sourcePath);
+    }),
+  );
+
+  return entries.sort((left, right) =>
+    left.date === right.date ? right.slug.localeCompare(left.slug) : right.date.localeCompare(left.date),
+  );
+}
+
 function getCliFlagValue(flag: string) {
   const flagIndex = process.argv.findIndex((argument) => argument === flag);
   if (flagIndex === -1) {
@@ -196,6 +239,22 @@ function buildPlanDocument(fileContent: string, sourcePath: string): PlanDocumen
   return {
     title: titleMatch?.[1]?.trim() ?? "Training Plan",
     body: fileContent.trim(),
+    sourcePath,
+  };
+}
+
+function buildChangelogEntry(fileName: string, fileContent: string, sourcePath: string): ChangelogEntry {
+  const parsed = matter(fileContent);
+  const data = parsed.data;
+
+  return {
+    slug: slugify(fileName.replace(/\.md$/u, "")),
+    title: expectString(data.title, fileName, "title"),
+    date: normalizeDate(data.date, fileName, "date"),
+    scope: normalizeNullableString(data.scope),
+    tags: normalizeStringArray(data.tags, fileName, "tags"),
+    affectedFiles: normalizeStringArray(data.affectedFiles, fileName, "affectedFiles"),
+    body: parsed.content.trim(),
     sourcePath,
   };
 }
@@ -288,6 +347,30 @@ function normalizeNullableString(value: unknown) {
   }
 
   return null;
+}
+
+function normalizeStringArray(value: unknown, fileName: string, field: string) {
+  if (value === null || value === undefined) {
+    return [];
+  }
+
+  const items = Array.isArray(value) ? value : [value];
+  const normalized = items
+    .map((item) => {
+      if (typeof item !== "string") {
+        throw new Error(`${fileName}: ${field} must contain only strings`);
+      }
+
+      const trimmed = item.trim();
+      if (trimmed.length === 0) {
+        throw new Error(`${fileName}: ${field} must not contain empty strings`);
+      }
+
+      return trimmed;
+    })
+    .filter((item, index, allItems) => allItems.indexOf(item) === index);
+
+  return normalized;
 }
 
 function normalizeDistanceKm(value: unknown) {

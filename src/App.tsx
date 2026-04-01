@@ -14,6 +14,7 @@ import {
   CalendarDays,
   FileText,
   GripVertical,
+  History,
   ListFilter,
   Menu,
   NotebookText,
@@ -36,24 +37,29 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select } from "@/components/ui/select";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
+  allChangelogEntries,
   allWorkouts,
+  availableChangelogAffectedFiles,
   availableEventTypes,
   filterWorkouts,
+  formatChangelogDate,
   formatCompletedTimestamp,
   formatDisplayDate,
   formatDistance,
   generatedAt,
+  getChangelogEntriesForFile,
   getWorkoutBySlug,
   groupWorkoutsByMonth,
   trainingPlan,
   welcomeDocument,
 } from "@/lib/workouts/load";
-import type { WorkoutFilters, WorkoutNote } from "@/lib/workouts/schema";
+import type { ChangelogEntry, WorkoutFilters, WorkoutNote } from "@/lib/workouts/schema";
 import { cn } from "@/lib/utils";
 
-type View = "welcome" | "plan" | "calendar";
+type View = "welcome" | "plan" | "calendar" | "changelog";
 type MonthGroup = ReturnType<typeof groupWorkoutsByMonth>[number];
 type WorkoutStatus = WorkoutFilters["status"];
 type ActiveResizePanel = "left" | "right";
@@ -104,6 +110,18 @@ export default function App() {
   );
   const monthGroups = useMemo(() => groupWorkoutsByMonth(filteredWorkouts), [filteredWorkouts]);
   const selectedWorkout = selectedWorkoutSlug ? getWorkoutBySlug(selectedWorkoutSlug) : null;
+  const welcomeChanges = useMemo(
+    () => getChangelogEntriesForFile(welcomeDocument.sourcePath),
+    [],
+  );
+  const planChanges = useMemo(
+    () => getChangelogEntriesForFile(trainingPlan.sourcePath),
+    [],
+  );
+  const selectedWorkoutChanges = useMemo(
+    () => (selectedWorkout ? getChangelogEntriesForFile(selectedWorkout.sourcePath) : []),
+    [selectedWorkout],
+  );
   const stravaRunCount = useMemo(
     () => allWorkouts.filter((workout) => workout.stravaId !== null).length,
     [],
@@ -225,22 +243,29 @@ export default function App() {
   };
 
   const handleMarkdownLink = (href: string) => {
-    if (href === "README.md") {
+    const normalizedHref = href.split("#")[0]?.split("?")[0] ?? href;
+
+    if (normalizedHref === "README.md") {
       navigateToView("plan");
       return true;
     }
 
-    if (href === "WELCOME.md") {
+    if (normalizedHref === "WELCOME.md") {
       navigateToView("welcome");
       return true;
     }
 
-    if (href === "notes" || href === "notes/") {
+    if (normalizedHref === "changelog" || normalizedHref === "changelog/") {
+      navigateToView("changelog");
+      return true;
+    }
+
+    if (normalizedHref === "notes" || normalizedHref === "notes/") {
       navigateToView("calendar");
       return true;
     }
 
-    const slug = workoutHrefToSlug(href);
+    const slug = workoutHrefToSlug(normalizedHref);
     if (!slug) {
       return false;
     }
@@ -267,7 +292,12 @@ export default function App() {
 
       <MobileDetailSheet open={!isDesktop && rightSidebarOpen} onOpenChange={setRightSidebarOpen}>
         {selectedWorkout ? (
-          <WorkoutDetailPanel workout={selectedWorkout} />
+          <WorkoutDetailPanel
+            relatedChanges={selectedWorkoutChanges}
+            workout={selectedWorkout}
+            onFileClick={handleMarkdownLink}
+            onLinkClick={handleMarkdownLink}
+          />
         ) : (
           <EmptyDetailState />
         )}
@@ -338,9 +368,23 @@ export default function App() {
           <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
             <main className="h-full min-w-0 flex-1 overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
               {view === "welcome" ? (
-                <MarkdownPage content={welcomeDocument.body} onLinkClick={handleMarkdownLink} />
+                <MarkdownPage
+                  content={welcomeDocument.body}
+                  relatedChanges={welcomeChanges}
+                  sourcePath={welcomeDocument.sourcePath}
+                  onFileClick={handleMarkdownLink}
+                  onLinkClick={handleMarkdownLink}
+                />
               ) : view === "plan" ? (
-                <MarkdownPage content={trainingPlan.body} onLinkClick={handleMarkdownLink} />
+                <MarkdownPage
+                  content={trainingPlan.body}
+                  relatedChanges={planChanges}
+                  sourcePath={trainingPlan.sourcePath}
+                  onFileClick={handleMarkdownLink}
+                  onLinkClick={handleMarkdownLink}
+                />
+              ) : view === "changelog" ? (
+                <ChangelogPage onFileClick={handleMarkdownLink} onLinkClick={handleMarkdownLink} />
               ) : (
                 <CalendarView
                   eventType={eventType}
@@ -389,7 +433,12 @@ export default function App() {
                 <div className="h-full w-full border-l border-foreground/10 bg-page">
                   <div className="h-full overflow-y-auto px-4 py-6 lg:px-6 lg:py-8">
                     {selectedWorkout ? (
-                      <WorkoutDetailPanel workout={selectedWorkout} />
+                      <WorkoutDetailPanel
+                        relatedChanges={selectedWorkoutChanges}
+                        workout={selectedWorkout}
+                        onFileClick={handleMarkdownLink}
+                        onLinkClick={handleMarkdownLink}
+                      />
                     ) : (
                       <EmptyDetailState />
                     )}
@@ -446,6 +495,12 @@ function SidebarContent({
           label="Calendar"
           onClick={() => onNavigate("calendar")}
         />
+        <SidebarNavButton
+          active={view === "changelog"}
+          icon={<History className="size-4" />}
+          label="Changelog"
+          onClick={() => onNavigate("changelog")}
+        />
       </nav>
 
       <dl className="mt-8 grid gap-5 border-t border-foreground/10 pt-6 text-sm">
@@ -474,9 +529,15 @@ function EmptyDetailState() {
 
 function MarkdownPage({
   content,
+  relatedChanges,
+  sourcePath,
+  onFileClick,
   onLinkClick,
 }: {
   content: string;
+  relatedChanges: ChangelogEntry[];
+  sourcePath: string;
+  onFileClick: (sourcePath: string) => void;
   onLinkClick?: (href: string) => boolean;
 }) {
   return (
@@ -484,6 +545,184 @@ function MarkdownPage({
       <div className="markdown-prose">
         <MarkdownContent content={content} onLinkClick={onLinkClick} />
       </div>
+      <RelatedChangesSection
+        className="mt-10"
+        currentSourcePath={sourcePath}
+        entries={relatedChanges}
+        onFileClick={onFileClick}
+        onLinkClick={onLinkClick}
+        title="Applies here"
+      />
+    </div>
+  );
+}
+
+function ChangelogPage({
+  onFileClick,
+  onLinkClick,
+}: {
+  onFileClick: (sourcePath: string) => void;
+  onLinkClick: (href: string) => boolean;
+}) {
+  const [affectedFile, setAffectedFile] = useState("all");
+  const visibleEntries = useMemo(
+    () =>
+      affectedFile === "all"
+        ? allChangelogEntries
+        : allChangelogEntries.filter((entry) => entry.affectedFiles.includes(affectedFile)),
+    [affectedFile],
+  );
+
+  return (
+    <section className="py-2">
+      <div className="flex items-center justify-end border-t border-foreground/10 pt-5">
+        <Select
+          className="h-10 min-w-56 rounded-[0.35rem] bg-surface-panel-alt px-3 py-0 pr-10"
+          value={affectedFile}
+          onChange={(event) => setAffectedFile(event.target.value)}
+        >
+          <option value="all">All affected files</option>
+          {availableChangelogAffectedFiles.map((file) => (
+            <option key={file} value={file}>
+              {formatAffectedFileLabel(file)}
+            </option>
+          ))}
+        </Select>
+      </div>
+
+      {visibleEntries.length > 0 ? (
+        <ChangelogTimeline
+          className="mt-8"
+          entries={visibleEntries}
+          onFileClick={onFileClick}
+          onLinkClick={onLinkClick}
+        />
+      ) : (
+        <div className="mt-8 border-t border-foreground/10 py-10">
+          <p className="text-sm text-muted-foreground">
+            No changelog entries match the current file filter.
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function RelatedChangesSection({
+  className,
+  currentSourcePath,
+  entries,
+  onFileClick,
+  onLinkClick,
+  title,
+}: {
+  className?: string;
+  currentSourcePath: string;
+  entries: ChangelogEntry[];
+  onFileClick: (sourcePath: string) => void;
+  onLinkClick?: (href: string) => boolean;
+  title: string;
+}) {
+  if (entries.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className={cn("border-t border-foreground/10 pt-6", className)}>
+      <p className="eyebrow">{title}</p>
+      <ChangelogTimeline
+        className="mt-5"
+        compact
+        currentSourcePath={currentSourcePath}
+        entries={entries}
+        onFileClick={onFileClick}
+        onLinkClick={onLinkClick}
+      />
+    </section>
+  );
+}
+
+function ChangelogTimeline({
+  className,
+  compact = false,
+  currentSourcePath,
+  entries,
+  onFileClick,
+  onLinkClick,
+}: {
+  className?: string;
+  compact?: boolean;
+  currentSourcePath?: string;
+  entries: ChangelogEntry[];
+  onFileClick: (sourcePath: string) => void;
+  onLinkClick?: (href: string) => boolean;
+}) {
+  return (
+    <div className={cn("space-y-0", className)}>
+      {entries.map((entry, index) => (
+        <article
+          className={cn(
+            "relative border-l border-foreground/10 pl-6",
+            compact ? (index === entries.length - 1 ? "" : "pb-6") : (index === entries.length - 1 ? "" : "pb-10"),
+          )}
+          key={entry.slug}
+        >
+          <span className="absolute top-1 left-0 size-3 -translate-x-1/2 rounded-full border border-background bg-primary" />
+
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-muted-foreground">
+              {formatChangelogDate(entry.date)}
+            </p>
+            {entry.scope ? (
+              <p className="text-xs font-semibold text-muted-foreground">
+                {toTitleCase(entry.scope)}
+              </p>
+            ) : null}
+          </div>
+
+          <h3 className={cn("mt-1 font-black", compact ? "text-lg" : "text-2xl")}>
+            {entry.title}
+          </h3>
+
+          {entry.tags.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {entry.tags.map((tag) => (
+                <span
+                  className="rounded-[0.35rem] border border-foreground/10 px-2 py-1 text-[11px] font-semibold text-muted-foreground"
+                  key={tag}
+                >
+                  {toTitleCase(tag)}
+                </span>
+              ))}
+            </div>
+          ) : null}
+
+          <div className={cn("markdown-prose", compact ? "mt-3" : "mt-4")}>
+            <MarkdownContent content={entry.body} onLinkClick={onLinkClick} />
+          </div>
+
+          {entry.affectedFiles.length > 0 ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {entry.affectedFiles.map((file) => {
+                const isCurrentFile = currentSourcePath === file;
+
+                return (
+                  <Button
+                    className="h-auto rounded-[0.35rem] px-2.5 py-1.5 text-xs"
+                    disabled={isCurrentFile}
+                    key={file}
+                    type="button"
+                    variant="secondary"
+                    onClick={() => onFileClick(file)}
+                  >
+                    {isCurrentFile ? "Current file" : formatAffectedFileLabel(file)}
+                  </Button>
+                );
+              })}
+            </div>
+          ) : null}
+        </article>
+      ))}
     </div>
   );
 }
@@ -897,9 +1136,15 @@ function WorkoutCardMeta({
 }
 
 function WorkoutDetailPanel({
+  relatedChanges,
   workout,
+  onFileClick,
+  onLinkClick,
 }: {
+  relatedChanges: ChangelogEntry[];
   workout: WorkoutNote;
+  onFileClick: (sourcePath: string) => void;
+  onLinkClick: (href: string) => boolean;
 }) {
   return (
     <div className="flex h-full flex-col">
@@ -934,6 +1179,15 @@ function WorkoutDetailPanel({
         </AccordionItem>
       </Accordion>
 
+      <RelatedChangesSection
+        className="mt-5"
+        currentSourcePath={workout.sourcePath}
+        entries={relatedChanges}
+        onFileClick={onFileClick}
+        onLinkClick={onLinkClick}
+        title="Related changes"
+      />
+
       {workout.summaryPolyline ? (
         <div className="mt-5 border-b border-foreground/10 pb-5">
           <RouteMap
@@ -947,7 +1201,7 @@ function WorkoutDetailPanel({
       ) : null}
 
       <div className="markdown-prose mt-5 flex-1">
-        <MarkdownContent content={workout.body} />
+        <MarkdownContent content={workout.body} onLinkClick={onLinkClick} />
       </div>
     </div>
   );
@@ -1073,7 +1327,13 @@ function usePathView(): [View, (view: View) => void] {
 
   const navigate = (nextView: View) => {
     const nextPath =
-      nextView === "calendar" ? "/calendar" : nextView === "plan" ? "/plan" : "/";
+      nextView === "calendar"
+        ? "/calendar"
+        : nextView === "plan"
+          ? "/plan"
+          : nextView === "changelog"
+            ? "/changelog"
+            : "/";
 
     if (window.location.pathname === nextPath) {
       setView(nextView);
@@ -1121,10 +1381,18 @@ function getViewFromPath(pathname: string): View {
     return "plan";
   }
 
+  if (pathname === "/changelog") {
+    return "changelog";
+  }
+
   return "welcome";
 }
 
 function formatViewLabel(view: View) {
+  if (view === "changelog") {
+    return "Changelog";
+  }
+
   if (view === "plan") {
     return "Plan";
   }
@@ -1206,6 +1474,26 @@ function toTitleCase(value: string) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function formatAffectedFileLabel(sourcePath: string) {
+  if (sourcePath === "README.md") {
+    return "README.md";
+  }
+
+  if (sourcePath === "WELCOME.md") {
+    return "WELCOME.md";
+  }
+
+  if (sourcePath.startsWith("notes/")) {
+    return sourcePath.slice("notes/".length).replace(/\.md$/u, "");
+  }
+
+  if (sourcePath.startsWith("changelog/")) {
+    return sourcePath.slice("changelog/".length).replace(/\.md$/u, "");
+  }
+
+  return sourcePath.replace(/\.md$/u, "");
 }
 
 function buildCalendarCells(

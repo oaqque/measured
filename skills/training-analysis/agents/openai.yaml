@@ -1,0 +1,4 @@
+interface:
+  display_name: "Training Analysis"
+  short_description: "Sync Strava data and update training notes"
+  default_prompt: "Use $training-analysis to sync Strava data, analyze a run, and update workout or changelog markdown in this repo."

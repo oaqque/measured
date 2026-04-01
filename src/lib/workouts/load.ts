@@ -1,22 +1,34 @@
 import workoutsJson from "@/generated/workouts.json";
-import type { WorkoutFilters, WorkoutNote, WorkoutsData } from "@/lib/workouts/schema";
+import type { ChangelogEntry, WorkoutFilters, WorkoutNote, WorkoutsData } from "@/lib/workouts/schema";
 
 const workoutsData = workoutsJson as WorkoutsData;
+const changelog = [...workoutsData.changelog].sort((left, right) =>
+  left.date === right.date ? right.slug.localeCompare(left.slug) : right.date.localeCompare(left.date),
+);
 const workouts = [...workoutsData.workouts].sort((left, right) =>
   left.date === right.date ? left.slug.localeCompare(right.slug) : left.date.localeCompare(right.date),
 );
 const workoutsBySlug = new Map(workouts.map((workout) => [workout.slug, workout]));
+const changelogByAffectedFile = buildChangelogByAffectedFile(changelog);
 
 export const generatedAt = workoutsData.generatedAt;
 export const welcomeDocument = workoutsData.welcome;
 export const trainingPlan = workoutsData.plan;
+export const allChangelogEntries = changelog;
 export const allWorkouts = workouts;
 export const availableEventTypes = Array.from(
   new Set(workouts.map((workout) => workout.eventType)),
 ).sort((left, right) => left.localeCompare(right));
+export const availableChangelogAffectedFiles = Array.from(
+  new Set(changelog.flatMap((entry) => entry.affectedFiles)),
+).sort((left, right) => left.localeCompare(right));
 
 export function getWorkoutBySlug(slug: string) {
   return workoutsBySlug.get(slug) ?? null;
+}
+
+export function getChangelogEntriesForFile(sourcePath: string) {
+  return changelogByAffectedFile.get(sourcePath) ?? [];
 }
 
 export function getAdjacentWorkouts(slug: string) {
@@ -177,6 +189,40 @@ export function formatDistance(distanceKm: number | null) {
 
 export function formatRange(rangeStart: string, rangeEnd: string) {
   return `${formatShortDate(rangeStart)} to ${formatShortDate(rangeEnd)}`;
+}
+
+export function formatChangelogDate(date: string) {
+  return new Intl.DateTimeFormat("en-AU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(`${date}T00:00:00`));
+}
+
+function buildChangelogByAffectedFile(entries: ChangelogEntry[]) {
+  const changelogMap = new Map<string, ChangelogEntry[]>();
+
+  for (const entry of entries) {
+    for (const affectedFile of entry.affectedFiles) {
+      const existingEntries = changelogMap.get(affectedFile);
+      if (existingEntries) {
+        existingEntries.push(entry);
+      } else {
+        changelogMap.set(affectedFile, [entry]);
+      }
+    }
+  }
+
+  for (const [key, items] of changelogMap.entries()) {
+    changelogMap.set(
+      key,
+      [...items].sort((left, right) =>
+        left.date === right.date ? right.slug.localeCompare(left.slug) : right.date.localeCompare(left.date),
+      ),
+    );
+  }
+
+  return changelogMap;
 }
 
 function formatMonthLabel(date: string) {

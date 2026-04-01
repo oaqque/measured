@@ -36,10 +36,22 @@ export interface PlanDocument {
   sourcePath: string;
 }
 
+export interface ChangelogEntry {
+  slug: string;
+  title: string;
+  date: string;
+  scope: string | null;
+  tags: string[];
+  affectedFiles: string[];
+  body: string;
+  sourcePath: string;
+}
+
 export interface WorkoutsData {
   generatedAt: string;
   welcome: PlanDocument;
   plan: PlanDocument;
+  changelog: ChangelogEntry[];
   workouts: WorkoutNote[];
 }
 
