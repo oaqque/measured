@@ -9,9 +9,13 @@ import {
   type WheelEvent as ReactWheelEvent,
 } from "react";
 import {
+  Accessibility,
   Calendar1,
   CalendarDays,
+  Dribbble,
+  Dumbbell,
   FileText,
+  Footprints,
   GripVertical,
   History,
   ListFilter,
@@ -19,6 +23,8 @@ import {
   NotebookText,
   PanelRightClose,
   PanelRightOpen,
+  Trophy,
+  type LucideIcon,
 } from "lucide-react";
 import { MobileDetailSheet } from "@/components/MobileDetailSheet";
 import { MarkdownContent } from "@/components/MarkdownContent";
@@ -52,7 +58,7 @@ import {
   trainingPlan,
   welcomeDocument,
 } from "@/lib/workouts/load";
-import type { ChangelogEntry, WorkoutFilters, WorkoutNote } from "@/lib/workouts/schema";
+import type { ChangelogEntry, WorkoutEventType, WorkoutFilters, WorkoutNote } from "@/lib/workouts/schema";
 import { cn } from "@/lib/utils";
 
 type View = "welcome" | "plan" | "calendar";
@@ -83,6 +89,13 @@ const RIGHT_SIDEBAR_MIN_WIDTH = 320;
 const RIGHT_SIDEBAR_MAX_WIDTH = 960;
 const RIGHT_SIDEBAR_DEFAULT_WIDTH = 520;
 const DESKTOP_CALENDAR_ROW_HEIGHT = 176;
+const EVENT_TYPE_META: Record<WorkoutEventType, { icon: LucideIcon; label: string }> = {
+  run: { icon: Footprints, label: "Run" },
+  basketball: { icon: Dribbble, label: "Basketball" },
+  strength: { icon: Dumbbell, label: "Strength" },
+  mobility: { icon: Accessibility, label: "Mobility" },
+  race: { icon: Trophy, label: "Race" },
+};
 
 export default function App() {
   const [view, setView] = usePathView();
@@ -94,7 +107,7 @@ export default function App() {
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(296);
   const [rightSidebarWidth, setRightSidebarWidth] = useState(RIGHT_SIDEBAR_DEFAULT_WIDTH);
-  const [eventType, setEventType] = useState<string>("all");
+  const [eventType, setEventType] = useState<WorkoutFilters["eventType"]>("all");
   const [status, setStatus] = useState<WorkoutStatus>("all");
   const [activeResizePanel, setActiveResizePanel] = useState<ActiveResizePanel | null>(null);
   const resizeStateRef = useRef<{
@@ -777,12 +790,12 @@ function CalendarView({
   onSelectWorkout,
 }: {
   calendarFocusDate: string;
-  eventType: string;
+  eventType: WorkoutFilters["eventType"];
   filteredWorkouts: WorkoutNote[];
   status: WorkoutStatus;
   selectedWorkoutSlug: string | null;
   onFocusDateChange: (value: string) => void;
-  onEventTypeChange: (value: string) => void;
+  onEventTypeChange: (value: WorkoutFilters["eventType"]) => void;
   onStatusChange: (value: WorkoutStatus) => void;
   onSelectWorkout: (slug: string) => void;
 }) {
@@ -906,10 +919,10 @@ function CalendarFilterMenu({
   onEventTypeChange,
   onStatusChange,
 }: {
-  eventType: string;
+  eventType: WorkoutFilters["eventType"];
   status: WorkoutStatus;
   triggerClassName?: string;
-  onEventTypeChange: (value: string) => void;
+  onEventTypeChange: (value: WorkoutFilters["eventType"]) => void;
   onStatusChange: (value: WorkoutStatus) => void;
 }) {
   const activeFilterCount = Number(eventType !== "all") + Number(status !== "all");
@@ -1201,9 +1214,20 @@ function WorkoutCardContent({
 }) {
   const displayDistance = getWorkoutCardDistance(workout);
   const displayDistanceKm = getWorkoutCardDistanceKm(workout);
+  const eventTypeMeta = getWorkoutEventTypeMeta(workout.eventType);
+  const EventTypeIcon = eventTypeMeta.icon;
 
   return (
-    <span className="flex h-full w-full items-end">
+    <span className="flex h-full w-full flex-col justify-between gap-1">
+      <span
+        className={cn(
+          "flex items-center gap-1 overflow-hidden text-[10px] font-semibold leading-none",
+          selected ? "text-primary-foreground/90" : "text-foreground/70",
+        )}
+      >
+        <EventTypeIcon className={cn("shrink-0", compact ? "size-3" : "size-3.5")} />
+        <span className="truncate">{eventTypeMeta.label}</span>
+      </span>
       {displayDistance ? (
         <span
           className={cn(
@@ -1245,7 +1269,7 @@ function WorkoutDetailPanel({
           </AccordionTrigger>
           <AccordionContent>
             <div className="grid gap-4 pt-1 text-sm">
-              <MetadataRow label="Event type" value={workout.eventType} />
+              <MetadataRow label="Event type" value={getWorkoutEventTypeMeta(workout.eventType).label} />
               <MetadataRow label="Expected distance" value={formatDistance(workout.expectedDistanceKm)} />
               <MetadataRow label="Actual distance" value={formatDistance(workout.actualDistanceKm)} />
               <MetadataRow label="Status" value={formatCompletedTimestamp(workout.completed)} />
@@ -1473,6 +1497,10 @@ function formatViewLabel(view: View) {
 
 function clampNumber(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function getWorkoutEventTypeMeta(eventType: WorkoutEventType) {
+  return EVENT_TYPE_META[eventType];
 }
 
 function getWorkoutCardDistance(workout: WorkoutNote) {

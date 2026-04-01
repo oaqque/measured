@@ -4,7 +4,7 @@ allDay: true
 type: single
 date: '2026-04-09'
 completed: false
-eventType: workout
+eventType: strength
 expectedDistance: 0 km
 ---
 ## Program

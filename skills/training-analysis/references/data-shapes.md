@@ -35,7 +35,7 @@ allDay: true
 type: single
 date: "2026-04-01"
 completed: false
-eventType: workout
+eventType: run
 expectedDistance: 10 km
 ---
 ```
@@ -44,6 +44,7 @@ Rules:
 
 - File name: `YYYY-MM-DD Title.md`
 - `completed` is either `false` or an ISO timestamp.
+- `eventType` must be one of `run`, `basketball`, `strength`, `mobility`, `race`.
 - `expectedDistance` is planned intent.
 - `actualDistance` is a manual override only.
 - `stravaId` is the preferred Strava linkage.

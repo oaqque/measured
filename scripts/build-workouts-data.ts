@@ -7,8 +7,10 @@ import type {
   PlanDocument,
   WorkoutNote,
   WorkoutRouteStreams,
+  WorkoutEventType,
   WorkoutsData,
 } from "../src/lib/workouts/schema";
+import { WORKOUT_EVENT_TYPES } from "../src/lib/workouts/schema";
 
 const rootDir = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const generatedPath = path.resolve(rootDir, "src/generated/workouts.json");
@@ -289,7 +291,7 @@ function buildWorkoutNote(
     slug: slugify(fileName.replace(/\.md$/u, "")),
     title: expectString(data.title, fileName, "title"),
     date: normalizeDate(data.date, fileName, "date"),
-    eventType: expectString(data.eventType, fileName, "eventType"),
+    eventType: normalizeEventType(data.eventType, fileName),
     expectedDistance,
     expectedDistanceKm,
     actualDistance,
@@ -516,6 +518,17 @@ function normalizeOptionalInteger(value: unknown, fileName: string, field: strin
   }
 
   throw new Error(`${fileName}: ${field} must be a positive integer`);
+}
+
+function normalizeEventType(value: unknown, fileName: string): WorkoutEventType {
+  const normalized = expectString(value, fileName, "eventType").toLowerCase() as WorkoutEventType;
+  if (!WORKOUT_EVENT_TYPES.includes(normalized)) {
+    throw new Error(
+      `${fileName}: eventType must be one of ${WORKOUT_EVENT_TYPES.join(", ")}`,
+    );
+  }
+
+  return normalized;
 }
 
 function normalizeCompleted(value: unknown, fileName: string) {

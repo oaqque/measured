@@ -9,7 +9,7 @@ Standardize scheduled training events as all-day calendar notes with:
 - `type: single`
 - a `date` property matching the workout date
 - `completed: false` by default
-- `eventType` set appropriately, usually `workout` or `race`
+- `eventType` set appropriately: `run`, `basketball`, `strength`, `mobility`, or `race`
 - no `startTime` or `endTime`
 - filenames that match `YYYY-MM-DD Title.md`
 

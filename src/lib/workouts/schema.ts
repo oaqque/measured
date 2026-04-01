@@ -1,3 +1,7 @@
+export const WORKOUT_EVENT_TYPES = ["run", "basketball", "strength", "mobility", "race"] as const;
+
+export type WorkoutEventType = (typeof WORKOUT_EVENT_TYPES)[number];
+
 export interface WorkoutRouteStreams {
   latlng: Array<[number, number]> | null;
   altitude: number[] | null;
@@ -11,7 +15,7 @@ export interface WorkoutNote {
   slug: string;
   title: string;
   date: string;
-  eventType: string;
+  eventType: WorkoutEventType;
   expectedDistance: string | null;
   expectedDistanceKm: number | null;
   actualDistance: string | null;
@@ -57,6 +61,6 @@ export interface WorkoutsData {
 
 export interface WorkoutFilters {
   query: string;
-  eventType: string;
+  eventType: "all" | WorkoutEventType;
   status: "all" | "planned" | "completed";
 }

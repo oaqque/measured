@@ -4,7 +4,7 @@ allDay: true
 type: single
 date: '2026-07-28'
 completed: false
-eventType: workout
+eventType: run
 expectedDistance: 20 km
 ---
 ## Program

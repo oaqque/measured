@@ -4,7 +4,7 @@ allDay: true
 type: single
 date: 2025-03-08
 completed: 2025-03-07T20:43:29Z
-eventType: workout
+eventType: run
 expectedDistance: 14 km
 stravaId: 13817982121
 ---

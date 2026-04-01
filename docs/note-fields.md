@@ -18,7 +18,7 @@ Every workout note should include:
 | `type` | string | yes | Session shape. Current notes use `single`. |
 | `date` | ISO date string | yes | Workout date in `YYYY-MM-DD` form. |
 | `completed` | `false` or ISO timestamp | yes | `false` for planned sessions, or the completion timestamp once done. |
-| `eventType` | string | yes | Session category, usually `workout` or `race`. |
+| `eventType` | string | yes | Session category. Allowed values: `run`, `basketball`, `strength`, `mobility`, `race`. |
 
 ## Optional Frontmatter
 
@@ -80,7 +80,7 @@ allDay: true
 type: single
 date: '2026-03-31'
 completed: false
-eventType: workout
+eventType: run
 expectedDistance: 10 km
 ---
 
@@ -100,7 +100,7 @@ allDay: true
 type: single
 date: '2026-03-30'
 completed: 2026-03-30T20:33:42+11:00
-eventType: workout
+eventType: run
 expectedDistance: 6 km
 stravaId: 17909794797
 ---
