@@ -15,7 +15,7 @@ export const DropdownMenuContent = React.forwardRef<
   <DropdownMenuPrimitive.Portal>
     <DropdownMenuPrimitive.Content
       className={cn(
-        "z-50 min-w-56 rounded-[0.35rem] border border-foreground/10 bg-background p-1.5 text-foreground shadow-lg outline-none data-[side=bottom]:animate-in data-[side=bottom]:fade-in-0 data-[side=bottom]:zoom-in-95 data-[side=top]:animate-in data-[side=top]:fade-in-0 data-[side=top]:zoom-in-95",
+        "z-[700] min-w-56 rounded-[0.35rem] border border-foreground/10 bg-background p-1.5 text-foreground shadow-lg outline-none data-[side=bottom]:animate-in data-[side=bottom]:fade-in-0 data-[side=bottom]:zoom-in-95 data-[side=top]:animate-in data-[side=top]:fade-in-0 data-[side=top]:zoom-in-95",
         className,
       )}
       ref={ref}

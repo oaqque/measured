@@ -59,7 +59,7 @@ export function MobileDetailSheet({
       }}
     >
       <SheetContent
-        className="h-[min(82vh,52rem)] rounded-t-[0.75rem] border-foreground/10 p-0 lg:hidden"
+        className="h-[min(82vh,52rem)] rounded-t-[0.75rem] border-foreground/10 bg-page p-0 lg:hidden"
         overlayClassName="bg-foreground/10 backdrop-blur-0"
         ref={contentRef}
         side="bottom"

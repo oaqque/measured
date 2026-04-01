@@ -9,6 +9,8 @@ import {
 } from "react";
 import { format } from "date-fns";
 import {
+  ArrowDown,
+  ArrowUp,
   CalendarDays,
   FileText,
   GripVertical,
@@ -21,6 +23,7 @@ import {
 import { MobileDetailSheet } from "@/components/MobileDetailSheet";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { RouteMap } from "@/components/RouteMap";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -74,6 +77,7 @@ const RIGHT_SIDEBAR_DEFAULT_WIDTH = 520;
 
 export default function App() {
   const [view, setView] = usePathView();
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [selectedWorkoutSlug, setSelectedWorkoutSlug] = useState<string | null>(null);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
@@ -261,7 +265,7 @@ export default function App() {
         </SheetContent>
       </Sheet>
 
-      <MobileDetailSheet open={rightSidebarOpen} onOpenChange={setRightSidebarOpen}>
+      <MobileDetailSheet open={!isDesktop && rightSidebarOpen} onOpenChange={setRightSidebarOpen}>
         {selectedWorkout ? (
           <WorkoutDetailPanel workout={selectedWorkout} />
         ) : (
@@ -271,7 +275,7 @@ export default function App() {
 
       <div className="flex h-full">
         <aside
-          className="hidden shrink-0 overflow-hidden border-r border-foreground/10 bg-background/55 lg:block"
+          className="hidden shrink-0 overflow-hidden border-r border-foreground/10 bg-page lg:block"
           style={{ width: `${leftSidebarWidth}px` }}
         >
           <div className="h-full overflow-y-auto px-8 py-8">
@@ -340,6 +344,7 @@ export default function App() {
               ) : (
                 <CalendarView
                   eventType={eventType}
+                  filteredWorkouts={filteredWorkouts}
                   monthGroups={monthGroups}
                   selectedMonth={selectedMonth}
                   selectedWorkoutSlug={selectedWorkoutSlug}
@@ -381,7 +386,7 @@ export default function App() {
               }}
             >
               {rightSidebarOpen ? (
-                <div className="h-full w-full border-l border-foreground/10 bg-background/65">
+                <div className="h-full w-full border-l border-foreground/10 bg-page">
                   <div className="h-full overflow-y-auto px-4 py-6 lg:px-6 lg:py-8">
                     {selectedWorkout ? (
                       <WorkoutDetailPanel workout={selectedWorkout} />
@@ -485,6 +490,7 @@ function MarkdownPage({
 
 function CalendarView({
   eventType,
+  filteredWorkouts,
   status,
   monthGroups,
   selectedMonth,
@@ -495,6 +501,7 @@ function CalendarView({
   onSelectWorkout,
 }: {
   eventType: string;
+  filteredWorkouts: WorkoutNote[];
   status: WorkoutStatus;
   monthGroups: MonthGroup[];
   selectedMonth: MonthGroup | null;
@@ -524,6 +531,7 @@ function CalendarView({
 
         {selectedMonth ? (
           <CalendarMonthGrid
+            filteredWorkouts={filteredWorkouts}
             month={selectedMonth}
             selectedWorkoutSlug={selectedWorkoutSlug}
             onSelectWorkout={onSelectWorkout}
@@ -687,15 +695,31 @@ function CalendarFilterMenu({
 }
 
 function CalendarMonthGrid({
+  filteredWorkouts,
   month,
   selectedWorkoutSlug,
   onSelectWorkout,
 }: {
+  filteredWorkouts: WorkoutNote[];
   month: MonthGroup;
   selectedWorkoutSlug: string | null;
   onSelectWorkout: (slug: string) => void;
 }) {
-  const cells = useMemo(() => buildCalendarCells(month), [month]);
+  const cells = useMemo(() => {
+    const workoutsByDate = new Map<string, WorkoutNote[]>();
+
+    filteredWorkouts.forEach((workout) => {
+      const workouts = workoutsByDate.get(workout.date);
+      if (workouts) {
+        workouts.push(workout);
+        return;
+      }
+
+      workoutsByDate.set(workout.date, [workout]);
+    });
+
+    return buildCalendarCells(month, workoutsByDate);
+  }, [filteredWorkouts, month]);
   const monthDays = month.days;
 
   return (
@@ -736,23 +760,7 @@ function CalendarMonthGrid({
                           {toTitleCase(workout.eventType)}
                         </span>
                         <span className="text-[13px] leading-[1.1rem]">{workout.title}</span>
-                        <span
-                          className={cn(
-                            "text-[11px] opacity-70",
-                            selected ? "text-primary-foreground" : "text-muted-foreground",
-                          )}
-                        >
-                          {workout.completed ? "Completed" : "Planned"}
-                          {(workout.completed
-                            ? workout.actualDistanceKm
-                            : workout.expectedDistanceKm) !== null
-                            ? ` · ${formatDistance(
-                                workout.completed
-                                  ? workout.actualDistanceKm
-                                  : workout.expectedDistanceKm,
-                              )}`
-                            : ""}
-                        </span>
+                        <WorkoutCardMeta selected={selected} workout={workout} />
                       </span>
                     </Button>
                   );
@@ -779,58 +787,56 @@ function CalendarMonthGrid({
             <div
               className={cn(
                 "min-h-28 border-r border-b border-foreground/10 px-2 py-2",
-                cell.date ? "bg-transparent" : "bg-background/40",
+                cell.isOutsideMonth ? "bg-background/40" : "bg-transparent",
               )}
               key={cell.key}
             >
               {cell.date ? (
                 <div className="flex h-full flex-col gap-1.5">
                   <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-sm font-black">{Number(cell.date.slice(-2))}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {cell.workouts.length === 0 ? "Rest" : `${cell.workouts.length} item${cell.workouts.length === 1 ? "" : "s"}`}
+                    <p
+                      className={cn(
+                        "text-sm font-black",
+                        cell.isOutsideMonth ? "text-muted-foreground/70" : "text-foreground",
+                      )}
+                    >
+                      {Number(cell.date.slice(-2))}
                     </p>
+                    {!cell.isOutsideMonth ? (
+                      <p className="text-[11px] text-muted-foreground">
+                        {cell.workouts.length === 0 ? "Rest" : `${cell.workouts.length} item${cell.workouts.length === 1 ? "" : "s"}`}
+                      </p>
+                    ) : null}
                   </div>
 
-                  <div className="flex flex-col gap-1">
-                    {cell.workouts.map((workout) => {
-                      const selected = workout.slug === selectedWorkoutSlug;
+                  {cell.workouts.length > 0 ? (
+                    <div className="flex flex-col gap-1">
+                      {cell.workouts.map((workout) => {
+                        const selected = workout.slug === selectedWorkoutSlug;
 
-                      return (
-                        <Button
-                          className="h-auto w-full items-start justify-start rounded-[0.35rem] px-2 py-1.5 text-left whitespace-normal"
-                          key={workout.slug}
-                          type="button"
-                          variant={selected ? "default" : "secondary"}
-                          onClick={() => onSelectWorkout(workout.slug)}
-                        >
-                          <span className="flex w-full flex-col gap-1">
-                            <span className="text-[10px] font-extrabold uppercase opacity-70">
-                              {toTitleCase(workout.eventType)}
+                        return (
+                          <Button
+                            className={cn(
+                              "h-auto w-full items-start justify-start rounded-[0.35rem] px-2 py-1.5 text-left whitespace-normal",
+                              cell.isOutsideMonth && "opacity-80",
+                            )}
+                            key={workout.slug}
+                            type="button"
+                            variant={selected ? "default" : "secondary"}
+                            onClick={() => onSelectWorkout(workout.slug)}
+                          >
+                            <span className="flex w-full flex-col gap-1">
+                              <span className="text-[10px] font-extrabold uppercase opacity-70">
+                                {toTitleCase(workout.eventType)}
+                              </span>
+                              <span className="text-[13px] leading-[1rem]">{workout.title}</span>
+                              <WorkoutCardMeta selected={selected} workout={workout} />
                             </span>
-                            <span className="text-[13px] leading-[1rem]">{workout.title}</span>
-                            <span
-                              className={cn(
-                                "text-[11px] opacity-70",
-                                selected ? "text-primary-foreground" : "text-muted-foreground",
-                              )}
-                            >
-                              {workout.completed ? "Completed" : "Planned"}
-                              {(workout.completed
-                                ? workout.actualDistanceKm
-                                : workout.expectedDistanceKm) !== null
-                                ? ` · ${formatDistance(
-                                    workout.completed
-                                      ? workout.actualDistanceKm
-                                      : workout.expectedDistanceKm,
-                                  )}`
-                                : ""}
-                            </span>
-                          </span>
-                        </Button>
-                      );
-                    })}
-                  </div>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -838,6 +844,55 @@ function CalendarMonthGrid({
         </div>
       </div>
     </div>
+  );
+}
+
+function WorkoutCardMeta({
+  selected,
+  workout,
+}: {
+  selected: boolean;
+  workout: WorkoutNote;
+}) {
+  const displayDistance =
+    (workout.completed ? workout.actualDistanceKm : workout.expectedDistanceKm) !== null
+      ? formatDistance(workout.completed ? workout.actualDistanceKm : workout.expectedDistanceKm)
+      : null;
+  const distanceDelta = getDistanceDelta(workout);
+
+  return (
+    <span className="flex items-center justify-between gap-2">
+      <span
+        className={cn(
+          "text-[11px] opacity-70",
+          selected ? "text-primary-foreground" : "text-muted-foreground",
+        )}
+      >
+        {workout.completed ? "Completed" : "Planned"}
+        {displayDistance ? ` · ${displayDistance}` : ""}
+      </span>
+      {distanceDelta ? (
+        <span
+          className={cn(
+            "inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold",
+            distanceDelta.direction === "up"
+              ? selected
+                ? "text-emerald-200"
+                : "text-emerald-700"
+              : selected
+                ? "text-rose-200"
+                : "text-rose-700",
+          )}
+        >
+          {distanceDelta.direction === "up" ? (
+            <ArrowUp className="size-3" />
+          ) : (
+            <ArrowDown className="size-3" />
+          )}
+          <span>{formatDeltaKm(distanceDelta.value)}</span>
+        </span>
+      ) : null}
+    </span>
   );
 }
 
@@ -856,19 +911,28 @@ function WorkoutDetailPanel({
         </div>
       </div>
 
-      <div className="mt-5 grid gap-4 border-b border-foreground/10 pb-5 text-sm">
-        <MetadataRow label="Event type" value={workout.eventType} />
-        <MetadataRow label="Expected distance" value={formatDistance(workout.expectedDistanceKm)} />
-        <MetadataRow label="Actual distance" value={formatDistance(workout.actualDistanceKm)} />
-        <MetadataRow label="Status" value={formatCompletedTimestamp(workout.completed)} />
-        <MetadataRow
-          label="Strava activity"
-          value={workout.stravaId === null ? "Not linked" : String(workout.stravaId)}
-        />
-        <MetadataRow label="All day" value={workout.allDay ? "Yes" : "No"} />
-        <MetadataRow label="Type" value={workout.type} />
-        <MetadataRow label="Source file" value={workout.sourcePath} />
-      </div>
+      <Accordion className="mt-5 border-b border-foreground/10" collapsible type="single">
+        <AccordionItem className="border-b-0" value="metadata">
+          <AccordionTrigger className="py-3 text-base font-semibold">
+            Metadata
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="grid gap-4 pt-1 text-sm">
+              <MetadataRow label="Event type" value={workout.eventType} />
+              <MetadataRow label="Expected distance" value={formatDistance(workout.expectedDistanceKm)} />
+              <MetadataRow label="Actual distance" value={formatDistance(workout.actualDistanceKm)} />
+              <MetadataRow label="Status" value={formatCompletedTimestamp(workout.completed)} />
+              <MetadataRow
+                label="Strava activity"
+                value={workout.stravaId === null ? "Not linked" : String(workout.stravaId)}
+              />
+              <MetadataRow label="All day" value={workout.allDay ? "Yes" : "No"} />
+              <MetadataRow label="Type" value={workout.type} />
+              <MetadataRow label="Source file" value={workout.sourcePath} />
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       {workout.summaryPolyline ? (
         <div className="mt-5 border-b border-foreground/10 pb-5">
@@ -1023,6 +1087,31 @@ function usePathView(): [View, (view: View) => void] {
   return [view, navigate];
 }
 
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(() =>
+    typeof window === "undefined" ? false : window.matchMedia(query).matches,
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia(query);
+    const updateMatch = () => {
+      setMatches(mediaQuery.matches);
+    };
+
+    updateMatch();
+    mediaQuery.addEventListener("change", updateMatch);
+    return () => {
+      mediaQuery.removeEventListener("change", updateMatch);
+    };
+  }, [query]);
+
+  return matches;
+}
+
 function getViewFromPath(pathname: string): View {
   if (pathname === "/calendar") {
     return "calendar";
@@ -1049,6 +1138,27 @@ function formatViewLabel(view: View) {
 
 function clampNumber(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function getDistanceDelta(workout: WorkoutNote) {
+  if (workout.expectedDistanceKm === null || workout.actualDistanceKm === null) {
+    return null;
+  }
+
+  const difference = workout.actualDistanceKm - workout.expectedDistanceKm;
+  if (Math.abs(difference) < 0.05) {
+    return null;
+  }
+
+  return {
+    direction: difference > 0 ? "up" : "down",
+    value: Math.abs(difference),
+  } as const;
+}
+
+function formatDeltaKm(value: number) {
+  const rounded = Math.round(value * 10) / 10;
+  return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)} km`;
 }
 
 function formatTimestamp(value: string) {
@@ -1098,16 +1208,32 @@ function toTitleCase(value: string) {
     .join(" ");
 }
 
-function buildCalendarCells(month: MonthGroup) {
+function buildCalendarCells(
+  month: MonthGroup,
+  workoutsByDate: Map<string, WorkoutNote[]>,
+) {
   const [year, monthNumber] = month.key.split("-").map(Number);
   const firstDay = new Date(year, monthNumber - 1, 1);
   const leadingEmptyDays = (firstDay.getDay() + 6) % 7;
   const daysInMonth = new Date(year, monthNumber, 0).getDate();
-  const workoutsByDate = new Map(month.days.map((day) => [day.date, day.workouts]));
-  const cells: Array<{ key: string; date: string | null; workouts: WorkoutNote[] }> = [];
+  const cells: Array<{
+    date: string;
+    isOutsideMonth: boolean;
+    key: string;
+    workouts: WorkoutNote[];
+  }> = [];
+  const previousMonth = new Date(year, monthNumber - 2, 1);
+  const previousMonthDays = new Date(previousMonth.getFullYear(), previousMonth.getMonth() + 1, 0).getDate();
 
   for (let index = 0; index < leadingEmptyDays; index += 1) {
-    cells.push({ key: `empty-start-${index}`, date: null, workouts: [] });
+    const day = previousMonthDays - leadingEmptyDays + index + 1;
+    const date = `${previousMonth.getFullYear()}-${String(previousMonth.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    cells.push({
+      key: `adjacent-start-${date}`,
+      date,
+      isOutsideMonth: true,
+      workouts: workoutsByDate.get(date) ?? [],
+    });
   }
 
   for (let day = 1; day <= daysInMonth; day += 1) {
@@ -1115,16 +1241,22 @@ function buildCalendarCells(month: MonthGroup) {
     cells.push({
       key: date,
       date,
+      isOutsideMonth: false,
       workouts: workoutsByDate.get(date) ?? [],
     });
   }
 
+  let nextMonthDay = 1;
+  const nextMonth = new Date(year, monthNumber, 1);
   while (cells.length % 7 !== 0) {
+    const date = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-${String(nextMonthDay).padStart(2, "0")}`;
     cells.push({
-      key: `empty-end-${cells.length}`,
-      date: null,
-      workouts: [],
+      key: `adjacent-end-${date}`,
+      date,
+      isOutsideMonth: true,
+      workouts: workoutsByDate.get(date) ?? [],
     });
+    nextMonthDay += 1;
   }
 
   return cells;

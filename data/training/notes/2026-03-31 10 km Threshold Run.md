@@ -3,9 +3,10 @@ title: 10 km Threshold Run
 allDay: true
 type: single
 date: '2026-03-31'
-completed: false
+completed: 2026-03-31T19:00:41+11:00
 eventType: workout
 expectedDistance: 10 km
+stravaId: 17924042199
 ---
 ## Program
 
@@ -25,3 +26,10 @@ expectedDistance: 10 km
 - Threshold reps should feel around `7/10` effort.
 - The third rep should still look similar to the first.
 - If form or breathing starts to drift badly before the final rep, you are running too hard.
+
+## Analysis
+
+- Actual run: `3.73 km` in `26:21`, which was about `6.3 km` short of the planned `10 km` threshold session.
+- Average heart rate was `145.4`, and the run picked up `82.2 m` of elevation, so this reads much more like a short aerobic or reset run than threshold work.
+- The useful interpretation is that the planned Tuesday quality session did not happen as written. This was a lighter substitute, not a completed threshold workout.
+- That matters for the rest of the `2026-03-30 to 2026-04-05` week. Wednesday and Thursday should now be judged by how the legs feel, but there is no need to pretend Tuesday quality is already banked.
