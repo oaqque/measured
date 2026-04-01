@@ -6,8 +6,8 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type WheelEvent as ReactWheelEvent,
 } from "react";
-import { format } from "date-fns";
 import {
   ArrowDown,
   ArrowUp,
@@ -50,7 +50,6 @@ import {
   generatedAt,
   getChangelogEntriesForFile,
   getWorkoutBySlug,
-  groupWorkoutsByMonth,
   trainingPlan,
   welcomeDocument,
 } from "@/lib/workouts/load";
@@ -58,9 +57,15 @@ import type { ChangelogEntry, WorkoutFilters, WorkoutNote } from "@/lib/workouts
 import { cn } from "@/lib/utils";
 
 type View = "welcome" | "plan" | "calendar";
-type MonthGroup = ReturnType<typeof groupWorkoutsByMonth>[number];
 type WorkoutStatus = WorkoutFilters["status"];
 type ActiveResizePanel = "left" | "right";
+type CalendarCell = {
+  date: string;
+  isFocusDate: boolean;
+  isOutsideRange: boolean;
+  key: string;
+  workouts: WorkoutNote[];
+};
 
 const FINGERPRINT_STROKES = [
   { color: "#1d2a6d", d: "M2 12a10 10 0 0 1 18-6" },
@@ -78,6 +83,7 @@ const LEFT_SIDEBAR_MAX_WIDTH = 420;
 const RIGHT_SIDEBAR_MIN_WIDTH = 320;
 const RIGHT_SIDEBAR_MAX_WIDTH = 960;
 const RIGHT_SIDEBAR_DEFAULT_WIDTH = 520;
+const DESKTOP_CALENDAR_ROW_HEIGHT = 176;
 
 export default function App() {
   const [view, setView] = usePathView();
@@ -85,12 +91,12 @@ export default function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [selectedWorkoutSlug, setSelectedWorkoutSlug] = useState<string | null>(null);
+  const [calendarFocusDate, setCalendarFocusDate] = useState("");
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(296);
   const [rightSidebarWidth, setRightSidebarWidth] = useState(RIGHT_SIDEBAR_DEFAULT_WIDTH);
   const [eventType, setEventType] = useState<string>("all");
   const [status, setStatus] = useState<WorkoutStatus>("all");
-  const [selectedMonthKey, setSelectedMonthKey] = useState("");
   const [activeResizePanel, setActiveResizePanel] = useState<ActiveResizePanel | null>(null);
   const resizeStateRef = useRef<{
     panel: ActiveResizePanel;
@@ -107,7 +113,6 @@ export default function App() {
       }),
     [eventType, status],
   );
-  const monthGroups = useMemo(() => groupWorkoutsByMonth(filteredWorkouts), [filteredWorkouts]);
   const selectedWorkout = selectedWorkoutSlug ? getWorkoutBySlug(selectedWorkoutSlug) : null;
   const welcomeChanges = useMemo(
     () => getChangelogEntriesForFile(welcomeDocument.sourcePath),
@@ -140,25 +145,31 @@ export default function App() {
     () => allWorkouts.filter((workout) => workout.stravaId !== null).length,
     [],
   );
-  const selectedMonth =
-    monthGroups.find((month) => month.key === selectedMonthKey) ?? monthGroups[0] ?? null;
-
-  useEffect(() => {
-    if (selectedMonthKey.length === 0 && monthGroups[0]) {
-      setSelectedMonthKey(resolveDefaultMonthKey(monthGroups));
-      return;
-    }
-
-    if (selectedMonthKey && !monthGroups.some((month) => month.key === selectedMonthKey)) {
-      setSelectedMonthKey(resolveDefaultMonthKey(monthGroups));
-    }
-  }, [monthGroups, selectedMonthKey]);
 
   useEffect(() => {
     if (selectedWorkoutSlug && !selectedWorkout) {
       setSelectedWorkoutSlug(null);
     }
   }, [selectedWorkout, selectedWorkoutSlug]);
+
+  useEffect(() => {
+    if (filteredWorkouts.length === 0) {
+      setCalendarFocusDate("");
+      return;
+    }
+
+    if (!calendarFocusDate) {
+      setCalendarFocusDate(resolveDefaultFocusDate(filteredWorkouts));
+    }
+  }, [calendarFocusDate, filteredWorkouts]);
+
+  useEffect(() => {
+    if (!selectedWorkout) {
+      return;
+    }
+
+    setCalendarFocusDate(selectedWorkout.date);
+  }, [selectedWorkout]);
 
   useEffect(() => {
     if (!selectedWorkout) {
@@ -219,14 +230,6 @@ export default function App() {
     if (nextView !== "calendar") {
       setSelectedWorkoutSlug(null);
       setRightSidebarOpen(false);
-    } else {
-      setSelectedMonthKey((current) => {
-        if (current && monthGroups.some((month) => month.key === current)) {
-          return current;
-        }
-
-        return resolveDefaultMonthKey(monthGroups);
-      });
     }
 
     setView(nextView);
@@ -240,7 +243,15 @@ export default function App() {
 
     setEventType("all");
     setStatus("all");
-    setSelectedMonthKey(workout.date.slice(0, 7));
+    setCalendarFocusDate(workout.date);
+
+    if (selectedWorkoutSlug === slug && rightSidebarOpen) {
+      setSelectedWorkoutSlug(null);
+      setRightSidebarOpen(false);
+      setView("calendar");
+      return;
+    }
+
     setSelectedWorkoutSlug(slug);
     setRightSidebarOpen(true);
     setView("calendar");
@@ -431,14 +442,13 @@ export default function App() {
                 />
               ) : (
                 <CalendarView
+                  calendarFocusDate={calendarFocusDate}
                   eventType={eventType}
                   filteredWorkouts={filteredWorkouts}
-                  monthGroups={monthGroups}
-                  selectedMonth={selectedMonth}
                   selectedWorkoutSlug={selectedWorkoutSlug}
                   status={status}
+                  onFocusDateChange={setCalendarFocusDate}
                   onEventTypeChange={setEventType}
-                  onMonthChange={setSelectedMonthKey}
                   onSelectWorkout={openWorkout}
                   onStatusChange={setStatus}
                 />
@@ -765,26 +775,24 @@ function ChangelogTimeline({
 }
 
 function CalendarView({
+  calendarFocusDate,
   eventType,
   filteredWorkouts,
   status,
-  monthGroups,
-  selectedMonth,
   selectedWorkoutSlug,
+  onFocusDateChange,
   onEventTypeChange,
   onStatusChange,
-  onMonthChange,
   onSelectWorkout,
 }: {
+  calendarFocusDate: string;
   eventType: string;
   filteredWorkouts: WorkoutNote[];
   status: WorkoutStatus;
-  monthGroups: MonthGroup[];
-  selectedMonth: MonthGroup | null;
   selectedWorkoutSlug: string | null;
+  onFocusDateChange: (value: string) => void;
   onEventTypeChange: (value: string) => void;
   onStatusChange: (value: WorkoutStatus) => void;
-  onMonthChange: (value: string) => void;
   onSelectWorkout: (slug: string) => void;
 }) {
   return (
@@ -792,9 +800,8 @@ function CalendarView({
       <div className="border-t border-foreground/10 pt-5">
         <div className="flex items-center justify-end gap-2">
           <MonthPicker
-            monthGroups={monthGroups}
-            selectedMonth={selectedMonth}
-            onMonthChange={onMonthChange}
+            selectedDateKey={calendarFocusDate}
+            onDateChange={onFocusDateChange}
           />
 
           <CalendarFilterMenu
@@ -805,11 +812,12 @@ function CalendarView({
           />
         </div>
 
-        {selectedMonth ? (
+        {filteredWorkouts.length > 0 && calendarFocusDate ? (
           <CalendarMonthGrid
+            calendarFocusDate={calendarFocusDate}
             filteredWorkouts={filteredWorkouts}
-            month={selectedMonth}
             selectedWorkoutSlug={selectedWorkoutSlug}
+            onFocusDateChange={onFocusDateChange}
             onSelectWorkout={onSelectWorkout}
           />
         ) : (
@@ -825,39 +833,32 @@ function CalendarView({
 }
 
 function MonthPicker({
-  monthGroups,
-  selectedMonth,
-  onMonthChange,
+  selectedDateKey,
+  onDateChange,
 }: {
-  monthGroups: MonthGroup[];
-  selectedMonth: MonthGroup | null;
-  onMonthChange: (value: string) => void;
+  selectedDateKey: string;
+  onDateChange: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const selectedMonthKey = selectedMonth?.key ?? "";
-  const selectedDate = selectedMonthKey ? monthKeyToDate(selectedMonthKey) : undefined;
+  const selectedDate = selectedDateKey ? parseDateKey(selectedDateKey) : undefined;
   const [pickerMonth, setPickerMonth] = useState<Date>(() => selectedDate ?? new Date());
-  const allowedMonthKeys = useMemo(
-    () => new Set(monthGroups.map((month) => month.key)),
-    [monthGroups],
-  );
 
   useEffect(() => {
-    if (selectedMonthKey) {
-      setPickerMonth(monthKeyToDate(selectedMonthKey));
+    if (selectedDateKey) {
+      setPickerMonth(parseDateKey(selectedDateKey));
     }
-  }, [selectedMonthKey]);
+  }, [selectedDateKey]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           className="h-10 min-w-40 justify-between rounded-[0.35rem] px-3 py-0"
-          disabled={monthGroups.length === 0}
+          disabled={!selectedDateKey}
           type="button"
           variant="secondary"
         >
-          <span>{selectedMonth?.label ?? "Pick month"}</span>
+          <span>{selectedDate ? formatMonthLabel(selectedDateKey) : "Pick month"}</span>
           <CalendarDays className="size-4 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
@@ -870,7 +871,6 @@ function MonthPicker({
       >
         <Calendar
           className="rounded-[0.35rem]"
-          disabled={(date) => !allowedMonthKeys.has(format(date, "yyyy-MM"))}
           mode="single"
           month={pickerMonth}
           selected={selectedDate}
@@ -880,12 +880,7 @@ function MonthPicker({
               return;
             }
 
-            const monthKey = format(date, "yyyy-MM");
-            if (!allowedMonthKeys.has(monthKey)) {
-              return;
-            }
-
-            onMonthChange(monthKey);
+            onDateChange(formatDateKey(date));
             setOpen(false);
           }}
         />
@@ -971,16 +966,22 @@ function CalendarFilterMenu({
 }
 
 function CalendarMonthGrid({
+  calendarFocusDate,
   filteredWorkouts,
-  month,
   selectedWorkoutSlug,
+  onFocusDateChange,
   onSelectWorkout,
 }: {
+  calendarFocusDate: string;
   filteredWorkouts: WorkoutNote[];
-  month: MonthGroup;
   selectedWorkoutSlug: string | null;
+  onFocusDateChange: (value: string) => void;
   onSelectWorkout: (slug: string) => void;
 }) {
+  const calendarRange = useMemo(
+    () => buildContinuousCalendarRange(filteredWorkouts, calendarFocusDate),
+    [calendarFocusDate, filteredWorkouts],
+  );
   const cells = useMemo(() => {
     const workoutsByDate = new Map<string, WorkoutNote[]>();
 
@@ -994,14 +995,38 @@ function CalendarMonthGrid({
       workoutsByDate.set(workout.date, [workout]);
     });
 
-    return buildCalendarCells(month, workoutsByDate);
-  }, [filteredWorkouts, month]);
-  const monthDays = month.days;
+    return buildCalendarCells(calendarRange.startDate, calendarRange.endDate, workoutsByDate, calendarFocusDate);
+  }, [calendarFocusDate, calendarRange.endDate, calendarRange.startDate, filteredWorkouts]);
+  const weeks = useMemo(() => chunkCalendarWeeks(cells), [cells]);
+  const visibleWeekStart = useMemo(
+    () => getCalendarWindowStartWeekIndex(weeks, calendarFocusDate),
+    [calendarFocusDate, weeks],
+  );
+  const visibleWeeks = useMemo(
+    () => weeks.slice(visibleWeekStart, visibleWeekStart + 3),
+    [visibleWeekStart, weeks],
+  );
+  const visibleDays = visibleWeeks.flat().map((cell) => ({ date: cell.date, workouts: cell.workouts }));
+  const maxWeekStart = Math.max(weeks.length - 3, 0);
+
+  const handleDesktopCalendarWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
+    if (Math.abs(event.deltaY) < 8) {
+      return;
+    }
+
+    event.preventDefault();
+    const nextWeekStart = clampNumber(visibleWeekStart + (event.deltaY > 0 ? 1 : -1), 0, maxWeekStart);
+    const nextFocusWeek = weeks[nextWeekStart + 1] ?? weeks[nextWeekStart] ?? weeks[0];
+    const nextFocusDate = nextFocusWeek?.find((cell) => !cell.isOutsideRange)?.date ?? nextFocusWeek?.[0]?.date;
+    if (nextFocusDate) {
+      onFocusDateChange(nextFocusDate);
+    }
+  };
 
   return (
     <div className="mt-8">
       <div className="grid gap-3 lg:hidden">
-        {monthDays.map((day) => (
+        {visibleDays.map((day) => (
           <section
             className="rounded-[0.35rem] border border-foreground/10 bg-background/70 px-3 py-3"
             key={day.date}
@@ -1058,67 +1083,106 @@ function CalendarMonthGrid({
           ))}
         </div>
 
-        <div className="grid grid-cols-7 border-l border-foreground/10">
-          {cells.map((cell) => (
+        <div
+          className="relative overflow-hidden border-l border-foreground/10"
+          style={{ height: `${DESKTOP_CALENDAR_ROW_HEIGHT * 3}px` }}
+          onWheel={handleDesktopCalendarWheel}
+        >
+          <CalendarWeeksDesktop
+            className="transition-transform duration-300 ease-out"
+            selectedWorkoutSlug={selectedWorkoutSlug}
+            style={{
+              transform: `translateY(-${visibleWeekStart * DESKTOP_CALENDAR_ROW_HEIGHT}px)`,
+            }}
+            weeks={weeks}
+            onSelectWorkout={onSelectWorkout}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CalendarWeeksDesktop({
+  className,
+  selectedWorkoutSlug,
+  style,
+  weeks,
+  onSelectWorkout,
+}: {
+  className?: string;
+  selectedWorkoutSlug: string | null;
+  style?: CSSProperties;
+  weeks: CalendarCell[][];
+  onSelectWorkout: (slug: string) => void;
+}) {
+  return (
+    <div className={cn("grid", className)} style={style}>
+      {weeks.map((week, weekIndex) => (
+        <div
+          className="grid grid-cols-7"
+          key={week[0]?.key ?? `week-${weekIndex}`}
+          style={{ height: `${DESKTOP_CALENDAR_ROW_HEIGHT}px` }}
+        >
+          {week.map((cell) => (
             <div
               className={cn(
-                "min-h-28 border-r border-b border-foreground/10 px-2 py-2",
-                cell.isOutsideMonth ? "bg-background/40" : "bg-transparent",
+                "h-full overflow-hidden border-r border-b border-foreground/10 px-2 py-2 transition-colors",
+                cell.isOutsideRange ? "bg-background/40" : "bg-transparent",
+                cell.isFocusDate && "bg-surface-panel-alt/45",
               )}
               key={cell.key}
             >
-              {cell.date ? (
-                <div className="flex h-full flex-col gap-1.5">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p
-                      className={cn(
-                        "text-sm font-black",
-                        cell.isOutsideMonth ? "text-muted-foreground/70" : "text-foreground",
-                      )}
-                    >
-                      {Number(cell.date.slice(-2))}
+              <div className="flex h-full min-h-0 flex-col gap-1.5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <p
+                    className={cn(
+                      "text-sm font-black",
+                      cell.isOutsideRange ? "text-muted-foreground/70" : "text-foreground",
+                    )}
+                  >
+                    {Number(cell.date.slice(-2))}
+                  </p>
+                  {!cell.isOutsideRange ? (
+                    <p className="text-[11px] text-muted-foreground">
+                      {cell.workouts.length === 0 ? "Rest" : `${cell.workouts.length} item${cell.workouts.length === 1 ? "" : "s"}`}
                     </p>
-                    {!cell.isOutsideMonth ? (
-                      <p className="text-[11px] text-muted-foreground">
-                        {cell.workouts.length === 0 ? "Rest" : `${cell.workouts.length} item${cell.workouts.length === 1 ? "" : "s"}`}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  {cell.workouts.length > 0 ? (
-                    <div className="flex flex-col gap-1">
-                      {cell.workouts.map((workout) => {
-                        const selected = workout.slug === selectedWorkoutSlug;
-
-                        return (
-                          <Button
-                            className={cn(
-                              "h-auto w-full items-start justify-start rounded-[0.35rem] px-2 py-1.5 text-left whitespace-normal",
-                              cell.isOutsideMonth && "opacity-80",
-                            )}
-                            key={workout.slug}
-                            type="button"
-                            variant={selected ? "default" : "secondary"}
-                            onClick={() => onSelectWorkout(workout.slug)}
-                          >
-                            <span className="flex w-full flex-col gap-1">
-                              <span className="text-[10px] font-extrabold uppercase opacity-70">
-                                {toTitleCase(workout.eventType)}
-                              </span>
-                              <span className="text-[13px] leading-[1rem]">{workout.title}</span>
-                              <WorkoutCardMeta selected={selected} workout={workout} />
-                            </span>
-                          </Button>
-                        );
-                      })}
-                    </div>
                   ) : null}
                 </div>
-              ) : null}
+
+                {cell.workouts.length > 0 ? (
+                  <div className="flex min-h-0 flex-col gap-1 overflow-y-auto pr-1">
+                    {cell.workouts.map((workout) => {
+                      const selected = workout.slug === selectedWorkoutSlug;
+
+                      return (
+                        <Button
+                          className={cn(
+                            "h-auto w-full items-start justify-start rounded-[0.35rem] px-2 py-1.5 text-left whitespace-normal",
+                            cell.isOutsideRange && "opacity-80",
+                          )}
+                          key={workout.slug}
+                          type="button"
+                          variant={selected ? "default" : "secondary"}
+                          onClick={() => onSelectWorkout(workout.slug)}
+                        >
+                          <span className="flex w-full flex-col gap-1">
+                            <span className="text-[10px] font-extrabold uppercase opacity-70">
+                              {toTitleCase(workout.eventType)}
+                            </span>
+                            <span className="text-[13px] leading-[1rem]">{workout.title}</span>
+                            <WorkoutCardMeta selected={selected} workout={workout} />
+                          </span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
             </div>
           ))}
         </div>
-      </div>
+      ))}
     </div>
   );
 }
@@ -1484,19 +1548,13 @@ function formatDayWeekday(value: string) {
   }).format(new Date(`${value}T00:00:00`));
 }
 
-function monthKeyToDate(monthKey: string) {
-  const [year, month] = monthKey.split("-").map(Number);
-  return new Date(year, month - 1, 1);
+function getTodayDateKey() {
+  return formatDateKey(new Date());
 }
 
-function resolveDefaultMonthKey(monthGroups: MonthGroup[]) {
-  const todayMonthKey = getTodayMonthKey();
-  return monthGroups.find((month) => month.key === todayMonthKey)?.key ?? monthGroups[0]?.key ?? "";
-}
-
-function getTodayMonthKey() {
-  const today = new Date();
-  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+function resolveDefaultFocusDate(workouts: WorkoutNote[]) {
+  const today = getTodayDateKey();
+  return workouts.find((workout) => workout.date >= today)?.date ?? workouts[workouts.length - 1]?.date ?? today;
 }
 
 function toTitleCase(value: string) {
@@ -1527,58 +1585,103 @@ function formatAffectedFileLabel(sourcePath: string) {
   return sourcePath.replace(/\.md$/u, "");
 }
 
+function chunkCalendarWeeks(cells: CalendarCell[]) {
+  const weeks: CalendarCell[][] = [];
+
+  for (let index = 0; index < cells.length; index += 7) {
+    weeks.push(cells.slice(index, index + 7));
+  }
+
+  return weeks;
+}
+
+function getCalendarWindowStartWeekIndex(weeks: CalendarCell[][], focusDate: string) {
+  const focusWeekIndex = weeks.findIndex((week) => week.some((cell) => cell.date === focusDate));
+  if (focusWeekIndex === -1) {
+    return 0;
+  }
+
+  return clampNumber(focusWeekIndex - 1, 0, Math.max(weeks.length - 3, 0));
+}
+
+function buildContinuousCalendarRange(workouts: WorkoutNote[], focusDate: string) {
+  const workoutDates = workouts.map((workout) => workout.date);
+  const earliestDate = workoutDates[0] ?? focusDate;
+  const latestDate = workoutDates[workoutDates.length - 1] ?? focusDate;
+  const rangeStartDate = startOfWeek(addDaysToDate(parseDateKey(minDateKey(earliestDate, focusDate)), -182));
+  const rangeEndDate = endOfWeek(addDaysToDate(parseDateKey(maxDateKey(latestDate, focusDate)), 182));
+
+  return {
+    startDate: formatDateKey(rangeStartDate),
+    endDate: formatDateKey(rangeEndDate),
+  };
+}
+
 function buildCalendarCells(
-  month: MonthGroup,
+  startDateKey: string,
+  endDateKey: string,
   workoutsByDate: Map<string, WorkoutNote[]>,
+  focusDate: string,
 ) {
-  const [year, monthNumber] = month.key.split("-").map(Number);
-  const firstDay = new Date(year, monthNumber - 1, 1);
-  const leadingEmptyDays = (firstDay.getDay() + 6) % 7;
-  const daysInMonth = new Date(year, monthNumber, 0).getDate();
+  const startDate = parseDateKey(startDateKey);
+  const endDate = parseDateKey(endDateKey);
   const cells: Array<{
     date: string;
-    isOutsideMonth: boolean;
+    isFocusDate: boolean;
+    isOutsideRange: boolean;
     key: string;
     workouts: WorkoutNote[];
   }> = [];
-  const previousMonth = new Date(year, monthNumber - 2, 1);
-  const previousMonthDays = new Date(previousMonth.getFullYear(), previousMonth.getMonth() + 1, 0).getDate();
 
-  for (let index = 0; index < leadingEmptyDays; index += 1) {
-    const day = previousMonthDays - leadingEmptyDays + index + 1;
-    const date = `${previousMonth.getFullYear()}-${String(previousMonth.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    cells.push({
-      key: `adjacent-start-${date}`,
-      date,
-      isOutsideMonth: true,
-      workouts: workoutsByDate.get(date) ?? [],
-    });
-  }
-
-  for (let day = 1; day <= daysInMonth; day += 1) {
-    const date = `${month.key}-${String(day).padStart(2, "0")}`;
+  for (let currentDate = startDate; currentDate <= endDate; currentDate = addDaysToDate(currentDate, 1)) {
+    const date = formatDateKey(currentDate);
     cells.push({
       key: date,
       date,
-      isOutsideMonth: false,
+      isFocusDate: date === focusDate,
+      isOutsideRange: false,
       workouts: workoutsByDate.get(date) ?? [],
     });
-  }
-
-  let nextMonthDay = 1;
-  const nextMonth = new Date(year, monthNumber, 1);
-  while (cells.length % 7 !== 0) {
-    const date = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-${String(nextMonthDay).padStart(2, "0")}`;
-    cells.push({
-      key: `adjacent-end-${date}`,
-      date,
-      isOutsideMonth: true,
-      workouts: workoutsByDate.get(date) ?? [],
-    });
-    nextMonthDay += 1;
   }
 
   return cells;
+}
+
+function parseDateKey(value: string) {
+  return new Date(`${value}T00:00:00`);
+}
+
+function formatDateKey(value: Date) {
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+}
+
+function formatMonthLabel(value: string) {
+  return new Intl.DateTimeFormat("en-AU", {
+    month: "long",
+    year: "numeric",
+  }).format(parseDateKey(value));
+}
+
+function addDaysToDate(value: Date, days: number) {
+  const nextValue = new Date(value);
+  nextValue.setDate(nextValue.getDate() + days);
+  return nextValue;
+}
+
+function startOfWeek(value: Date) {
+  return addDaysToDate(value, -((value.getDay() + 6) % 7));
+}
+
+function endOfWeek(value: Date) {
+  return addDaysToDate(startOfWeek(value), 6);
+}
+
+function minDateKey(left: string, right: string) {
+  return left <= right ? left : right;
+}
+
+function maxDateKey(left: string, right: string) {
+  return left >= right ? left : right;
 }
 
 function workoutHrefToSlug(href: string) {
