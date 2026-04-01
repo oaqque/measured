@@ -1,6 +1,6 @@
 ---
 name: training-analysis
-description: Analyze training data and maintain the repo's training source files. Use when Codex needs to fetch or sync Strava data, backfill or update workout notes in data/training/notes, revise the training plan in data/training/README.md, create changelog entries in data/training/changelog, or explain the relationship between planned sessions and completed runs.
+description: Analyze training data and maintain the repo's training source files. Use when Codex needs to fetch or sync Strava data, backfill or update workout notes in data/training/notes, revise the training plan in data/training/README.md, create changelog entries in data/training/changelog, explain the relationship between planned sessions and completed runs, or package that work into a required git commit at the end.
 ---
 
 # Training Analysis
@@ -77,3 +77,4 @@ When creating an entry:
 - Never blur planned versus actual distance.
 - If a workout analysis implies plan changes, update the plan files in the same pass instead of leaving them inconsistent.
 - After structural data changes, regenerate app data before finishing.
+- End the workflow with a git commit once the requested training-analysis changes are complete and verified.
