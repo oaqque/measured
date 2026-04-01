@@ -37,12 +37,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select } from "@/components/ui/select";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   allChangelogEntries,
   allWorkouts,
-  availableChangelogAffectedFiles,
   availableEventTypes,
   filterWorkouts,
   formatChangelogDate,
@@ -384,12 +382,11 @@ export default function App() {
 
                   <PopoverContent
                     align="end"
-                    className="w-[min(44rem,calc(100vw-2rem))] max-w-none overflow-hidden p-0"
+                    className="w-[min(44rem,calc(100vw-2rem))] max-w-none p-0"
                     side="bottom"
                   >
                     <ChangelogPopoverPanel
                       focusedFile={changelogFocusedFile}
-                      open={changelogOpen}
                       onFileClick={handleChangelogLink}
                       onLinkClick={handleChangelogLink}
                     />
@@ -600,68 +597,37 @@ function MarkdownPage({
 
 function ChangelogPopoverPanel({
   focusedFile,
-  open,
   onFileClick,
   onLinkClick,
 }: {
   focusedFile: string | null;
-  open: boolean;
   onFileClick: (sourcePath: string) => void;
   onLinkClick: (href: string) => boolean;
 }) {
-  const [affectedFile, setAffectedFile] = useState("all");
-  const selectableFiles = useMemo(() => {
-    if (!focusedFile || availableChangelogAffectedFiles.includes(focusedFile)) {
-      return availableChangelogAffectedFiles;
-    }
-
-    return [focusedFile, ...availableChangelogAffectedFiles];
-  }, [focusedFile]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    setAffectedFile(focusedFile ?? "all");
-  }, [focusedFile, open]);
-
   const visibleEntries = useMemo(
     () =>
-      affectedFile === "all"
-        ? allChangelogEntries
-        : allChangelogEntries.filter((entry) => entry.affectedFiles.includes(affectedFile)),
-    [affectedFile],
+      focusedFile
+        ? allChangelogEntries.filter((entry) => entry.affectedFiles.includes(focusedFile))
+        : allChangelogEntries,
+    [focusedFile],
   );
 
   return (
-    <section className="p-4 md:p-5">
-      <div className="flex items-center justify-between gap-4 border-b border-foreground/10 pb-4">
+    <section className="p-5 md:p-6">
+      <div className="border-b border-foreground/10 pb-4">
         <div>
           <p className="eyebrow">Changelog</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {affectedFile === "all"
+            {focusedFile === null
               ? "Training plan and note changes across the repo."
-              : `Showing changes for ${formatAffectedFileLabel(affectedFile)}.`}
+              : `Showing changes for ${formatAffectedFileLabel(focusedFile)}.`}
           </p>
         </div>
-        <Select
-          className="h-10 min-w-56 rounded-[0.35rem] bg-surface-panel-alt px-3 py-0 pr-10"
-          value={affectedFile}
-          onChange={(event) => setAffectedFile(event.target.value)}
-        >
-          <option value="all">All affected files</option>
-          {selectableFiles.map((file) => (
-            <option key={file} value={file}>
-              {formatAffectedFileLabel(file)}
-            </option>
-          ))}
-        </Select>
       </div>
 
       {visibleEntries.length > 0 ? (
         <ChangelogTimeline
-          className="mt-6 max-h-[min(70vh,48rem)] overflow-y-auto pr-1"
+          className="mt-6 max-h-[min(70vh,48rem)] overflow-y-auto pl-3 pr-1"
           entries={visibleEntries}
           onFileClick={onFileClick}
           onLinkClick={onLinkClick}
@@ -669,9 +635,9 @@ function ChangelogPopoverPanel({
       ) : (
         <div className="py-10">
           <p className="text-sm text-muted-foreground">
-            {affectedFile === "all"
+            {focusedFile === null
               ? "No changelog entries match the current file filter."
-              : `No changelog entries apply to ${formatAffectedFileLabel(affectedFile)} yet.`}
+              : `No changelog entries apply to ${formatAffectedFileLabel(focusedFile)} yet.`}
           </p>
         </div>
       )}
