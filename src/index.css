@@ -113,6 +113,11 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
 
+  .markdown-prose code::before,
+  .markdown-prose code::after {
+    content: none;
+  }
+
   .markdown-prose pre {
     overflow-x: auto;
     border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
