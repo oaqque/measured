@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .venv/
+.vercel/
 src/generated/workouts.json
 /public/generated/workout-routes/
 *.tsbuildinfo
@@ -8,3 +9,4 @@ src/generated/workouts.json
 /vault/strava/.session.lock
 /vault/strava/*.sqlite3
 /vault/strava/cache-export.json
+.vercel
