@@ -63,6 +63,10 @@ import { cn } from "@/lib/utils";
 type View = "welcome" | "plan" | "calendar";
 type WorkoutStatus = WorkoutFilters["status"];
 type ActiveResizePanel = "left" | "right";
+type AppRoute = {
+  view: View;
+  noteSlug: string | null;
+};
 type CalendarCell = {
   date: string;
   isToday: boolean;
@@ -119,11 +123,10 @@ const EVENT_TYPE_META: Record<WorkoutEventType, { icon: WorkoutEventTypeIcon; la
 };
 
 export default function App() {
-  const [view, setView] = usePathView();
+  const [{ view, noteSlug: selectedWorkoutSlug }, navigateRoute] = useAppRoute();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
-  const [selectedWorkoutSlug, setSelectedWorkoutSlug] = useState<string | null>(null);
   const [calendarFocusDate, setCalendarFocusDate] = useState("");
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(296);
@@ -131,6 +134,7 @@ export default function App() {
   const [eventType, setEventType] = useState<WorkoutFilters["eventType"]>("all");
   const [status, setStatus] = useState<WorkoutStatus>("all");
   const [activeResizePanel, setActiveResizePanel] = useState<ActiveResizePanel | null>(null);
+  const previousSelectedWorkoutSlugRef = useRef<string | null>(selectedWorkoutSlug);
   const resizeStateRef = useRef<{
     panel: ActiveResizePanel;
     startX: number;
@@ -177,9 +181,9 @@ export default function App() {
 
   useEffect(() => {
     if (selectedWorkoutSlug && !selectedWorkout) {
-      setSelectedWorkoutSlug(null);
+      navigateRoute({ view: "calendar", noteSlug: null }, { replace: true });
     }
-  }, [selectedWorkout, selectedWorkoutSlug]);
+  }, [navigateRoute, selectedWorkout, selectedWorkoutSlug]);
 
   useEffect(() => {
     if (filteredWorkouts.length === 0) {
@@ -197,8 +201,25 @@ export default function App() {
       return;
     }
 
+    setEventType("all");
+    setStatus("all");
+    setCalendarFocusDate((current) => (current === selectedWorkout.date ? current : selectedWorkout.date));
     setRightSidebarOpen(true);
   }, [selectedWorkout]);
+
+  useEffect(() => {
+    if (previousSelectedWorkoutSlugRef.current && !selectedWorkoutSlug) {
+      setRightSidebarOpen(false);
+    }
+
+    previousSelectedWorkoutSlugRef.current = selectedWorkoutSlug;
+  }, [selectedWorkoutSlug]);
+
+  useEffect(() => {
+    if (view !== "calendar") {
+      setRightSidebarOpen(false);
+    }
+  }, [view]);
 
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
@@ -249,11 +270,10 @@ export default function App() {
     setChangelogOpen(false);
 
     if (nextView !== "calendar") {
-      setSelectedWorkoutSlug(null);
       setRightSidebarOpen(false);
     }
 
-    setView(nextView);
+    navigateRoute({ view: nextView, noteSlug: null });
   };
 
   const focusCalendarDate = (value: string) => {
@@ -273,19 +293,34 @@ export default function App() {
     }
 
     if (selectedWorkoutSlug === slug && rightSidebarOpen) {
-      setSelectedWorkoutSlug(null);
       setRightSidebarOpen(false);
-      setView("calendar");
+      navigateRoute({ view: "calendar", noteSlug: null });
       return;
     }
 
-    setSelectedWorkoutSlug(slug);
     setRightSidebarOpen(true);
-    setView("calendar");
+    navigateRoute({ view: "calendar", noteSlug: slug });
   };
 
   const openWorkoutFromCalendar = (slug: string) => {
     openWorkout(slug, false);
+  };
+
+  const handleDetailPanelOpenChange = (open: boolean) => {
+    setRightSidebarOpen(open);
+
+    if (!open && selectedWorkoutSlug) {
+      navigateRoute({ view: "calendar", noteSlug: null });
+    }
+  };
+
+  const toggleDesktopDetailPanel = () => {
+    if (rightSidebarOpen) {
+      handleDetailPanelOpenChange(false);
+      return;
+    }
+
+    setRightSidebarOpen(true);
   };
 
   const startResize = (panel: ActiveResizePanel, event: ReactPointerEvent<HTMLDivElement>) => {
@@ -352,7 +387,7 @@ export default function App() {
         </SheetContent>
       </Sheet>
 
-      <MobileDetailSheet open={!isDesktop && rightSidebarOpen} onOpenChange={setRightSidebarOpen}>
+      <MobileDetailSheet open={!isDesktop && rightSidebarOpen} onOpenChange={handleDetailPanelOpenChange}>
         {selectedWorkout ? (
           <WorkoutDetailPanel
             workout={selectedWorkout}
@@ -438,7 +473,7 @@ export default function App() {
                   className="hidden size-9 rounded-[0.35rem] p-0 lg:inline-flex"
                   type="button"
                   variant="secondary"
-                  onClick={() => setRightSidebarOpen((current) => !current)}
+                  onClick={toggleDesktopDetailPanel}
                 >
                   {rightSidebarOpen ? (
                     <PanelRightClose className="size-4" />
@@ -1496,9 +1531,9 @@ function BrandMark({ className }: { className?: string }) {
   );
 }
 
-function usePathView(): [View, (view: View) => void] {
-  const [view, setView] = useState<View>(() =>
-    typeof window === "undefined" ? "welcome" : getViewFromPath(window.location.pathname),
+function useAppRoute(): [AppRoute, (route: AppRoute, options?: { replace?: boolean }) => void] {
+  const [route, setRoute] = useState<AppRoute>(() =>
+    typeof window === "undefined" ? { view: "welcome", noteSlug: null } : getRouteFromPath(window.location.pathname),
   );
 
   useEffect(() => {
@@ -1515,7 +1550,7 @@ function usePathView(): [View, (view: View) => void] {
     }
 
     const handlePopState = () => {
-      setView(getViewFromPath(window.location.pathname));
+      setRoute(getRouteFromPath(window.location.pathname));
     };
 
     handlePopState();
@@ -1526,24 +1561,23 @@ function usePathView(): [View, (view: View) => void] {
     };
   }, []);
 
-  const navigate = (nextView: View) => {
-    const nextPath =
-      nextView === "calendar"
-        ? "/calendar"
-        : nextView === "plan"
-          ? "/plan"
-          : "/";
+  const navigate = (nextRoute: AppRoute, options?: { replace?: boolean }) => {
+    const nextPath = getPathFromRoute(nextRoute);
 
     if (window.location.pathname === nextPath) {
-      setView(nextView);
+      setRoute(nextRoute);
       return;
     }
 
-    window.history.pushState(null, "", nextPath);
-    setView(nextView);
+    if (options?.replace) {
+      window.history.replaceState(null, "", nextPath);
+    } else {
+      window.history.pushState(null, "", nextPath);
+    }
+    setRoute(nextRoute);
   };
 
-  return [view, navigate];
+  return [route, navigate];
 }
 
 function useMediaQuery(query: string) {
@@ -1571,16 +1605,54 @@ function useMediaQuery(query: string) {
   return matches;
 }
 
-function getViewFromPath(pathname: string): View {
-  if (pathname === "/calendar") {
-    return "calendar";
+function getRouteFromPath(pathname: string): AppRoute {
+  const normalizedPath = normalizePathname(pathname);
+
+  if (normalizedPath.startsWith("/notes/")) {
+    const noteSlug = decodeURIComponent(normalizedPath.slice("/notes/".length)).trim();
+    return {
+      view: "calendar",
+      noteSlug: noteSlug.length > 0 ? noteSlug : null,
+    };
   }
 
-  if (pathname === "/plan") {
-    return "plan";
+  if (normalizedPath === "/calendar") {
+    return { view: "calendar", noteSlug: null };
   }
 
-  return "welcome";
+  if (normalizedPath === "/plan") {
+    return { view: "plan", noteSlug: null };
+  }
+
+  return { view: "welcome", noteSlug: null };
+}
+
+function getPathFromRoute(route: AppRoute) {
+  if (route.noteSlug) {
+    return `/notes/${encodeURIComponent(route.noteSlug)}`;
+  }
+
+  if (route.view === "calendar") {
+    return "/calendar";
+  }
+
+  if (route.view === "plan") {
+    return "/plan";
+  }
+
+  return "/";
+}
+
+function normalizePathname(pathname: string) {
+  if (!pathname || pathname === "/index.html") {
+    return "/";
+  }
+
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    return pathname.slice(0, -1);
+  }
+
+  return pathname;
 }
 
 function formatViewLabel(view: View) {
@@ -1837,6 +1909,11 @@ function maxDateKey(left: string, right: string) {
 
 function workoutHrefToSlug(href: string) {
   const normalizedHref = href.split("#")[0]?.split("?")[0] ?? "";
+  if (normalizedHref.startsWith("/notes/")) {
+    const slug = decodeURIComponent(normalizedHref.slice("/notes/".length)).trim();
+    return slug.length > 0 ? slug : null;
+  }
+
   if (!normalizedHref.startsWith("notes/") || !normalizedHref.endsWith(".md")) {
     return null;
   }
