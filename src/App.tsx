@@ -8,7 +8,6 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type SVGProps,
-  type WheelEvent as ReactWheelEvent,
 } from "react";
 import {
   Accessibility,
@@ -66,7 +65,7 @@ type WorkoutStatus = WorkoutFilters["status"];
 type ActiveResizePanel = "left" | "right";
 type CalendarCell = {
   date: string;
-  isFocusDate: boolean;
+  isToday: boolean;
   isOutsideRange: boolean;
   key: string;
   workouts: WorkoutNote[];
@@ -89,6 +88,7 @@ const RIGHT_SIDEBAR_MIN_WIDTH = 320;
 const RIGHT_SIDEBAR_MAX_WIDTH = 960;
 const RIGHT_SIDEBAR_DEFAULT_WIDTH = 520;
 const DESKTOP_CALENDAR_ROW_HEIGHT = 176;
+const MOBILE_CALENDAR_CARD_HEIGHT = 176;
 type WorkoutEventTypeIcon = ComponentType<{ className?: string }>;
 
 function SportShoeIcon({ className }: SVGProps<SVGSVGElement>) {
@@ -197,14 +197,6 @@ export default function App() {
       return;
     }
 
-    setCalendarFocusDate(selectedWorkout.date);
-  }, [selectedWorkout]);
-
-  useEffect(() => {
-    if (!selectedWorkout) {
-      return;
-    }
-
     setRightSidebarOpen(true);
   }, [selectedWorkout]);
 
@@ -264,7 +256,11 @@ export default function App() {
     setView(nextView);
   };
 
-  const openWorkout = (slug: string) => {
+  const focusCalendarDate = (value: string) => {
+    setCalendarFocusDate(value);
+  };
+
+  const openWorkout = (slug: string, syncCalendarDate = true) => {
     const workout = getWorkoutBySlug(slug);
     if (!workout) {
       return;
@@ -272,7 +268,9 @@ export default function App() {
 
     setEventType("all");
     setStatus("all");
-    setCalendarFocusDate(workout.date);
+    if (syncCalendarDate) {
+      focusCalendarDate(workout.date);
+    }
 
     if (selectedWorkoutSlug === slug && rightSidebarOpen) {
       setSelectedWorkoutSlug(null);
@@ -284,6 +282,10 @@ export default function App() {
     setSelectedWorkoutSlug(slug);
     setRightSidebarOpen(true);
     setView("calendar");
+  };
+
+  const openWorkoutFromCalendar = (slug: string) => {
+    openWorkout(slug, false);
   };
 
   const startResize = (panel: ActiveResizePanel, event: ReactPointerEvent<HTMLDivElement>) => {
@@ -474,9 +476,9 @@ export default function App() {
                   filteredWorkouts={filteredWorkouts}
                   selectedWorkoutSlug={selectedWorkoutSlug}
                   status={status}
-                  onFocusDateChange={setCalendarFocusDate}
+                  onFocusDateChange={focusCalendarDate}
                   onEventTypeChange={setEventType}
-                  onSelectWorkout={openWorkout}
+                  onSelectWorkout={openWorkoutFromCalendar}
                   onStatusChange={setStatus}
                 />
               )}
@@ -821,38 +823,21 @@ function CalendarView({
   onSelectWorkout: (slug: string) => void;
 }) {
   const todayDateKey = getTodayDateKey();
+  const isMobileViewport = useMediaQuery("(max-width: 1023px)");
 
   return (
-    <section className="py-2">
+    <section className={cn("py-2", isMobileViewport ? "pb-28" : "")}>
       <div className="border-t border-foreground/10 pt-5">
-        <div className="flex items-center justify-end">
-          <div className="inline-flex items-stretch">
-            <Button
-              aria-label="Jump to today"
-              className="size-10 rounded-none rounded-l-[0.35rem] border-r border-foreground/10 p-0"
-              disabled={calendarFocusDate === todayDateKey}
-              type="button"
-              variant="secondary"
-              onClick={() => onFocusDateChange(todayDateKey)}
-            >
-              <Calendar1 className="size-4" />
-              <span className="sr-only">Jump to today</span>
-            </Button>
-
-            <MonthPicker
-              selectedDateKey={calendarFocusDate}
-              triggerClassName="rounded-none border-r border-foreground/10"
-              onDateChange={onFocusDateChange}
-            />
-
-            <CalendarFilterMenu
-              eventType={eventType}
-              status={status}
-              triggerClassName="rounded-none rounded-r-[0.35rem]"
-              onEventTypeChange={onEventTypeChange}
-              onStatusChange={onStatusChange}
-            />
-          </div>
+        <div className="hidden items-center justify-end lg:flex">
+          <CalendarControls
+            calendarFocusDate={calendarFocusDate}
+            eventType={eventType}
+            status={status}
+            todayDateKey={todayDateKey}
+            onEventTypeChange={onEventTypeChange}
+            onFocusDateChange={onFocusDateChange}
+            onStatusChange={onStatusChange}
+          />
         </div>
 
         {filteredWorkouts.length > 0 && calendarFocusDate ? (
@@ -860,7 +845,6 @@ function CalendarView({
             calendarFocusDate={calendarFocusDate}
             filteredWorkouts={filteredWorkouts}
             selectedWorkoutSlug={selectedWorkoutSlug}
-            onFocusDateChange={onFocusDateChange}
             onSelectWorkout={onSelectWorkout}
           />
         ) : (
@@ -871,7 +855,68 @@ function CalendarView({
           </div>
         )}
       </div>
+
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] lg:hidden">
+        <div className="pointer-events-auto mx-auto w-full max-w-xl rounded-[0.75rem] border border-foreground/10 bg-background/92 p-2 shadow-lg shadow-black/10 backdrop-blur">
+          <CalendarControls
+            calendarFocusDate={calendarFocusDate}
+            eventType={eventType}
+            status={status}
+            todayDateKey={todayDateKey}
+            onEventTypeChange={onEventTypeChange}
+            onFocusDateChange={onFocusDateChange}
+            onStatusChange={onStatusChange}
+          />
+        </div>
+      </div>
     </section>
+  );
+}
+
+function CalendarControls({
+  calendarFocusDate,
+  eventType,
+  status,
+  todayDateKey,
+  onEventTypeChange,
+  onFocusDateChange,
+  onStatusChange,
+}: {
+  calendarFocusDate: string;
+  eventType: WorkoutFilters["eventType"];
+  status: WorkoutStatus;
+  todayDateKey: string;
+  onEventTypeChange: (value: WorkoutFilters["eventType"]) => void;
+  onFocusDateChange: (value: string) => void;
+  onStatusChange: (value: WorkoutStatus) => void;
+}) {
+  return (
+    <div className="flex items-stretch gap-2 lg:inline-flex lg:gap-0">
+      <Button
+        aria-label="Jump to today"
+        className="size-11 shrink-0 rounded-[0.5rem] p-0 lg:size-10 lg:rounded-none lg:rounded-l-[0.35rem] lg:border-r lg:border-foreground/10"
+        type="button"
+        variant="secondary"
+        onClick={() => onFocusDateChange(todayDateKey)}
+      >
+        <Calendar1 className="size-4" />
+        <span className="sr-only">Jump to today</span>
+      </Button>
+
+      <MonthPicker
+        selectedDateKey={calendarFocusDate}
+        triggerClassName="min-w-0 flex-1 rounded-[0.5rem] px-4 lg:min-w-44 lg:rounded-none lg:border-r lg:border-foreground/10 lg:px-3"
+        onDateChange={onFocusDateChange}
+      />
+
+      <CalendarFilterMenu
+        eventType={eventType}
+        status={status}
+        triggerClassName="size-11 shrink-0 rounded-[0.5rem] p-0 lg:size-10 lg:rounded-none lg:rounded-r-[0.35rem]"
+        onEventTypeChange={onEventTypeChange}
+        onStatusChange={onStatusChange}
+      />
+    </div>
   );
 }
 
@@ -1015,19 +1060,20 @@ function CalendarMonthGrid({
   calendarFocusDate,
   filteredWorkouts,
   selectedWorkoutSlug,
-  onFocusDateChange,
   onSelectWorkout,
 }: {
   calendarFocusDate: string;
   filteredWorkouts: WorkoutNote[];
   selectedWorkoutSlug: string | null;
-  onFocusDateChange: (value: string) => void;
   onSelectWorkout: (slug: string) => void;
 }) {
   const calendarRange = useMemo(
     () => buildContinuousCalendarRange(filteredWorkouts, calendarFocusDate),
     [calendarFocusDate, filteredWorkouts],
   );
+  const isMobileViewport = useMediaQuery("(max-width: 1023px)");
+  const mobileDaysRef = useRef<HTMLDivElement | null>(null);
+  const desktopWeeksViewportRef = useRef<HTMLDivElement | null>(null);
   const cells = useMemo(() => {
     const workoutsByDate = new Map<string, WorkoutNote[]>();
 
@@ -1041,53 +1087,78 @@ function CalendarMonthGrid({
       workoutsByDate.set(workout.date, [workout]);
     });
 
-    return buildCalendarCells(calendarRange.startDate, calendarRange.endDate, workoutsByDate, calendarFocusDate);
+    return buildCalendarCells(calendarRange.startDate, calendarRange.endDate, workoutsByDate);
   }, [calendarFocusDate, calendarRange.endDate, calendarRange.startDate, filteredWorkouts]);
   const weeks = useMemo(() => chunkCalendarWeeks(cells), [cells]);
-  const visibleWeekStart = useMemo(
-    () => getCalendarWindowStartWeekIndex(weeks, calendarFocusDate),
-    [calendarFocusDate, weeks],
-  );
-  const visibleWeeks = useMemo(
-    () => weeks.slice(visibleWeekStart, visibleWeekStart + 3),
-    [visibleWeekStart, weeks],
-  );
-  const visibleDays = visibleWeeks.flat().map((cell) => ({ date: cell.date, workouts: cell.workouts }));
   const maxWeekStart = Math.max(weeks.length - 3, 0);
 
-  const handleDesktopCalendarWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
-    if (Math.abs(event.deltaY) < 8) {
+  useEffect(() => {
+    if (!calendarFocusDate) {
       return;
     }
 
-    event.preventDefault();
-    const nextWeekStart = clampNumber(visibleWeekStart + (event.deltaY > 0 ? 1 : -1), 0, maxWeekStart);
-    const nextFocusWeek = weeks[nextWeekStart + 1] ?? weeks[nextWeekStart] ?? weeks[0];
-    const nextFocusDate = nextFocusWeek?.find((cell) => !cell.isOutsideRange)?.date ?? nextFocusWeek?.[0]?.date;
-    if (nextFocusDate) {
-      onFocusDateChange(nextFocusDate);
+    if (isMobileViewport) {
+      const targetDayCard = mobileDaysRef.current?.querySelector<HTMLElement>(
+        `[data-calendar-date="${calendarFocusDate}"]`,
+      );
+      targetDayCard?.scrollIntoView({
+        block: "center",
+        behavior: "auto",
+      });
+      return;
     }
-  };
+
+    if (!desktopWeeksViewportRef.current) {
+      return;
+    }
+
+    const focusWeekIndex = weeks.findIndex((week) =>
+      week.some((cell) => cell.date === calendarFocusDate),
+    );
+    if (focusWeekIndex === -1) {
+      return;
+    }
+
+    const nextWeekStart = clampNumber(focusWeekIndex - 1, 0, maxWeekStart);
+    desktopWeeksViewportRef.current.scrollTo({
+      top: nextWeekStart * DESKTOP_CALENDAR_ROW_HEIGHT,
+      behavior: "auto",
+    });
+  }, [calendarFocusDate, isMobileViewport, maxWeekStart, weeks]);
 
   return (
     <div className="mt-8">
-      <div className="grid gap-3 lg:hidden">
-        {visibleDays.map((day) => (
+      <div className="grid gap-3 lg:hidden" ref={mobileDaysRef}>
+        {cells.map((day) => (
           <section
-            className="rounded-[0.35rem] border border-foreground/10 bg-background/70 px-3 py-3"
+            className={cn(
+              "flex scroll-mt-28 flex-col rounded-[0.35rem] border px-3 py-3",
+              day.isToday
+                ? "border-primary/35 bg-surface-panel-alt/55"
+                : "border-foreground/10 bg-background/70",
+            )}
+            data-calendar-date={day.date}
             key={day.date}
+            style={{ height: `${MOBILE_CALENDAR_CARD_HEIGHT}px` }}
           >
             <div className="border-b border-foreground/10 pb-2">
               <div>
                 <p className="text-base font-black">{formatDayLabel(day.date)}</p>
-                <p className="text-[11px] uppercase text-muted-foreground">
-                  {formatDayWeekday(day.date)}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[11px] uppercase text-muted-foreground">
+                    {formatDayWeekday(day.date)}
+                  </p>
+                  {day.isToday ? (
+                    <span className="rounded-full bg-primary px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] text-primary-foreground">
+                      Today
+                    </span>
+                  ) : null}
+                </div>
               </div>
             </div>
 
             {day.workouts.length > 0 ? (
-              <div className="mt-3 flex flex-col gap-2">
+              <div className="mt-3 flex min-h-0 flex-1 flex-col gap-2">
                 {day.workouts.map((workout) => {
                   const selected = workout.slug === selectedWorkoutSlug;
                   const statusTone = getWorkoutStatusTone(workout);
@@ -1095,7 +1166,7 @@ function CalendarMonthGrid({
                   return (
                     <Button
                       className={cn(
-                        "h-auto w-full items-start justify-start rounded-[0.35rem] px-3 py-2 text-left whitespace-normal",
+                        "h-full w-full flex-1 items-start justify-start rounded-[0.35rem] px-3 py-2 text-left whitespace-normal",
                         getWorkoutCardToneClasses(statusTone, selected),
                       )}
                       key={workout.slug}
@@ -1109,7 +1180,9 @@ function CalendarMonthGrid({
                 })}
               </div>
             ) : (
-              <p className="mt-3 text-sm text-muted-foreground">Rest day.</p>
+              <div className="mt-3 flex flex-1 items-center">
+                <p className="text-sm text-muted-foreground">Rest day.</p>
+              </div>
             )}
           </section>
         ))}
@@ -1125,16 +1198,12 @@ function CalendarMonthGrid({
         </div>
 
         <div
-          className="relative overflow-hidden border-l border-foreground/10"
+          className="relative overflow-y-auto border-l border-foreground/10"
+          ref={desktopWeeksViewportRef}
           style={{ height: `${DESKTOP_CALENDAR_ROW_HEIGHT * 3}px` }}
-          onWheel={handleDesktopCalendarWheel}
         >
           <CalendarWeeksDesktop
-            className="transition-transform duration-300 ease-out"
             selectedWorkoutSlug={selectedWorkoutSlug}
-            style={{
-              transform: `translateY(-${visibleWeekStart * DESKTOP_CALENDAR_ROW_HEIGHT}px)`,
-            }}
             weeks={weeks}
             onSelectWorkout={onSelectWorkout}
           />
@@ -1170,12 +1239,12 @@ function CalendarWeeksDesktop({
               className={cn(
                 "h-full overflow-hidden border-r border-b border-foreground/10 px-2 py-2 transition-colors",
                 cell.isOutsideRange ? "bg-background/40" : "bg-transparent",
-                cell.isFocusDate && "bg-surface-panel-alt/45",
+                cell.isToday && "bg-surface-panel-alt/45",
               )}
               key={cell.key}
             >
               <div className="flex h-full min-h-0 flex-col gap-1.5">
-                <div>
+                <div className="flex items-center justify-between gap-2">
                   <p
                     className={cn(
                       "text-sm font-black",
@@ -1184,6 +1253,11 @@ function CalendarWeeksDesktop({
                   >
                     {Number(cell.date.slice(-2))}
                   </p>
+                  {cell.isToday ? (
+                    <span className="rounded-full bg-primary px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] text-primary-foreground">
+                      Today
+                    </span>
+                  ) : null}
                 </div>
 
                 {cell.workouts.length > 0 ? (
@@ -1681,15 +1755,6 @@ function chunkCalendarWeeks(cells: CalendarCell[]) {
   return weeks;
 }
 
-function getCalendarWindowStartWeekIndex(weeks: CalendarCell[][], focusDate: string) {
-  const focusWeekIndex = weeks.findIndex((week) => week.some((cell) => cell.date === focusDate));
-  if (focusWeekIndex === -1) {
-    return 0;
-  }
-
-  return clampNumber(focusWeekIndex - 1, 0, Math.max(weeks.length - 3, 0));
-}
-
 function buildContinuousCalendarRange(workouts: WorkoutNote[], focusDate: string) {
   const workoutDates = workouts.map((workout) => workout.date);
   const earliestDate = workoutDates[0] ?? focusDate;
@@ -1707,13 +1772,13 @@ function buildCalendarCells(
   startDateKey: string,
   endDateKey: string,
   workoutsByDate: Map<string, WorkoutNote[]>,
-  focusDate: string,
 ) {
   const startDate = parseDateKey(startDateKey);
   const endDate = parseDateKey(endDateKey);
+  const todayDateKey = getTodayDateKey();
   const cells: Array<{
     date: string;
-    isFocusDate: boolean;
+    isToday: boolean;
     isOutsideRange: boolean;
     key: string;
     workouts: WorkoutNote[];
@@ -1724,7 +1789,7 @@ function buildCalendarCells(
     cells.push({
       key: date,
       date,
-      isFocusDate: date === focusDate,
+      isToday: date === todayDateKey,
       isOutsideRange: false,
       workouts: workoutsByDate.get(date) ?? [],
     });
