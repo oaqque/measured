@@ -81,42 +81,8 @@
     }
   }
 
-  @keyframes fingerprint-stroke-draw {
-    0% {
-      stroke-dasharray: 0 1;
-      stroke-dashoffset: -1;
-      opacity: 0.18;
-    }
-
-    38% {
-      stroke-dasharray: 1 0;
-      stroke-dashoffset: -1;
-      opacity: 1;
-    }
-
-    62% {
-      stroke-dasharray: 1 0;
-      stroke-dashoffset: -1;
-      opacity: 1;
-    }
-
-    100% {
-      stroke-dasharray: 0 1;
-      stroke-dashoffset: 0;
-      opacity: 0.18;
-    }
-  }
-
   .motion-enter {
     animation: reveal-up 420ms ease-out;
-  }
-
-  .fingerprint-stroke {
-    stroke: var(--fingerprint-stroke);
-    stroke-dasharray: 0 1;
-    stroke-dashoffset: -1;
-    animation: fingerprint-stroke-draw 2s linear infinite;
-    animation-delay: var(--fingerprint-delay);
   }
 
   .surface-panel {
@@ -170,16 +136,5 @@
   .markdown-prose pre code::selection {
     background: #f4fdff;
     color: #1d2a6d;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  @layer components {
-    .fingerprint-stroke {
-      animation: none;
-      opacity: 1;
-      stroke-dasharray: none;
-      stroke-dashoffset: 0;
-    }
   }
 }

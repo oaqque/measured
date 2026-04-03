@@ -76,17 +76,6 @@ type CalendarCell = {
   workouts: WorkoutNote[];
 };
 
-const FINGERPRINT_STROKES = [
-  { color: "#1d2a6d", d: "M2 12a10 10 0 0 1 18-6" },
-  { color: "#24479d", d: "M9 6.8a6 6 0 0 1 9 5.2v2" },
-  { color: "#1f63d2", d: "M21.8 16c.2-2 .131-5.354 0-6" },
-  { color: "#2388ef", d: "M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2" },
-  { color: "#39b8ff", d: "M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4" },
-  { color: "#63ddff", d: "M14 13.12c0 2.38 0 6.38-1 8.88" },
-  { color: "#8ef2ff", d: "M17.29 21.02c.12-.6.43-2.3.5-3.02" },
-  { color: "#c6fbff", d: "M8.65 22c.21-.66.45-1.32.57-2" },
-  { color: "#ffffff", d: "M2 16h.01" },
-] as const;
 const LEFT_SIDEBAR_MIN_WIDTH = 240;
 const LEFT_SIDEBAR_MAX_WIDTH = 420;
 const RIGHT_SIDEBAR_MIN_WIDTH = 320;
@@ -1532,34 +1521,7 @@ function ResizeHandle({
 }
 
 function BrandMark({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <g>
-        {FINGERPRINT_STROKES.map((stroke, index) => (
-          <path
-            className="fingerprint-stroke"
-            d={stroke.d}
-            key={stroke.d}
-            pathLength="1"
-            style={
-              {
-                "--fingerprint-delay": `${index * -0.2}s`,
-                "--fingerprint-stroke": stroke.color,
-              } as CSSProperties
-            }
-          />
-        ))}
-      </g>
-    </svg>
-  );
+  return <img alt="" aria-hidden="true" className={className} src="/brand-mark.svg" />;
 }
 
 function useAppRoute(): [AppRoute, (route: AppRoute, options?: { replace?: boolean }) => void] {

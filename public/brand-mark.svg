@@ -1,0 +1,63 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  stroke-width="2"
+>
+  <style>
+    @keyframes fingerprint-stroke-draw {
+      0% {
+        stroke-dasharray: 0 1;
+        stroke-dashoffset: -1;
+        opacity: 0.18;
+      }
+
+      38% {
+        stroke-dasharray: 1 0;
+        stroke-dashoffset: -1;
+        opacity: 1;
+      }
+
+      62% {
+        stroke-dasharray: 1 0;
+        stroke-dashoffset: -1;
+        opacity: 1;
+      }
+
+      100% {
+        stroke-dasharray: 0 1;
+        stroke-dashoffset: 0;
+        opacity: 0.18;
+      }
+    }
+
+    .fingerprint-stroke {
+      stroke-dasharray: 0 1;
+      stroke-dashoffset: -1;
+      animation: fingerprint-stroke-draw 2s linear infinite;
+      animation-delay: var(--fingerprint-delay);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fingerprint-stroke {
+        animation: none;
+        opacity: 1;
+        stroke-dasharray: none;
+        stroke-dashoffset: 0;
+      }
+    }
+  </style>
+  <g>
+    <path class="fingerprint-stroke" pathLength="1" d="M2 12a10 10 0 0 1 18-6" stroke="#1d2a6d" style="--fingerprint-delay: 0s" />
+    <path class="fingerprint-stroke" pathLength="1" d="M9 6.8a6 6 0 0 1 9 5.2v2" stroke="#24479d" style="--fingerprint-delay: -0.2s" />
+    <path class="fingerprint-stroke" pathLength="1" d="M21.8 16c.2-2 .131-5.354 0-6" stroke="#1f63d2" style="--fingerprint-delay: -0.4s" />
+    <path class="fingerprint-stroke" pathLength="1" d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2" stroke="#2388ef" style="--fingerprint-delay: -0.6s" />
+    <path class="fingerprint-stroke" pathLength="1" d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4" stroke="#39b8ff" style="--fingerprint-delay: -0.8s" />
+    <path class="fingerprint-stroke" pathLength="1" d="M14 13.12c0 2.38 0 6.38-1 8.88" stroke="#63ddff" style="--fingerprint-delay: -1s" />
+    <path class="fingerprint-stroke" pathLength="1" d="M17.29 21.02c.12-.6.43-2.3.5-3.02" stroke="#8ef2ff" style="--fingerprint-delay: -1.2s" />
+    <path class="fingerprint-stroke" pathLength="1" d="M8.65 22c.21-.66.45-1.32.57-2" stroke="#c6fbff" style="--fingerprint-delay: -1.4s" />
+    <path class="fingerprint-stroke" pathLength="1" d="M2 16h.01" stroke="#ffffff" style="--fingerprint-delay: -1.6s" />
+  </g>
+</svg>
