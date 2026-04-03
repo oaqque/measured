@@ -26,6 +26,18 @@ interface StravaCacheSnapshot {
   activities: Record<string, StravaCachedActivity>;
 }
 
+interface GeneratedWorkoutFallback {
+  actualDistance: string | null;
+  actualDistanceKm: number | null;
+  actualMovingTimeSeconds: number | null;
+  actualElapsedTimeSeconds: number | null;
+  averageHeartrate: number | null;
+  maxHeartrate: number | null;
+  summaryPolyline: string | null;
+  hasStravaStreams: boolean;
+  stravaId: number | null;
+}
+
 interface StravaCachedActivity {
   activityId: number;
   name: string | null;
@@ -59,10 +71,27 @@ async function main() {
   const changelogDir = path.join(dataDir, changelogDirName);
   await assertNotesDirectory(notesDir);
   const stravaCache = await readStravaCacheSnapshot();
+  const existingGeneratedData = await readExistingGeneratedData();
   const fileNames = (await fs.readdir(notesDir))
     .filter((fileName) => fileName.endsWith(".md"))
     .sort((left, right) => left.localeCompare(right));
   const changelogEntries = await readChangelogEntries(changelogDir, dataDir);
+  const existingWorkoutFallbacks = new Map(
+    (existingGeneratedData?.workouts ?? []).map((workout) => [
+      workout.sourcePath,
+      {
+        actualDistance: workout.actualDistance,
+        actualDistanceKm: workout.actualDistanceKm,
+        actualMovingTimeSeconds: workout.actualMovingTimeSeconds,
+        actualElapsedTimeSeconds: workout.actualElapsedTimeSeconds,
+        averageHeartrate: workout.averageHeartrate,
+        maxHeartrate: workout.maxHeartrate,
+        summaryPolyline: workout.summaryPolyline,
+        hasStravaStreams: workout.hasStravaStreams,
+        stravaId: workout.stravaId,
+      } satisfies GeneratedWorkoutFallback,
+    ]),
+  );
 
   const workouts: WorkoutNote[] = [];
   let welcome: PlanDocument | null = null;
@@ -76,7 +105,15 @@ async function main() {
     const sourcePath = path.relative(dataDir, filePath).replaceAll("\\", "/");
     const fileContent = await fs.readFile(filePath, "utf8");
 
-    workouts.push(buildWorkoutNote(fileName, fileContent, sourcePath, stravaCache.activities));
+    workouts.push(
+      buildWorkoutNote(
+        fileName,
+        fileContent,
+        sourcePath,
+        stravaCache.activities,
+        existingWorkoutFallbacks.get(sourcePath) ?? null,
+      ),
+    );
   }
 
   if (!welcome) {
@@ -158,6 +195,24 @@ async function readStravaCacheSnapshot(): Promise<StravaCacheSnapshot> {
 
     throw new Error(
       `Unable to read Strava cache export at ${defaultStravaCacheExportPath}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+}
+
+async function readExistingGeneratedData(): Promise<WorkoutsData | null> {
+  try {
+    const fileContent = await fs.readFile(generatedPath, "utf8");
+    return JSON.parse(fileContent) as WorkoutsData;
+  } catch (error) {
+    const nodeError = error as NodeJS.ErrnoException;
+    if (nodeError?.code === "ENOENT") {
+      return null;
+    }
+
+    throw new Error(
+      `Unable to read existing generated workouts at ${generatedPath}: ${
         error instanceof Error ? error.message : String(error)
       }`,
     );
@@ -266,10 +321,13 @@ function buildWorkoutNote(
   fileContent: string,
   sourcePath: string,
   stravaActivities: Record<string, StravaCachedActivity>,
+  existingFallback: GeneratedWorkoutFallback | null,
 ): WorkoutNote {
   const parsed = matter(fileContent);
   const data = parsed.data;
   const stravaId = normalizeOptionalInteger(data.stravaId, fileName, "stravaId");
+  const validFallback =
+    existingFallback && existingFallback.stravaId === stravaId ? existingFallback : null;
   const importedFromStrava =
     stravaId !== null && /(^|\n)##\s+Imported from Strava\b/u.test(parsed.content);
   const notedExpectedDistance = normalizeNullableString(data.expectedDistance);
@@ -280,10 +338,12 @@ function buildWorkoutNote(
   const expectedDistanceKm = normalizeDistanceKm(expectedDistance);
   const actualDistance =
     normalizeCachedDistanceLabel(cachedActivity) ??
+    validFallback?.actualDistance ??
     notedActualDistance ??
     (importedFromStrava ? notedExpectedDistance : null);
   const actualDistanceKm =
     normalizeCachedDistanceKm(cachedActivity) ??
+    validFallback?.actualDistanceKm ??
     normalizeDistanceKm(notedActualDistance) ??
     (importedFromStrava ? normalizeDistanceKm(notedExpectedDistance) : null);
 
@@ -298,12 +358,13 @@ function buildWorkoutNote(
     actualDistanceKm,
     completed: normalizeCompleted(data.completed, fileName),
     stravaId,
-    actualMovingTimeSeconds: normalizeCachedInteger(cachedActivity?.movingTimeSeconds),
-    actualElapsedTimeSeconds: normalizeCachedInteger(cachedActivity?.elapsedTimeSeconds),
-    averageHeartrate: normalizeCachedNumber(cachedActivity?.averageHeartrate),
-    maxHeartrate: normalizeCachedNumber(cachedActivity?.maxHeartrate),
-    summaryPolyline: normalizeNullableString(cachedActivity?.summaryPolyline),
-    hasStravaStreams: cachedActivity?.hasStreams === true,
+    actualMovingTimeSeconds: normalizeCachedInteger(cachedActivity?.movingTimeSeconds) ?? validFallback?.actualMovingTimeSeconds ?? null,
+    actualElapsedTimeSeconds:
+      normalizeCachedInteger(cachedActivity?.elapsedTimeSeconds) ?? validFallback?.actualElapsedTimeSeconds ?? null,
+    averageHeartrate: normalizeCachedNumber(cachedActivity?.averageHeartrate) ?? validFallback?.averageHeartrate ?? null,
+    maxHeartrate: normalizeCachedNumber(cachedActivity?.maxHeartrate) ?? validFallback?.maxHeartrate ?? null,
+    summaryPolyline: normalizeNullableString(cachedActivity?.summaryPolyline) ?? validFallback?.summaryPolyline ?? null,
+    hasStravaStreams: cachedActivity?.hasStreams === true || validFallback?.hasStravaStreams === true,
     allDay: expectBoolean(data.allDay, fileName, "allDay"),
     type: expectString(data.type, fileName, "type"),
     body: parsed.content.trim(),
@@ -447,6 +508,17 @@ function buildRouteStreamsPayload(activities: Record<string, StravaCachedActivit
 }
 
 async function writeRouteStreamFiles(routeStreamsByActivity: Record<string, WorkoutRouteStreams>) {
+  if (Object.keys(routeStreamsByActivity).length === 0) {
+    try {
+      const stats = await fs.stat(generatedRouteStreamsDir);
+      if (stats.isDirectory()) {
+        return;
+      }
+    } catch {
+      // Fall through and recreate the directory if there is no existing payload to preserve.
+    }
+  }
+
   await fs.rm(legacyGeneratedRouteStreamsPath, { force: true });
   await fs.rm(generatedRouteStreamsDir, { force: true, recursive: true });
   await fs.mkdir(generatedRouteStreamsDir, { recursive: true });

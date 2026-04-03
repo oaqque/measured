@@ -8,7 +8,8 @@ The recommended workflow is:
 2. Build locally on the same machine that has `vault/strava/cache-export.json`.
 3. Deploy that prebuilt output to Vercel.
 
-That avoids the main problem with cloud builds in this repo: a clean remote build does not have your local Strava cache, so it will not produce the same Strava-enriched site you see locally.
+That remains the most reliable path for publishing freshly synced Strava-backed data.
+The repo now also supports Git-triggered cloud builds better than before by allowing committed generated artifacts to act as a fallback when the local Strava cache is unavailable during the build.
 
 ## Why This Path
 
@@ -127,28 +128,24 @@ They also upload the prebuilt output as a `.tgz` archive, which is the path Verc
 
 ## Important Constraint
 
-This repo does not currently have a faithful zero-config cloud build.
+This repo still prefers local prebuilt deploys when you want the latest Strava sync reflected in production immediately.
 
 Reasons:
 
-- `build:data` reads local Strava cache data from `vault/strava/cache-export.json`
-- generated outputs like `src/generated/workouts.json` are gitignored
-- route stream JSON under `public/generated/workout-routes/` is also gitignored
+- `build:data` reads Strava cache data from `vault/strava/cache-export.json` when it exists
+- cloud builds usually do not have that cache available
+- a cloud build can only preserve the last committed generated artifacts, not invent newer Strava-backed data
 
-So if you import this repo into Vercel and let Vercel build directly from source, the deploy may succeed, but it will not fully match your local site.
+So if you import this repo into Vercel and let Vercel build directly from source:
 
-Specifically, you should expect some combination of:
-
-- missing route data
-- missing Strava-enriched actual distances or metrics
-- a site that is valid, but incomplete compared with your local build
+- committed generated artifacts will keep existing route maps and Strava-enriched metrics available
+- but newly synced Strava data will not appear until those generated artifacts are rebuilt locally and committed or deployed prebuilt
 
 ## If You Want Full Git-Triggered CI/CD Later
 
 That needs one more design decision. Pick one:
 
-1. Commit generated deploy artifacts
-2. Upload trusted build data during CI
-3. Remove the cloud-build dependency on local Strava cache
+1. Upload trusted build data during CI
+2. Remove the cloud-build dependency on local Strava cache
 
 Until then, use the local prebuilt Vercel deploy path in this document.
