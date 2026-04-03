@@ -7,7 +7,7 @@ tags:
   - recovery
   - long-run
 affectedFiles:
-  - README.md
+  - PLAN.md
   - notes/2026-04-02 8 km Easy Aerobic Run.md
   - notes/2026-04-02 Lighter Support Gym.md
   - notes/2026-04-03 6 km Easy Recovery Run.md

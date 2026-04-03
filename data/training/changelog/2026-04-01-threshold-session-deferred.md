@@ -6,7 +6,7 @@ tags:
   - threshold
   - scheduling
 affectedFiles:
-  - README.md
+  - PLAN.md
   - notes/2026-03-31 3.7 km Evening Run.md
   - notes/2026-04-01 10 km Threshold Run.md
 ---

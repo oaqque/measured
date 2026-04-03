@@ -45,6 +45,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   allChangelogEntries,
+  allGoalNotes,
   allWorkouts,
   availableEventTypes,
   filterWorkouts,
@@ -54,14 +55,15 @@ import {
   formatDistance,
   generatedAt,
   getChangelogEntriesForFile,
+  goalsDocument,
   getWorkoutBySlug,
   trainingPlan,
   welcomeDocument,
 } from "@/lib/workouts/load";
-import type { ChangelogEntry, WorkoutEventType, WorkoutFilters, WorkoutNote } from "@/lib/workouts/schema";
+import type { ChangelogEntry, GoalNote, WorkoutEventType, WorkoutFilters, WorkoutNote } from "@/lib/workouts/schema";
 import { cn } from "@/lib/utils";
 
-type View = "welcome" | "plan" | "calendar";
+type View = "welcome" | "goals" | "plan" | "calendar";
 type WorkoutStatus = WorkoutFilters["status"];
 type ActiveResizePanel = "left" | "right";
 type AppRoute = {
@@ -145,6 +147,13 @@ export default function App() {
     () => getChangelogEntriesForFile(welcomeDocument.sourcePath),
     [],
   );
+  const goalsChanges = useMemo(
+    () => {
+      const goalPaths = new Set([goalsDocument.sourcePath, ...allGoalNotes.map((goal) => goal.sourcePath)]);
+      return allChangelogEntries.filter((entry) => entry.affectedFiles.some((file) => goalPaths.has(file)));
+    },
+    [],
+  );
   const planChanges = useMemo(
     () => getChangelogEntriesForFile(trainingPlan.sourcePath),
     [],
@@ -158,12 +167,16 @@ export default function App() {
       return welcomeDocument.sourcePath;
     }
 
+    if (view === "goals") {
+      return goalsDocument.sourcePath;
+    }
+
     if (view === "plan") {
       return trainingPlan.sourcePath;
     }
 
     return null;
-  }, [selectedWorkout, trainingPlan.sourcePath, view, welcomeDocument.sourcePath]);
+  }, [goalsDocument.sourcePath, selectedWorkout, trainingPlan.sourcePath, view, welcomeDocument.sourcePath]);
   const stravaRunCount = useMemo(
     () => allWorkouts.filter((workout) => workout.stravaId !== null).length,
     [],
@@ -327,8 +340,13 @@ export default function App() {
   const handleMarkdownLink = (href: string) => {
     const normalizedHref = href.split("#")[0]?.split("?")[0] ?? href;
 
-    if (normalizedHref === "README.md") {
+    if (normalizedHref === "README.md" || normalizedHref === "PLAN.md") {
       navigateToView("plan");
+      return true;
+    }
+
+    if (normalizedHref === "GOALS.md") {
+      navigateToView("goals");
       return true;
     }
 
@@ -486,10 +504,20 @@ export default function App() {
                   onFileClick={handleMarkdownLink}
                   onLinkClick={handleMarkdownLink}
                 />
+              ) : view === "goals" ? (
+                <GoalsPage
+                  goals={allGoalNotes}
+                  intro={goalsDocument.body}
+                  relatedChanges={goalsChanges}
+                  sourcePath={goalsDocument.sourcePath}
+                  onFileClick={handleMarkdownLink}
+                  onLinkClick={handleMarkdownLink}
+                />
               ) : view === "plan" ? (
                 <MarkdownPage
                   content={trainingPlan.body}
                   relatedChanges={planChanges}
+                  showRelatedChanges={false}
                   sourcePath={trainingPlan.sourcePath}
                   onFileClick={handleMarkdownLink}
                   onLinkClick={handleMarkdownLink}
@@ -590,6 +618,12 @@ function SidebarContent({
           onClick={() => onNavigate("welcome")}
         />
         <SidebarNavButton
+          active={view === "goals"}
+          icon={<Trophy className="size-4" />}
+          label="Goals"
+          onClick={() => onNavigate("goals")}
+        />
+        <SidebarNavButton
           active={view === "plan"}
           icon={<FileText className="size-4" />}
           label="Plan"
@@ -638,12 +672,14 @@ function EmptyDetailState() {
 function MarkdownPage({
   content,
   relatedChanges,
+  showRelatedChanges = true,
   sourcePath,
   onFileClick,
   onLinkClick,
 }: {
   content: string;
   relatedChanges: ChangelogEntry[];
+  showRelatedChanges?: boolean;
   sourcePath: string;
   onFileClick: (sourcePath: string) => void;
   onLinkClick?: (href: string) => boolean;
@@ -653,6 +689,78 @@ function MarkdownPage({
       <div className="markdown-prose">
         <MarkdownContent content={content} onLinkClick={onLinkClick} />
       </div>
+      {showRelatedChanges ? (
+        <RelatedChangesSection
+          className="mt-10"
+          currentSourcePath={sourcePath}
+          entries={relatedChanges}
+          onFileClick={onFileClick}
+          onLinkClick={onLinkClick}
+          title="Applies here"
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function GoalsPage({
+  goals,
+  intro,
+  relatedChanges,
+  sourcePath,
+  onFileClick,
+  onLinkClick,
+}: {
+  goals: GoalNote[];
+  intro: string;
+  relatedChanges: ChangelogEntry[];
+  sourcePath: string;
+  onFileClick: (sourcePath: string) => void;
+  onLinkClick?: (href: string) => boolean;
+}) {
+  return (
+    <div className="py-2">
+      <div className="markdown-prose">
+        <MarkdownContent content={intro} onLinkClick={onLinkClick} />
+      </div>
+
+      <section className="mt-8">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {goals.map((goal) => (
+            <article
+              className="flex min-h-64 flex-col rounded-[1.4rem] border border-foreground/10 bg-background/85 p-5 shadow-sm shadow-primary/5"
+              key={goal.slug}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-[1rem] bg-surface-panel text-2xl">
+                  <span aria-hidden="true">{goal.emoji}</span>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <p className="rounded-full bg-surface-elevated px-3 py-1 text-xs font-semibold text-muted-foreground">
+                    {formatDisplayDate(goal.date)}
+                  </p>
+                  <p className="rounded-full bg-surface-panel px-3 py-1 text-xs font-semibold text-foreground">
+                    {formatGoalCountdown(goal.date)}
+                  </p>
+                </div>
+              </div>
+
+              <h2 className="mt-4 text-xl font-black leading-tight text-foreground">
+                {goal.title}
+              </h2>
+
+              <div className="markdown-prose mt-3 flex-1 text-sm">
+                <MarkdownContent content={goal.body} onLinkClick={onLinkClick} />
+              </div>
+
+              <p className="mt-4 text-xs font-medium text-muted-foreground">
+                {goal.sourcePath}
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <RelatedChangesSection
         className="mt-10"
         currentSourcePath={sourcePath}
@@ -1613,6 +1721,10 @@ function getRouteFromPath(pathname: string): AppRoute {
     return { view: "calendar", noteSlug: null };
   }
 
+  if (normalizedPath === "/goals") {
+    return { view: "goals", noteSlug: null };
+  }
+
   if (normalizedPath === "/plan") {
     return { view: "plan", noteSlug: null };
   }
@@ -1627,6 +1739,10 @@ function getPathFromRoute(route: AppRoute) {
 
   if (route.view === "calendar") {
     return "/calendar";
+  }
+
+  if (route.view === "goals") {
+    return "/goals";
   }
 
   if (route.view === "plan") {
@@ -1649,6 +1765,10 @@ function normalizePathname(pathname: string) {
 }
 
 function formatViewLabel(view: View) {
+  if (view === "goals") {
+    return "Goals";
+  }
+
   if (view === "plan") {
     return "Plan";
   }
@@ -1773,6 +1893,31 @@ function formatDayWeekday(value: string) {
   }).format(new Date(`${value}T00:00:00`));
 }
 
+function formatGoalCountdown(value: string) {
+  const today = parseDateKey(getTodayDateKey());
+  const goalDate = parseDateKey(value);
+  const millisecondsPerDay = 1000 * 60 * 60 * 24;
+  const diffDays = Math.round((goalDate.getTime() - today.getTime()) / millisecondsPerDay);
+
+  if (diffDays === 0) {
+    return "Today";
+  }
+
+  if (diffDays === 1) {
+    return "1 day left";
+  }
+
+  if (diffDays > 1) {
+    return `${diffDays} days left`;
+  }
+
+  if (diffDays === -1) {
+    return "1 day ago";
+  }
+
+  return `${Math.abs(diffDays)} days ago`;
+}
+
 function getTodayDateKey() {
   return formatDateKey(new Date());
 }
@@ -1795,8 +1940,20 @@ function formatAffectedFileLabel(sourcePath: string) {
     return "README.md";
   }
 
+  if (sourcePath === "PLAN.md") {
+    return "PLAN.md";
+  }
+
   if (sourcePath === "WELCOME.md") {
     return "WELCOME.md";
+  }
+
+  if (sourcePath === "GOALS.md") {
+    return "GOALS.md";
+  }
+
+  if (sourcePath.startsWith("goals/")) {
+    return sourcePath.slice("goals/".length).replace(/\.md$/u, "");
   }
 
   if (sourcePath.startsWith("notes/")) {

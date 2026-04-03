@@ -1,6 +1,6 @@
 ---
 name: training-analysis
-description: Analyze training data and maintain the repo's training source files. Use when Codex needs to fetch or sync Strava data, backfill or update workout notes in data/training/notes, revise the training plan in data/training/README.md, create changelog entries in data/training/changelog, explain the relationship between planned sessions and completed runs, or package that work into a required git commit at the end.
+description: Analyze training data and maintain the repo's training source files. Use when Codex needs to fetch or sync Strava data, backfill or update workout notes in data/training/notes, revise the training plan in data/training/PLAN.md, create changelog entries in data/training/changelog, explain the relationship between planned sessions and completed runs, or package that work into a required git commit at the end.
 ---
 
 # Training Analysis
@@ -25,7 +25,7 @@ Read [`references/data-shapes.md`](references/data-shapes.md) before creating or
 
 ## Analyze and Update a Workout Note
 
-1. Read the plan first in `data/training/README.md` before writing analysis for a run. Treat the scheduled intent as the baseline.
+1. Read the plan first in `data/training/PLAN.md` before writing analysis for a run. Treat the scheduled intent as the baseline.
 2. Open the target note in `data/training/notes/`.
 3. If no note exists for the run, create one using the workout note shape in `references/data-shapes.md`.
 4. Keep planned intent and actual outcome separate:
@@ -120,7 +120,7 @@ stravaId: 17932415058
    - `### Personal Note`
 6. When writing completed-run analysis, anchor it in the workout's intended purpose first, then connect it to the immediate week and the larger training block.
 7. If changing the weekly structure, update both:
-   - `data/training/README.md`
+   - `data/training/PLAN.md`
    - the affected note files in `data/training/notes/`
 
 ## Create a Changelog Entry
@@ -139,7 +139,7 @@ When creating an entry:
 1. Add one markdown file under `data/training/changelog/`.
 2. Use the file name pattern `YYYY-MM-DD-short-description.md`.
 3. Set `affectedFiles` relative to `data/training`, for example:
-   - `README.md`
+   - `PLAN.md`
    - `WELCOME.md`
    - `notes/2026-04-01 10 km Threshold Run.md`
 4. In the body, explain what changed, why it changed, and what downstream impact it has.

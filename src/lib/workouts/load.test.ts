@@ -7,10 +7,11 @@ import {
 } from "@/lib/workouts/load";
 
 describe("workout data", () => {
-  it("excludes the README from workout ingestion", () => {
+  it("excludes training root docs from workout ingestion", () => {
     expect(allWorkouts.length).toBeGreaterThan(0);
     expect(allWorkouts.some((workout) => workout.slug === "readme")).toBe(false);
-    expect(trainingPlan.sourcePath).toBe("README.md");
+    expect(allWorkouts.some((workout) => workout.slug === "plan")).toBe(false);
+    expect(trainingPlan.sourcePath).toBe("PLAN.md");
   });
 
   it("sorts workouts chronologically and keeps adjacent navigation stable", () => {

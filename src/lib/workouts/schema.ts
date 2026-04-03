@@ -40,6 +40,15 @@ export interface PlanDocument {
   sourcePath: string;
 }
 
+export interface GoalNote {
+  slug: string;
+  title: string;
+  emoji: string;
+  date: string;
+  body: string;
+  sourcePath: string;
+}
+
 export interface ChangelogEntry {
   slug: string;
   title: string;
@@ -54,6 +63,8 @@ export interface ChangelogEntry {
 export interface WorkoutsData {
   generatedAt: string;
   welcome: PlanDocument;
+  goals: PlanDocument;
+  goalNotes: GoalNote[];
   plan: PlanDocument;
   changelog: ChangelogEntry[];
   workouts: WorkoutNote[];

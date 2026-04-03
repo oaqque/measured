@@ -26,5 +26,5 @@ or:
 pnpm run build:data -- --source /absolute/path/to/workouts
 ```
 
-The training data root lives under [`data/training/README.md`](data/training/README.md).
+The training data root lives under [`data/training/PLAN.md`](data/training/PLAN.md).
 The welcome page source is [`data/training/WELCOME.md`](data/training/WELCOME.md), and individual workout notes live under [`data/training/notes`](data/training/notes).

@@ -8,11 +8,16 @@ const changelog = [...workoutsData.changelog].sort((left, right) =>
 const workouts = [...workoutsData.workouts].sort((left, right) =>
   left.date === right.date ? left.slug.localeCompare(right.slug) : left.date.localeCompare(right.date),
 );
+const goalNotes = [...workoutsData.goalNotes].sort((left, right) =>
+  left.date === right.date ? left.title.localeCompare(right.title) : left.date.localeCompare(right.date),
+);
 const workoutsBySlug = new Map(workouts.map((workout) => [workout.slug, workout]));
 const changelogByAffectedFile = buildChangelogByAffectedFile(changelog);
 
 export const generatedAt = workoutsData.generatedAt;
 export const welcomeDocument = workoutsData.welcome;
+export const goalsDocument = workoutsData.goals;
+export const allGoalNotes = goalNotes;
 export const trainingPlan = workoutsData.plan;
 export const allChangelogEntries = changelog;
 export const allWorkouts = workouts;

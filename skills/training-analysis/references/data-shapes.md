@@ -5,7 +5,7 @@ Use this file when creating or editing training markdown under `data/training/`.
 ## Source Files
 
 - `data/training/WELCOME.md`: welcome-page markdown
-- `data/training/README.md`: current training plan
+- `data/training/PLAN.md`: current training plan
 - `data/training/notes/*.md`: one workout note per file
 - `data/training/changelog/*.md`: one changelog entry per file
 
@@ -118,7 +118,7 @@ tags:
   - threshold
   - scheduling
 affectedFiles:
-  - README.md
+  - PLAN.md
   - notes/2026-03-31 3.7 km Evening Run.md
   - notes/2026-04-01 10 km Threshold Run.md
 ---

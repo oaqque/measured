@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
 import type {
   ChangelogEntry,
+  GoalNote,
   PlanDocument,
   WorkoutNote,
   WorkoutRouteStreams,
@@ -19,6 +20,7 @@ const legacyGeneratedRouteStreamsPath = path.resolve(rootDir, "public/generated/
 const defaultWorkoutsDir = path.resolve(rootDir, "data/training");
 const defaultStravaCacheExportPath = path.resolve(rootDir, "vault/strava/cache-export.json");
 const changelogDirName = "changelog";
+const goalsDirName = "goals";
 const notesDirName = "notes";
 
 interface StravaCacheSnapshot {
@@ -68,11 +70,16 @@ interface StravaCachedRouteStreams {
 async function main() {
   const dataDir = await resolveWorkoutsDir();
   const notesDir = path.join(dataDir, notesDirName);
+  const goalsDir = path.join(dataDir, goalsDirName);
   const changelogDir = path.join(dataDir, changelogDirName);
   await assertNotesDirectory(notesDir);
+  await assertGoalNotesDirectory(goalsDir);
   const stravaCache = await readStravaCacheSnapshot();
   const existingGeneratedData = await readExistingGeneratedData();
   const fileNames = (await fs.readdir(notesDir))
+    .filter((fileName) => fileName.endsWith(".md"))
+    .sort((left, right) => left.localeCompare(right));
+  const goalFileNames = (await fs.readdir(goalsDir))
     .filter((fileName) => fileName.endsWith(".md"))
     .sort((left, right) => left.localeCompare(right));
   const changelogEntries = await readChangelogEntries(changelogDir, dataDir);
@@ -94,11 +101,14 @@ async function main() {
   );
 
   const workouts: WorkoutNote[] = [];
+  const goalNotes: GoalNote[] = [];
   let welcome: PlanDocument | null = null;
+  let goals: PlanDocument | null = null;
   let plan: PlanDocument | null = null;
 
   welcome = await readDocument(path.join(dataDir, "WELCOME.md"), dataDir);
-  plan = await readDocument(path.join(dataDir, "README.md"), dataDir);
+  goals = await readDocument(path.join(dataDir, "GOALS.md"), dataDir);
+  plan = await readDocument(path.join(dataDir, "PLAN.md"), dataDir);
 
   for (const fileName of fileNames) {
     const filePath = path.join(notesDir, fileName);
@@ -116,12 +126,24 @@ async function main() {
     );
   }
 
+  for (const fileName of goalFileNames) {
+    const filePath = path.join(goalsDir, fileName);
+    const sourcePath = path.relative(dataDir, filePath).replaceAll("\\", "/");
+    const fileContent = await fs.readFile(filePath, "utf8");
+
+    goalNotes.push(buildGoalNote(fileName, fileContent, sourcePath));
+  }
+
   if (!welcome) {
     throw new Error(`Missing WELCOME.md in workouts source directory: ${dataDir}`);
   }
 
   if (!plan) {
-    throw new Error(`Missing README.md in workouts source directory: ${dataDir}`);
+    throw new Error(`Missing PLAN.md in workouts source directory: ${dataDir}`);
+  }
+
+  if (!goals) {
+    throw new Error(`Missing GOALS.md in workouts source directory: ${dataDir}`);
   }
 
   workouts.sort((left, right) =>
@@ -131,6 +153,8 @@ async function main() {
   const payload: WorkoutsData = {
     generatedAt: new Date().toISOString(),
     welcome,
+    goals,
+    goalNotes,
     plan,
     changelog: changelogEntries,
     workouts,
@@ -230,7 +254,25 @@ async function assertNotesDirectory(notesDir: string) {
     throw new Error(
       [
         `Unable to read workout notes directory: ${notesDir}`,
-        `Expected structure: <data-root>/${notesDirName}/*.md with README.md and WELCOME.md in <data-root>`,
+        `Expected structure: <data-root>/${notesDirName}/*.md with PLAN.md, WELCOME.md, GOALS.md, AGENTS.md, and goals/*.md in <data-root>`,
+        `Details: ${detail}`,
+      ].join("\n"),
+    );
+  }
+}
+
+async function assertGoalNotesDirectory(goalsDir: string) {
+  try {
+    const stats = await fs.stat(goalsDir);
+    if (!stats.isDirectory()) {
+      throw new Error(`Goal notes path is not a directory: ${goalsDir}`);
+    }
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      [
+        `Unable to read goal notes directory: ${goalsDir}`,
+        `Expected structure: <data-root>/${goalsDirName}/*.md`,
         `Details: ${detail}`,
       ].join("\n"),
     );
@@ -311,6 +353,20 @@ function buildChangelogEntry(fileName: string, fileContent: string, sourcePath: 
     scope: normalizeNullableString(data.scope),
     tags: normalizeStringArray(data.tags, fileName, "tags"),
     affectedFiles: normalizeStringArray(data.affectedFiles, fileName, "affectedFiles"),
+    body: parsed.content.trim(),
+    sourcePath,
+  };
+}
+
+function buildGoalNote(fileName: string, fileContent: string, sourcePath: string): GoalNote {
+  const parsed = matter(fileContent);
+  const data = parsed.data;
+
+  return {
+    slug: slugify(fileName.replace(/\.md$/u, "")),
+    title: expectString(data.title, fileName, "title"),
+    emoji: expectString(data.emoji, fileName, "emoji"),
+    date: normalizeDate(data.date, fileName, "date"),
     body: parsed.content.trim(),
     sourcePath,
   };
