@@ -30,7 +30,7 @@ import { MobileDetailSheet } from "@/components/MobileDetailSheet";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { RouteMap } from "@/components/RouteMap";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
   DropdownMenu,
@@ -1497,10 +1497,7 @@ function SidebarExternalLink({
 }) {
   return (
     <a
-      className={cn(
-        buttonVariants({ variant: "ghost" }),
-        "h-10 w-full justify-start rounded-[0.35rem] px-3 py-2 text-sm transition-colors duration-300",
-      )}
+      className="inline-flex h-10 w-full items-center justify-start gap-2 rounded-[0.35rem] bg-transparent px-3 py-2 text-sm font-semibold text-foreground transition-colors duration-300 hover:bg-surface-panel-alt/55 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       href={href}
       rel="noreferrer"
       target="_blank"
