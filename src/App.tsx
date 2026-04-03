@@ -16,6 +16,7 @@ import {
   Dribbble,
   Dumbbell,
   FileText,
+  Github,
   GripVertical,
   History,
   ListFilter,
@@ -29,7 +30,7 @@ import { MobileDetailSheet } from "@/components/MobileDetailSheet";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { RouteMap } from "@/components/RouteMap";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
   DropdownMenu,
@@ -612,6 +613,14 @@ function SidebarContent({
           onClick={() => onNavigate("calendar")}
         />
       </nav>
+
+      <div className="mt-4 border-t border-foreground/10 pt-4">
+        <SidebarExternalLink
+          href="https://github.com/oaqque/measured"
+          icon={<Github className="size-4" />}
+          label="GitHub"
+        />
+      </div>
 
       <dl className="mt-8 grid gap-5 border-t border-foreground/10 pt-6 text-sm">
         <MetadataRow label="Notes loaded" value={String(notesLoaded)} />
@@ -1474,6 +1483,31 @@ function MetadataRow({ label, value }: { label: string; value: string }) {
       <dt className="eyebrow">{label}</dt>
       <dd className="text-sm font-medium text-foreground">{value}</dd>
     </div>
+  );
+}
+
+function SidebarExternalLink({
+  href,
+  icon,
+  label,
+}: {
+  href: string;
+  icon: ReactNode;
+  label: string;
+}) {
+  return (
+    <a
+      className={cn(
+        buttonVariants({ variant: "ghost" }),
+        "h-10 w-full justify-start rounded-[0.35rem] px-3 py-2 text-sm transition-colors duration-300",
+      )}
+      href={href}
+      rel="noreferrer"
+      target="_blank"
+    >
+      {icon}
+      <span>{label}</span>
+    </a>
   );
 }
 
