@@ -3,6 +3,8 @@ name = "measured-local-tools"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
+  "detect-secrets>=1.5.0",
+  "pre-commit>=4.5.1",
   "strava-mcp",
 ]
 
