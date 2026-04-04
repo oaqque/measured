@@ -19,33 +19,35 @@ Read [`references/data-shapes.md`](references/data-shapes.md) before creating or
 
 ## Sync and Refresh
 
-1. Run `pnpm run sync:strava` from the repo root. This repo defaults that command to sync with streams.
-2. If the user asked for new analysis, identify the relevant Strava activity from the refreshed cache and the corresponding note by `stravaId`, date, or schedule context.
-3. Run `pnpm run build:data` after note or plan changes so the app reflects them.
-4. Run `pnpm run typecheck` after UI or data-model changes. For note-only edits, `pnpm run build:data` is usually enough.
+1. Fetch the current local date and time first using Linux CLI utilities such as `date`. Do this at the start of every training-analysis run so any references to "today", "yesterday", or "this week" are grounded in the machine's current time.
+2. Run `pnpm run sync:strava` from the repo root. This repo defaults that command to sync with streams.
+3. If the user asked for new analysis, identify the relevant Strava activity from the refreshed cache and the corresponding note by `stravaId`, date, or schedule context.
+4. Run `pnpm run build:data` after note or plan changes so the app reflects them.
+5. Run `pnpm run typecheck` after UI or data-model changes. For note-only edits, `pnpm run build:data` is usually enough.
 
 ## Analyze and Update a Workout Note
 
-1. Read the plan first in `data/training/PLAN.md` before writing analysis for a run. Treat the scheduled intent as the baseline.
-2. Open the target note in `data/training/notes/`.
-3. If no note exists for the run, create one using the workout note shape in `references/data-shapes.md`.
-4. Keep planned intent and actual outcome separate:
+1. Fetch the current local date and time first using Linux CLI utilities such as `date` if you have not already done so in this run.
+2. Read the plan first in `data/training/PLAN.md` before writing analysis for a run. Treat the scheduled intent as the baseline.
+3. Open the target note in `data/training/notes/`.
+4. If no note exists for the run, create one using the workout note shape in `references/data-shapes.md`.
+5. Keep planned intent and actual outcome separate:
    - `expectedDistance` is the plan.
    - `actualDistance` is only for manual overrides.
    - `stravaId` is the stable Strava linkage.
-5. Use the note-body layout that matches the run status:
+6. Use the note-body layout that matches the run status:
    - If the run is unfinished, the body should contain only `## Program`.
    - If the run is completed, keep `## Program`, then add `## Analysis` with the subsections `### Intention`, `### Short-Term Goal`, `### Long-Term Goal`, and `### Personal Note`.
-6. For a newly completed run note, explicitly ask the user: `Would you like to add a personal note for this run?`
+7. For a newly completed run note, explicitly ask the user: `Would you like to add a personal note for this run?`
    - Put the user's response under `### Personal Note`.
    - If the user declines or has nothing to add, write `- None provided.`
-7. In completed-run analysis, make each subsection specific:
+8. In completed-run analysis, make each subsection specific:
    - `### Intention`: whether the run matched the planned purpose of the session
    - `### Short-Term Goal`: what it implies for the next few days or the current week
    - `### Long-Term Goal`: how it supports or threatens the current training block and race goals
    - `### Personal Note`: the user's own subjective note, preserved clearly
-8. If the run happened on a different day than planned, state that explicitly and update the surrounding notes or plan if needed.
-9. After producing or materially revising run analysis, create a changelog entry in the same pass even if the only file change is the note itself.
+9. If the run happened on a different day than planned, state that explicitly and update the surrounding notes or plan if needed.
+10. After producing or materially revising run analysis, create a changelog entry in the same pass even if the only file change is the note itself.
 
 ### Analysis Guidance
 
