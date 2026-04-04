@@ -1049,6 +1049,8 @@ function MonthPicker({
   const selectedDate = selectedDateKey ? parseDateKey(selectedDateKey) : undefined;
   const [pickerMonth, setPickerMonth] = useState<Date>(() => selectedDate ?? new Date());
   const isMobileViewport = useMediaQuery("(max-width: 1023px)");
+  const selectedMonthLabel = selectedDate ? formatMonthLabel(selectedDateKey) : "Pick month";
+  const viewingMonthLabel = formatMonthFromDate(pickerMonth);
 
   useEffect(() => {
     if (selectedDateKey) {
@@ -1060,12 +1062,22 @@ function MonthPicker({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          className={cn("h-10 min-w-44 justify-between rounded-[0.35rem] px-3 py-0", triggerClassName)}
+          className={cn(
+            "min-h-10 min-w-44 justify-between rounded-[0.35rem] px-3 py-2",
+            triggerClassName,
+          )}
           disabled={!selectedDateKey}
           type="button"
           variant="secondary"
         >
-          <span>{selectedDate ? formatMonthLabel(selectedDateKey) : "Pick month"}</span>
+          <span className="flex min-w-0 flex-col items-start text-left leading-tight">
+            <span className="truncate">{selectedMonthLabel}</span>
+            {open ? (
+              <span className="truncate text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Viewing {viewingMonthLabel}
+              </span>
+            ) : null}
+          </span>
         </Button>
       </PopoverTrigger>
 
@@ -1193,7 +1205,8 @@ function CalendarMonthGrid({
   const isMobileViewport = useMediaQuery("(max-width: 1023px)");
   const mobileDaysRef = useRef<HTMLDivElement | null>(null);
   const desktopWeeksViewportRef = useRef<HTMLDivElement | null>(null);
-  const shiftTimeoutRef = useRef<number | null>(null);
+  const shiftFrameRef = useRef<number | null>(null);
+  const shiftIndicatorTimeoutRef = useRef<number | null>(null);
   const edgeLockRef = useRef<"backward" | "forward" | null>(null);
   const pendingFocusScrollRef = useRef(false);
   const restoreViewportScrollRef = useRef<(() => void) | null>(null);
@@ -1204,6 +1217,7 @@ function CalendarMonthGrid({
     scrollTop: number;
   } | null>(null);
   const [windowShiftDirection, setWindowShiftDirection] = useState<"backward" | "forward" | null>(null);
+  const [shiftIndicatorDirection, setShiftIndicatorDirection] = useState<"backward" | "forward" | null>(null);
   const [visibleRange, setVisibleRange] = useState(() =>
     buildCalendarWindow(calendarFocusDate, isMobileViewport),
   );
@@ -1231,8 +1245,11 @@ function CalendarMonthGrid({
 
   useEffect(() => {
     return () => {
-      if (shiftTimeoutRef.current !== null) {
-        window.clearTimeout(shiftTimeoutRef.current);
+      if (shiftFrameRef.current !== null) {
+        window.cancelAnimationFrame(shiftFrameRef.current);
+      }
+      if (shiftIndicatorTimeoutRef.current !== null) {
+        window.clearTimeout(shiftIndicatorTimeoutRef.current);
       }
       restoreViewportScrollRef.current?.();
       restoreViewportScrollRef.current = null;
@@ -1263,6 +1280,18 @@ function CalendarMonthGrid({
       restoreViewportScrollRef.current = null;
     });
     setWindowShiftDirection(null);
+    if (isMobileViewport) {
+      if (shiftIndicatorTimeoutRef.current !== null) {
+        window.clearTimeout(shiftIndicatorTimeoutRef.current);
+      }
+      shiftIndicatorTimeoutRef.current = window.setTimeout(() => {
+        shiftIndicatorTimeoutRef.current = null;
+        setShiftIndicatorDirection(null);
+      }, 180);
+      return;
+    }
+
+    setShiftIndicatorDirection(null);
   }, [cells, isMobileViewport, scrollViewportRef, weeks]);
 
   useEffect(() => {
@@ -1369,28 +1398,41 @@ function CalendarMonthGrid({
       return;
     }
 
-    if (shiftTimeoutRef.current !== null) {
-      window.clearTimeout(shiftTimeoutRef.current);
+    if (shiftFrameRef.current !== null) {
+      window.cancelAnimationFrame(shiftFrameRef.current);
+    }
+    if (shiftIndicatorTimeoutRef.current !== null) {
+      window.clearTimeout(shiftIndicatorTimeoutRef.current);
+      shiftIndicatorTimeoutRef.current = null;
     }
 
     pendingShiftAdjustmentRef.current = {
       direction,
       scrollTop: viewport.scrollTop,
     };
-    restoreViewportScrollRef.current?.();
-    restoreViewportScrollRef.current = freezeViewportScroll(viewport);
+    if (!isMobileViewport) {
+      restoreViewportScrollRef.current?.();
+      restoreViewportScrollRef.current = freezeViewportScroll(viewport);
+    }
     edgeLockRef.current = direction;
     setWindowShiftDirection(direction);
-    shiftTimeoutRef.current = window.setTimeout(() => {
-      shiftTimeoutRef.current = null;
+    setShiftIndicatorDirection(direction);
+
+    shiftFrameRef.current = window.requestAnimationFrame(() => {
+      shiftFrameRef.current = null;
       setVisibleRange((current) => shiftCalendarWindow(current, direction));
-    }, 120);
+    });
   };
 
   return (
     <div className="relative mt-8">
-      {windowShiftDirection ? (
-        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+      {shiftIndicatorDirection ? (
+        <div
+          className={cn(
+            "pointer-events-none z-10 flex items-center justify-center",
+            isMobileViewport ? "fixed inset-x-0 top-1/2 -translate-y-1/2" : "absolute inset-0",
+          )}
+        >
           <div className="w-full max-w-20 opacity-95">
             <BrandMark className="block h-auto w-full" />
           </div>
@@ -2327,10 +2369,14 @@ function formatDateKey(value: Date) {
 }
 
 function formatMonthLabel(value: string) {
+  return formatMonthFromDate(parseDateKey(value));
+}
+
+function formatMonthFromDate(value: Date) {
   return new Intl.DateTimeFormat("en-AU", {
     month: "long",
     year: "numeric",
-  }).format(parseDateKey(value));
+  }).format(value);
 }
 
 function addDaysToDate(value: Date, days: number) {
