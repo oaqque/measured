@@ -165,7 +165,7 @@ export function MobileDetailSheet({
           >
             <span className="h-1.5 w-12 rounded-full bg-foreground/12" />
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-2">
+          <div className="app-scroll-pane min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-2">
             {children}
           </div>
         </div>

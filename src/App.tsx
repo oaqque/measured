@@ -452,7 +452,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-page text-foreground">
+    <div className="h-dvh overflow-hidden overscroll-none bg-page text-foreground">
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <SheetContent
           className="w-[min(20rem,100vw)] p-0 sm:max-w-none lg:hidden"
@@ -463,7 +463,7 @@ export default function App() {
             <SheetTitle>Navigation</SheetTitle>
             <SheetDescription>Displays the mobile navigation menu.</SheetDescription>
           </div>
-          <div className="h-full overflow-y-auto bg-background/98 px-6 py-6">
+          <div className="app-scroll-pane h-full overflow-y-auto bg-background/98 px-6 py-6">
             <SidebarContent
               generatedAtLabel={formatTimestamp(generatedAt)}
               notesLoaded={allWorkouts.length}
@@ -480,7 +480,7 @@ export default function App() {
           className="hidden shrink-0 overflow-hidden border-r border-foreground/10 bg-page lg:block"
           style={{ width: `${leftSidebarWidth}px` }}
         >
-          <div className="h-full overflow-y-auto px-8 py-8">
+          <div className="app-scroll-pane h-full overflow-y-auto px-8 py-8">
             <SidebarContent
               generatedAtLabel={formatTimestamp(generatedAt)}
               notesLoaded={allWorkouts.length}
@@ -555,7 +555,7 @@ export default function App() {
                 <>
                   <div
                     className={cn(
-                      "h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10",
+                      "app-scroll-pane h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10",
                       showSelectedWorkoutPane && "hidden",
                     )}
                     ref={calendarScrollViewportRef}
@@ -590,7 +590,7 @@ export default function App() {
                   ) : null}
                 </>
               ) : view === "welcome" ? (
-                <div className="h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
+                <div className="app-scroll-pane h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
                   <MarkdownPage
                     content={welcomeDocument.body}
                     relatedChanges={welcomeChanges}
@@ -600,7 +600,7 @@ export default function App() {
                   />
                 </div>
               ) : view === "goals" ? (
-                <div className="h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
+                <div className="app-scroll-pane h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
                   <GoalsPage
                     goals={allGoalNotes}
                     intro={goalsDocument.body}
@@ -611,7 +611,7 @@ export default function App() {
                   />
                 </div>
               ) : view === "plan" ? (
-                <div className="h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
+                <div className="app-scroll-pane h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
                   <MarkdownPage
                     content={trainingPlan.body}
                     relatedChanges={planChanges}
@@ -1660,7 +1660,7 @@ function CalendarMonthGrid({
         </div>
 
         <div
-          className="relative overflow-y-auto border-l border-foreground/10"
+          className="app-scroll-pane relative overflow-y-auto border-l border-foreground/10"
           ref={desktopWeeksViewportRef}
           style={{ height: `${DESKTOP_CALENDAR_ROW_HEIGHT * 3}px` }}
         >

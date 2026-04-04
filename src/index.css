@@ -51,6 +51,14 @@
     background: var(--page);
   }
 
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
   body {
     @apply bg-page font-sans text-foreground antialiased;
   }
@@ -157,6 +165,11 @@
   .markdown-prose pre code::selection {
     background: #f4fdff;
     color: #1d2a6d;
+  }
+
+  .app-scroll-pane {
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .leaflet-container {
