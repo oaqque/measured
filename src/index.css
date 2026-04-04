@@ -81,8 +81,24 @@
     }
   }
 
+  @keyframes conceal-down {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    to {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+
   .motion-enter {
     animation: reveal-up 420ms ease-out;
+  }
+
+  .motion-exit {
+    animation: conceal-down 220ms ease-in forwards;
   }
 
   .surface-panel {
@@ -141,5 +157,39 @@
   .markdown-prose pre code::selection {
     background: #f4fdff;
     color: #1d2a6d;
+  }
+
+  .leaflet-container {
+    z-index: 0;
+  }
+
+  .leaflet-tile-pane {
+    z-index: 1;
+  }
+
+  .leaflet-overlay-pane {
+    z-index: 2;
+  }
+
+  .leaflet-shadow-pane {
+    z-index: 3;
+  }
+
+  .leaflet-marker-pane {
+    z-index: 4;
+  }
+
+  .leaflet-tooltip-pane {
+    z-index: 5;
+  }
+
+  .leaflet-popup-pane {
+    z-index: 6;
+  }
+
+  .leaflet-top,
+  .leaflet-bottom,
+  .leaflet-control {
+    z-index: 7;
   }
 }

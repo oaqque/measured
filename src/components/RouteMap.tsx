@@ -19,11 +19,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { decodePolyline, type RouteCoordinate } from "@/lib/workouts/polyline";
 import type { WorkoutRouteStreams } from "@/lib/workouts/schema";
 import { clearRouteStreamsCache, loadRouteStreamsForActivity } from "@/lib/workouts/routes";
 import { cn } from "@/lib/utils";
-
-type RouteCoordinate = [number, number];
 type RouteColorMode = "route" | "pace" | "heartrate" | "moving" | "elevation";
 type RouteLegendItem = {
   color: string;
@@ -298,8 +297,8 @@ export function RouteMap({
           Loading route stream data…
         </div>
       ) : null}
-      <div className="relative h-64 w-full">
-        <div className="absolute top-[10px] right-[10px] z-[500] flex flex-col gap-1">
+      <div className="relative z-0 h-64 w-full isolate">
+        <div className="absolute top-[10px] right-[10px] z-10 flex flex-col gap-1">
           <Button
             aria-label="Zoom in"
             className="size-9 border border-foreground/10 bg-background/95 p-0 shadow-sm"
@@ -811,42 +810,4 @@ function elevationToColor(value: number, min: number, max: number) {
     return "#0284c7";
   }
   return "#1d4ed8";
-}
-
-function decodePolyline(encoded: string): RouteCoordinate[] {
-  const coordinates: RouteCoordinate[] = [];
-  let index = 0;
-  let latitude = 0;
-  let longitude = 0;
-
-  while (index < encoded.length) {
-    const latitudeResult = decodePolylineValue(encoded, index);
-    latitude += latitudeResult.value;
-    index = latitudeResult.nextIndex;
-
-    const longitudeResult = decodePolylineValue(encoded, index);
-    longitude += longitudeResult.value;
-    index = longitudeResult.nextIndex;
-
-    coordinates.push([latitude / 1e5, longitude / 1e5]);
-  }
-
-  return coordinates;
-}
-
-function decodePolylineValue(encoded: string, startIndex: number) {
-  let result = 0;
-  let shift = 0;
-  let index = startIndex;
-  let byte = 0;
-
-  do {
-    byte = encoded.charCodeAt(index) - 63;
-    result |= (byte & 0x1f) << shift;
-    shift += 5;
-    index += 1;
-  } while (byte >= 0x20 && index < encoded.length + 1);
-
-  const value = result & 1 ? ~(result >> 1) : result >> 1;
-  return { value, nextIndex: index };
 }

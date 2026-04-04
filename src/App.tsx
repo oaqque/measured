@@ -1,5 +1,8 @@
 import {
+  Suspense,
+  lazy,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -13,6 +16,9 @@ import {
   Accessibility,
   Calendar1,
   CalendarDays,
+  Circle,
+  CircleCheck,
+  CircleX,
   Dribbble,
   Dumbbell,
   FileText,
@@ -22,14 +28,9 @@ import {
   ListFilter,
   Menu,
   NotebookText,
-  PanelRightClose,
-  PanelRightOpen,
   Trophy,
 } from "lucide-react";
-import { MobileDetailSheet } from "@/components/MobileDetailSheet";
 import { MarkdownContent } from "@/components/MarkdownContent";
-import { RouteMap } from "@/components/RouteMap";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -37,12 +38,12 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   allChangelogEntries,
   allGoalNotes,
@@ -50,9 +51,7 @@ import {
   availableEventTypes,
   filterWorkouts,
   formatChangelogDate,
-  formatCompletedTimestamp,
   formatDisplayDate,
-  formatDistance,
   generatedAt,
   getChangelogEntriesForFile,
   goalsDocument,
@@ -60,7 +59,14 @@ import {
   trainingPlan,
   welcomeDocument,
 } from "@/lib/workouts/load";
-import type { ChangelogEntry, GoalNote, WorkoutEventType, WorkoutFilters, WorkoutNote } from "@/lib/workouts/schema";
+import { decodePolyline, type RouteCoordinate } from "@/lib/workouts/polyline";
+import type {
+  ChangelogEntry,
+  GoalNote,
+  WorkoutEventType,
+  WorkoutFilters,
+  WorkoutNote,
+} from "@/lib/workouts/schema";
 import { cn } from "@/lib/utils";
 
 type View = "welcome" | "goals" | "plan" | "calendar";
@@ -84,8 +90,13 @@ const RIGHT_SIDEBAR_MIN_WIDTH = 320;
 const RIGHT_SIDEBAR_MAX_WIDTH = 960;
 const RIGHT_SIDEBAR_DEFAULT_WIDTH = 520;
 const DESKTOP_CALENDAR_ROW_HEIGHT = 176;
-const MOBILE_CALENDAR_CARD_HEIGHT = 176;
+const MOBILE_CALENDAR_CARD_HEIGHT = 224;
+const MOBILE_CALENDAR_CARD_GAP = 12;
+const DESKTOP_CALENDAR_WINDOW_WEEKS = 9;
+const MOBILE_CALENDAR_WINDOW_WEEKS = 6;
+const CALENDAR_WINDOW_SHIFT_WEEKS = 4;
 type WorkoutEventTypeIcon = ComponentType<{ className?: string }>;
+const LazyWorkoutNotePane = lazy(() => import("@/components/WorkoutNotePane"));
 
 function SportShoeIcon({ className }: SVGProps<SVGSVGElement>) {
   return (
@@ -125,8 +136,8 @@ export default function App() {
   const [rightSidebarWidth, setRightSidebarWidth] = useState(RIGHT_SIDEBAR_DEFAULT_WIDTH);
   const [eventType, setEventType] = useState<WorkoutFilters["eventType"]>("all");
   const [status, setStatus] = useState<WorkoutStatus>("all");
-  const [activeResizePanel, setActiveResizePanel] = useState<ActiveResizePanel | null>(null);
   const previousSelectedWorkoutSlugRef = useRef<string | null>(selectedWorkoutSlug);
+  const calendarScrollViewportRef = useRef<HTMLDivElement | null>(null);
   const resizeStateRef = useRef<{
     panel: ActiveResizePanel;
     startX: number;
@@ -181,6 +192,7 @@ export default function App() {
     () => allWorkouts.filter((workout) => workout.stravaId !== null).length,
     [],
   );
+  const showSelectedWorkoutPane = selectedWorkout !== null && (isDesktop || rightSidebarOpen);
 
   useEffect(() => {
     if (selectedWorkoutSlug && !selectedWorkout) {
@@ -207,8 +219,10 @@ export default function App() {
     setEventType("all");
     setStatus("all");
     setCalendarFocusDate((current) => (current === selectedWorkout.date ? current : selectedWorkout.date));
-    setRightSidebarOpen(true);
-  }, [selectedWorkout]);
+    if (!isDesktop) {
+      setRightSidebarOpen(true);
+    }
+  }, [isDesktop, selectedWorkout]);
 
   useEffect(() => {
     if (previousSelectedWorkoutSlugRef.current && !selectedWorkoutSlug) {
@@ -252,7 +266,6 @@ export default function App() {
 
     const handlePointerUp = () => {
       if (resizeStateRef.current) {
-        setActiveResizePanel(null);
         resizeStateRef.current = null;
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
@@ -295,13 +308,17 @@ export default function App() {
       focusCalendarDate(workout.date);
     }
 
-    if (selectedWorkoutSlug === slug && rightSidebarOpen) {
-      setRightSidebarOpen(false);
+    if (selectedWorkoutSlug === slug && (isDesktop || rightSidebarOpen)) {
+      if (!isDesktop) {
+        setRightSidebarOpen(false);
+      }
       navigateRoute({ view: "calendar", noteSlug: null });
       return;
     }
 
-    setRightSidebarOpen(true);
+    if (!isDesktop) {
+      setRightSidebarOpen(true);
+    }
     navigateRoute({ view: "calendar", noteSlug: slug });
   };
 
@@ -310,20 +327,13 @@ export default function App() {
   };
 
   const handleDetailPanelOpenChange = (open: boolean) => {
-    setRightSidebarOpen(open);
-
     if (!open && selectedWorkoutSlug) {
+      setRightSidebarOpen(false);
       navigateRoute({ view: "calendar", noteSlug: null });
-    }
-  };
-
-  const toggleDesktopDetailPanel = () => {
-    if (rightSidebarOpen) {
-      handleDetailPanelOpenChange(false);
       return;
     }
 
-    setRightSidebarOpen(true);
+    setRightSidebarOpen(open);
   };
 
   const startResize = (panel: ActiveResizePanel, event: ReactPointerEvent<HTMLDivElement>) => {
@@ -332,7 +342,6 @@ export default function App() {
       startX: event.clientX,
       startWidth: panel === "left" ? leftSidebarWidth : rightSidebarWidth,
     };
-    setActiveResizePanel(panel);
     document.body.style.cursor = "col-resize";
     document.body.style.userSelect = "none";
   };
@@ -382,7 +391,15 @@ export default function App() {
   return (
     <div className="h-screen overflow-hidden bg-page text-foreground">
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-        <SheetContent className="w-[min(20rem,100vw)] p-0 sm:max-w-none lg:hidden" side="left">
+        <SheetContent
+          className="w-[min(20rem,100vw)] p-0 sm:max-w-none lg:hidden"
+          overlayClassName="backdrop-blur-none"
+          side="left"
+        >
+          <div className="sr-only">
+            <SheetTitle>Navigation</SheetTitle>
+            <SheetDescription>Displays the mobile navigation menu.</SheetDescription>
+          </div>
           <div className="h-full overflow-y-auto bg-background/98 px-6 py-6">
             <SidebarContent
               generatedAtLabel={formatTimestamp(generatedAt)}
@@ -394,17 +411,6 @@ export default function App() {
           </div>
         </SheetContent>
       </Sheet>
-
-      <MobileDetailSheet open={!isDesktop && rightSidebarOpen} onOpenChange={handleDetailPanelOpenChange}>
-        {selectedWorkout ? (
-          <WorkoutDetailPanel
-            workout={selectedWorkout}
-            onLinkClick={handleMarkdownLink}
-          />
-        ) : (
-          <EmptyDetailState />
-        )}
-      </MobileDetailSheet>
 
       <div className="flex h-full">
         <aside
@@ -465,7 +471,7 @@ export default function App() {
 
                   <PopoverContent
                     align="end"
-                    className="w-[min(44rem,calc(100vw-2rem))] max-w-none p-0"
+                    className="w-[min(44rem,calc(100vw-2rem))] max-w-none bg-page p-0"
                     side="bottom"
                   >
                     <ChangelogPopoverPanel
@@ -476,110 +482,82 @@ export default function App() {
                   </PopoverContent>
                 </Popover>
 
-                <Button
-                  aria-label={rightSidebarOpen ? "Hide details" : "Show details"}
-                  className="hidden size-9 rounded-[0.35rem] p-0 lg:inline-flex"
-                  type="button"
-                  variant="secondary"
-                  onClick={toggleDesktopDetailPanel}
-                >
-                  {rightSidebarOpen ? (
-                    <PanelRightClose className="size-4" />
-                  ) : (
-                    <PanelRightOpen className="size-4" />
-                  )}
-                  <span className="sr-only">{rightSidebarOpen ? "Hide details" : "Show details"}</span>
-                </Button>
               </div>
             </div>
           </header>
 
           <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
-            <main className="h-full min-w-0 flex-1 overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
-              {view === "welcome" ? (
-                <MarkdownPage
-                  content={welcomeDocument.body}
-                  relatedChanges={welcomeChanges}
-                  sourcePath={welcomeDocument.sourcePath}
-                  onFileClick={handleMarkdownLink}
-                  onLinkClick={handleMarkdownLink}
-                />
-              ) : view === "goals" ? (
-                <GoalsPage
-                  goals={allGoalNotes}
-                  intro={goalsDocument.body}
-                  relatedChanges={goalsChanges}
-                  sourcePath={goalsDocument.sourcePath}
-                  onFileClick={handleMarkdownLink}
-                  onLinkClick={handleMarkdownLink}
-                />
-              ) : view === "plan" ? (
-                <MarkdownPage
-                  content={trainingPlan.body}
-                  relatedChanges={planChanges}
-                  showRelatedChanges={false}
-                  sourcePath={trainingPlan.sourcePath}
-                  onFileClick={handleMarkdownLink}
-                  onLinkClick={handleMarkdownLink}
-                />
-              ) : (
-                <CalendarView
-                  calendarFocusDate={calendarFocusDate}
-                  eventType={eventType}
-                  filteredWorkouts={filteredWorkouts}
-                  selectedWorkoutSlug={selectedWorkoutSlug}
-                  status={status}
-                  onFocusDateChange={focusCalendarDate}
-                  onEventTypeChange={setEventType}
-                  onSelectWorkout={openWorkoutFromCalendar}
-                  onStatusChange={setStatus}
-                />
-              )}
-            </main>
-
-            <div
-              className={cn(
-                "hidden overflow-hidden lg:flex",
-                activeResizePanel === "right" ? "transition-none" : "transition-[width,opacity] duration-300 ease-out",
-                rightSidebarOpen ? "w-4 opacity-100" : "pointer-events-none w-0 opacity-0",
-              )}
-            >
-              <ResizeHandle
-                className="flex"
-                onPointerDown={(event) => startResize("right", event)}
-              />
-            </div>
-
-            <aside
-              aria-hidden={!rightSidebarOpen}
-              className={cn(
-                "hidden overflow-hidden lg:static lg:z-auto lg:flex",
-                activeResizePanel === "right"
-                  ? "transition-none"
-                  : "transition-[width,opacity] duration-300 ease-out",
-                rightSidebarOpen
-                  ? "opacity-100"
-                  : "pointer-events-none opacity-0",
-              )}
-              style={{
-                width: rightSidebarOpen ? `${rightSidebarWidth}px` : "0px",
-              }}
-            >
-              {rightSidebarOpen ? (
-                <div className="h-full w-full border-l border-foreground/10 bg-page">
-                  <div className="h-full overflow-y-auto px-4 py-6 lg:px-6 lg:py-8">
-                    {selectedWorkout ? (
-                      <WorkoutDetailPanel
-                        workout={selectedWorkout}
-                        onLinkClick={handleMarkdownLink}
-                      />
-                    ) : (
-                      <EmptyDetailState />
+            <main className="h-full min-w-0 flex-1 overflow-hidden">
+              {view === "calendar" ? (
+                <>
+                  <div
+                    className={cn(
+                      "h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10",
+                      showSelectedWorkoutPane && "hidden",
                     )}
+                    ref={calendarScrollViewportRef}
+                  >
+                    <CalendarView
+                      calendarFocusDate={calendarFocusDate}
+                      eventType={eventType}
+                      filteredWorkouts={filteredWorkouts}
+                      scrollViewportRef={calendarScrollViewportRef}
+                      selectedWorkoutSlug={selectedWorkoutSlug}
+                      status={status}
+                      onFocusDateChange={focusCalendarDate}
+                      onEventTypeChange={setEventType}
+                      onSelectWorkout={openWorkoutFromCalendar}
+                      onStatusChange={setStatus}
+                    />
                   </div>
+                  {showSelectedWorkoutPane ? (
+                    <div className="h-full overflow-hidden px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
+                      {selectedWorkout ? (
+                        <Suspense fallback={<WorkoutNotePaneSkeleton />}>
+                          <LazyWorkoutNotePane
+                            workout={selectedWorkout}
+                            onBack={() => handleDetailPanelOpenChange(false)}
+                            onLinkClick={handleMarkdownLink}
+                          />
+                        </Suspense>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </>
+              ) : view === "welcome" ? (
+                <div className="h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
+                  <MarkdownPage
+                    content={welcomeDocument.body}
+                    relatedChanges={welcomeChanges}
+                    sourcePath={welcomeDocument.sourcePath}
+                    onFileClick={handleMarkdownLink}
+                    onLinkClick={handleMarkdownLink}
+                  />
+                </div>
+              ) : view === "goals" ? (
+                <div className="h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
+                  <GoalsPage
+                    goals={allGoalNotes}
+                    intro={goalsDocument.body}
+                    relatedChanges={goalsChanges}
+                    sourcePath={goalsDocument.sourcePath}
+                    onFileClick={handleMarkdownLink}
+                    onLinkClick={handleMarkdownLink}
+                  />
+                </div>
+              ) : view === "plan" ? (
+                <div className="h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
+                  <MarkdownPage
+                    content={trainingPlan.body}
+                    relatedChanges={planChanges}
+                    showRelatedChanges={false}
+                    sourcePath={trainingPlan.sourcePath}
+                    onFileClick={handleMarkdownLink}
+                    onLinkClick={handleMarkdownLink}
+                  />
                 </div>
               ) : null}
-            </aside>
+            </main>
           </div>
         </div>
       </div>
@@ -651,21 +629,6 @@ function SidebarContent({
         <MetadataRow label="Generated" value={generatedAtLabel} />
       </dl>
     </>
-  );
-}
-
-function EmptyDetailState() {
-  return (
-    <div className="flex h-full items-center justify-center">
-      <div className="max-w-xs text-center">
-        <p className="text-sm font-black uppercase text-muted-foreground">
-          Details
-        </p>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Open a workout note from the calendar to inspect its metadata and full note content here.
-        </p>
-      </div>
-    </div>
   );
 }
 
@@ -946,6 +909,7 @@ function CalendarView({
   calendarFocusDate,
   eventType,
   filteredWorkouts,
+  scrollViewportRef,
   status,
   selectedWorkoutSlug,
   onFocusDateChange,
@@ -956,6 +920,7 @@ function CalendarView({
   calendarFocusDate: string;
   eventType: WorkoutFilters["eventType"];
   filteredWorkouts: WorkoutNote[];
+  scrollViewportRef: React.RefObject<HTMLDivElement | null>;
   status: WorkoutStatus;
   selectedWorkoutSlug: string | null;
   onFocusDateChange: (value: string) => void;
@@ -965,6 +930,7 @@ function CalendarView({
 }) {
   const todayDateKey = getTodayDateKey();
   const isMobileViewport = useMediaQuery("(max-width: 1023px)");
+  const [focusViewportRequest, setFocusViewportRequest] = useState(0);
 
   return (
     <section className={cn("py-2", isMobileViewport ? "pb-28" : "")}>
@@ -977,6 +943,7 @@ function CalendarView({
             todayDateKey={todayDateKey}
             onEventTypeChange={onEventTypeChange}
             onFocusDateChange={onFocusDateChange}
+            onTodayClick={() => setFocusViewportRequest((current) => current + 1)}
             onStatusChange={onStatusChange}
           />
         </div>
@@ -984,7 +951,9 @@ function CalendarView({
         {filteredWorkouts.length > 0 && calendarFocusDate ? (
           <CalendarMonthGrid
             calendarFocusDate={calendarFocusDate}
+            focusViewportRequest={focusViewportRequest}
             filteredWorkouts={filteredWorkouts}
+            scrollViewportRef={scrollViewportRef}
             selectedWorkoutSlug={selectedWorkoutSlug}
             onSelectWorkout={onSelectWorkout}
           />
@@ -1006,6 +975,7 @@ function CalendarView({
             todayDateKey={todayDateKey}
             onEventTypeChange={onEventTypeChange}
             onFocusDateChange={onFocusDateChange}
+            onTodayClick={() => setFocusViewportRequest((current) => current + 1)}
             onStatusChange={onStatusChange}
           />
         </div>
@@ -1021,6 +991,7 @@ function CalendarControls({
   todayDateKey,
   onEventTypeChange,
   onFocusDateChange,
+  onTodayClick,
   onStatusChange,
 }: {
   calendarFocusDate: string;
@@ -1029,16 +1000,20 @@ function CalendarControls({
   todayDateKey: string;
   onEventTypeChange: (value: WorkoutFilters["eventType"]) => void;
   onFocusDateChange: (value: string) => void;
+  onTodayClick: () => void;
   onStatusChange: (value: WorkoutStatus) => void;
 }) {
   return (
     <div className="flex items-stretch gap-2 lg:inline-flex lg:gap-0">
       <Button
         aria-label="Jump to today"
-        className="size-11 shrink-0 rounded-[0.5rem] p-0 lg:size-10 lg:rounded-none lg:rounded-l-[0.35rem] lg:border-r lg:border-foreground/10"
+        className="size-10 shrink-0 rounded-[0.5rem] p-0 lg:rounded-none lg:rounded-l-[0.35rem] lg:border-r lg:border-foreground/10"
         type="button"
         variant="secondary"
-        onClick={() => onFocusDateChange(todayDateKey)}
+        onClick={() => {
+          onFocusDateChange(todayDateKey);
+          onTodayClick();
+        }}
       >
         <Calendar1 className="size-4" />
         <span className="sr-only">Jump to today</span>
@@ -1053,7 +1028,7 @@ function CalendarControls({
       <CalendarFilterMenu
         eventType={eventType}
         status={status}
-        triggerClassName="size-11 shrink-0 rounded-[0.5rem] p-0 lg:size-10 lg:rounded-none lg:rounded-r-[0.35rem]"
+        triggerClassName="size-10 shrink-0 rounded-[0.5rem] p-0 lg:rounded-none lg:rounded-r-[0.35rem]"
         onEventTypeChange={onEventTypeChange}
         onStatusChange={onStatusChange}
       />
@@ -1073,6 +1048,7 @@ function MonthPicker({
   const [open, setOpen] = useState(false);
   const selectedDate = selectedDateKey ? parseDateKey(selectedDateKey) : undefined;
   const [pickerMonth, setPickerMonth] = useState<Date>(() => selectedDate ?? new Date());
+  const isMobileViewport = useMediaQuery("(max-width: 1023px)");
 
   useEffect(() => {
     if (selectedDateKey) {
@@ -1094,10 +1070,9 @@ function MonthPicker({
       </PopoverTrigger>
 
       <PopoverContent
-        align="end"
-        avoidCollisions={false}
+        align={isMobileViewport ? "center" : "end"}
         className="w-auto p-0"
-        side="bottom"
+        side={isMobileViewport ? "top" : "bottom"}
       >
         <Calendar
           className="rounded-[0.35rem]"
@@ -1153,31 +1128,34 @@ function CalendarFilterMenu({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel>Add filter</DropdownMenuLabel>
         <DropdownMenuCheckboxItem
           checked={status === "planned"}
           onCheckedChange={(checked) => onStatusChange(checked ? "planned" : "all")}
         >
-          Add filter: planned only
+          Planned
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
           checked={status === "completed"}
           onCheckedChange={(checked) => onStatusChange(checked ? "completed" : "all")}
         >
-          Add filter: completed only
+          Completed
         </DropdownMenuCheckboxItem>
 
         <DropdownMenuSeparator />
-        <DropdownMenuLabel>Add filter</DropdownMenuLabel>
-        {availableEventTypes.map((item) => (
-          <DropdownMenuCheckboxItem
-            checked={eventType === item}
-            key={item}
-            onCheckedChange={(checked) => onEventTypeChange(checked ? item : "all")}
-          >
-            {`Add filter: ${toTitleCase(item)}`}
-          </DropdownMenuCheckboxItem>
-        ))}
+        {availableEventTypes.map((item) => {
+          const EventTypeIcon = getWorkoutEventTypeMeta(item).icon;
+
+          return (
+            <DropdownMenuCheckboxItem
+              checked={eventType === item}
+              key={item}
+              onCheckedChange={(checked) => onEventTypeChange(checked ? item : "all")}
+            >
+              <EventTypeIcon className="size-4" />
+              {getWorkoutEventTypeMeta(item).label}
+            </DropdownMenuCheckboxItem>
+          );
+        })}
 
         {activeFilterCount > 0 ? (
           <>
@@ -1199,22 +1177,36 @@ function CalendarFilterMenu({
 
 function CalendarMonthGrid({
   calendarFocusDate,
+  focusViewportRequest,
   filteredWorkouts,
+  scrollViewportRef,
   selectedWorkoutSlug,
   onSelectWorkout,
 }: {
   calendarFocusDate: string;
+  focusViewportRequest: number;
   filteredWorkouts: WorkoutNote[];
+  scrollViewportRef: React.RefObject<HTMLDivElement | null>;
   selectedWorkoutSlug: string | null;
   onSelectWorkout: (slug: string) => void;
 }) {
-  const calendarRange = useMemo(
-    () => buildContinuousCalendarRange(filteredWorkouts, calendarFocusDate),
-    [calendarFocusDate, filteredWorkouts],
-  );
   const isMobileViewport = useMediaQuery("(max-width: 1023px)");
   const mobileDaysRef = useRef<HTMLDivElement | null>(null);
   const desktopWeeksViewportRef = useRef<HTMLDivElement | null>(null);
+  const shiftTimeoutRef = useRef<number | null>(null);
+  const edgeLockRef = useRef<"backward" | "forward" | null>(null);
+  const pendingFocusScrollRef = useRef(false);
+  const restoreViewportScrollRef = useRef<(() => void) | null>(null);
+  const previousFocusDateRef = useRef<string | null>(null);
+  const previousFocusViewportRequestRef = useRef(focusViewportRequest);
+  const pendingShiftAdjustmentRef = useRef<{
+    direction: "backward" | "forward";
+    scrollTop: number;
+  } | null>(null);
+  const [windowShiftDirection, setWindowShiftDirection] = useState<"backward" | "forward" | null>(null);
+  const [visibleRange, setVisibleRange] = useState(() =>
+    buildCalendarWindow(calendarFocusDate, isMobileViewport),
+  );
   const cells = useMemo(() => {
     const workoutsByDate = new Map<string, WorkoutNote[]>();
 
@@ -1228,24 +1220,82 @@ function CalendarMonthGrid({
       workoutsByDate.set(workout.date, [workout]);
     });
 
-    return buildCalendarCells(calendarRange.startDate, calendarRange.endDate, workoutsByDate);
-  }, [calendarFocusDate, calendarRange.endDate, calendarRange.startDate, filteredWorkouts]);
+    return buildCalendarCells(visibleRange.startDate, visibleRange.endDate, workoutsByDate);
+  }, [filteredWorkouts, visibleRange.endDate, visibleRange.startDate]);
   const weeks = useMemo(() => chunkCalendarWeeks(cells), [cells]);
   const maxWeekStart = Math.max(weeks.length - 3, 0);
+
+  useEffect(() => {
+    setVisibleRange(buildCalendarWindow(calendarFocusDate, isMobileViewport));
+  }, [calendarFocusDate, isMobileViewport]);
+
+  useEffect(() => {
+    return () => {
+      if (shiftTimeoutRef.current !== null) {
+        window.clearTimeout(shiftTimeoutRef.current);
+      }
+      restoreViewportScrollRef.current?.();
+      restoreViewportScrollRef.current = null;
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const pendingShift = pendingShiftAdjustmentRef.current;
+    if (!pendingShift) {
+      return;
+    }
+
+    const viewport = isMobileViewport ? scrollViewportRef.current : desktopWeeksViewportRef.current;
+    if (!viewport) {
+      pendingShiftAdjustmentRef.current = null;
+      setWindowShiftDirection(null);
+      return;
+    }
+
+    const adjustment =
+      pendingShift.direction === "backward"
+        ? getCalendarWindowShiftScrollOffset(isMobileViewport)
+        : -getCalendarWindowShiftScrollOffset(isMobileViewport);
+    viewport.scrollTop = Math.max(0, pendingShift.scrollTop + adjustment);
+    pendingShiftAdjustmentRef.current = null;
+    requestAnimationFrame(() => {
+      restoreViewportScrollRef.current?.();
+      restoreViewportScrollRef.current = null;
+    });
+    setWindowShiftDirection(null);
+  }, [cells, isMobileViewport, scrollViewportRef, weeks]);
 
   useEffect(() => {
     if (!calendarFocusDate) {
       return;
     }
 
+    const focusDateChanged = previousFocusDateRef.current !== calendarFocusDate;
+    const focusRequestChanged = previousFocusViewportRequestRef.current !== focusViewportRequest;
+    const shouldScrollToFocus =
+      focusDateChanged || focusRequestChanged || pendingFocusScrollRef.current;
+
+    previousFocusDateRef.current = calendarFocusDate;
+    previousFocusViewportRequestRef.current = focusViewportRequest;
+
     if (isMobileViewport) {
       const targetDayCard = mobileDaysRef.current?.querySelector<HTMLElement>(
         `[data-calendar-date="${calendarFocusDate}"]`,
       );
-      targetDayCard?.scrollIntoView({
-        block: "center",
-        behavior: "auto",
-      });
+      if (!targetDayCard) {
+        if (shouldScrollToFocus) {
+          pendingFocusScrollRef.current = true;
+          setVisibleRange(buildCalendarWindow(calendarFocusDate, true));
+        }
+        return;
+      }
+      if (shouldScrollToFocus) {
+        pendingFocusScrollRef.current = false;
+        targetDayCard.scrollIntoView({
+          block: "center",
+          behavior: "smooth",
+        });
+      }
       return;
     }
 
@@ -1257,23 +1307,101 @@ function CalendarMonthGrid({
       week.some((cell) => cell.date === calendarFocusDate),
     );
     if (focusWeekIndex === -1) {
+      if (shouldScrollToFocus) {
+        pendingFocusScrollRef.current = true;
+        setVisibleRange(buildCalendarWindow(calendarFocusDate, false));
+      }
       return;
     }
 
-    const nextWeekStart = clampNumber(focusWeekIndex - 1, 0, maxWeekStart);
-    desktopWeeksViewportRef.current.scrollTo({
-      top: nextWeekStart * DESKTOP_CALENDAR_ROW_HEIGHT,
-      behavior: "auto",
-    });
-  }, [calendarFocusDate, isMobileViewport, maxWeekStart, weeks]);
+    if (shouldScrollToFocus) {
+      pendingFocusScrollRef.current = false;
+      const nextWeekStart = clampNumber(focusWeekIndex - 1, 0, maxWeekStart);
+      desktopWeeksViewportRef.current.scrollTo({
+        top: nextWeekStart * DESKTOP_CALENDAR_ROW_HEIGHT,
+        behavior: "smooth",
+      });
+    }
+  }, [calendarFocusDate, focusViewportRequest, isMobileViewport, maxWeekStart, weeks]);
+
+  useEffect(() => {
+    const viewport = isMobileViewport ? scrollViewportRef.current : desktopWeeksViewportRef.current;
+    if (!viewport) {
+      return;
+    }
+
+    const handleScroll = () => {
+      if (windowShiftDirection) {
+        return;
+      }
+
+      const threshold = isMobileViewport ? MOBILE_CALENDAR_CARD_HEIGHT : DESKTOP_CALENDAR_ROW_HEIGHT;
+      const releaseThreshold = threshold * 2;
+      const remainingScroll = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
+
+      if (edgeLockRef.current === "backward" && viewport.scrollTop > releaseThreshold) {
+        edgeLockRef.current = null;
+      }
+
+      if (edgeLockRef.current === "forward" && remainingScroll > releaseThreshold) {
+        edgeLockRef.current = null;
+      }
+
+      if (viewport.scrollTop <= threshold && edgeLockRef.current === null) {
+        scheduleCalendarWindowShift("backward");
+        return;
+      }
+
+      if (remainingScroll <= threshold && edgeLockRef.current === null) {
+        scheduleCalendarWindowShift("forward");
+      }
+    };
+
+    viewport.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      viewport.removeEventListener("scroll", handleScroll);
+    };
+  }, [isMobileViewport, scrollViewportRef, windowShiftDirection]);
+
+  const scheduleCalendarWindowShift = (direction: "backward" | "forward") => {
+    const viewport = isMobileViewport ? scrollViewportRef.current : desktopWeeksViewportRef.current;
+    if (!viewport || windowShiftDirection) {
+      return;
+    }
+
+    if (shiftTimeoutRef.current !== null) {
+      window.clearTimeout(shiftTimeoutRef.current);
+    }
+
+    pendingShiftAdjustmentRef.current = {
+      direction,
+      scrollTop: viewport.scrollTop,
+    };
+    restoreViewportScrollRef.current?.();
+    restoreViewportScrollRef.current = freezeViewportScroll(viewport);
+    edgeLockRef.current = direction;
+    setWindowShiftDirection(direction);
+    shiftTimeoutRef.current = window.setTimeout(() => {
+      shiftTimeoutRef.current = null;
+      setVisibleRange((current) => shiftCalendarWindow(current, direction));
+    }, 120);
+  };
 
   return (
-    <div className="mt-8">
+    <div className="relative mt-8">
+      {windowShiftDirection ? (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <div className="w-full max-w-20 opacity-95">
+            <BrandMark className="block h-auto w-full" />
+          </div>
+        </div>
+      ) : null}
+
       <div className="grid gap-3 lg:hidden" ref={mobileDaysRef}>
         {cells.map((day) => (
           <section
             className={cn(
-              "flex scroll-mt-28 flex-col rounded-[0.35rem] border px-3 py-3",
+              "flex flex-col rounded-[0.35rem] border px-3 py-3",
               day.isToday
                 ? "border-primary/35 bg-surface-panel-alt/55"
                 : "border-foreground/10 bg-background/70",
@@ -1299,7 +1427,7 @@ function CalendarMonthGrid({
             </div>
 
             {day.workouts.length > 0 ? (
-              <div className="mt-3 flex min-h-0 flex-1 flex-col gap-2">
+              <div className="mt-3 flex min-h-0 flex-1 gap-2 overflow-x-auto pb-1">
                 {day.workouts.map((workout) => {
                   const selected = workout.slug === selectedWorkoutSlug;
                   const statusTone = getWorkoutStatusTone(workout);
@@ -1307,7 +1435,7 @@ function CalendarMonthGrid({
                   return (
                     <Button
                       className={cn(
-                        "h-full w-full flex-1 items-start justify-start rounded-[0.35rem] px-3 py-2 text-left whitespace-normal",
+                        "h-full min-w-[10rem] flex-1 items-start justify-start rounded-[0.35rem] px-3 py-2 text-left whitespace-normal",
                         getWorkoutCardToneClasses(statusTone, selected),
                       )}
                       key={workout.slug}
@@ -1451,22 +1579,41 @@ function WorkoutCardContent({
   const displayDistance = getWorkoutCardDistance(workout);
   const displayDistanceKm = getWorkoutCardDistanceKm(workout);
   const eventTypeMeta = getWorkoutEventTypeMeta(workout.eventType);
+  const statusTone = getWorkoutStatusTone(workout);
+  const statusMeta = getWorkoutStatusIconMeta(statusTone);
   const EventTypeIcon = eventTypeMeta.icon;
   const iconSizeClass = compact ? "size-3.5" : "size-4";
+  const routeOutlinePath = getWorkoutCardRouteOutlinePath(workout.summaryPolyline);
+  const StatusIcon = statusMeta.icon;
 
   return (
     <span
       aria-label={
-        displayDistance
-          ? `${eventTypeMeta.label}, ${displayDistance} kilometres`
-          : eventTypeMeta.label
+        [
+          displayDistance
+            ? `${eventTypeMeta.label}, ${displayDistance} kilometres`
+            : eventTypeMeta.label,
+          statusMeta.label,
+        ].join(", ")
       }
       className="relative flex h-full w-full"
     >
+      {routeOutlinePath ? (
+        <WorkoutCardRouteOutline compact={compact} path={routeOutlinePath} selected={selected} />
+      ) : null}
       <span className="absolute left-0 top-0 flex items-start justify-start">
         <EventTypeIcon
           aria-hidden="true"
           className={cn(iconSizeClass, selected ? "text-primary-foreground" : "text-foreground")}
+        />
+      </span>
+      <span className="absolute right-0 top-0 flex items-start justify-end">
+        <StatusIcon
+          aria-hidden="true"
+          className={cn(
+            compact ? "size-3.5" : "size-4",
+            selected ? "text-primary-foreground" : statusMeta.className,
+          )}
         />
       </span>
       {displayDistance ? (
@@ -1486,60 +1633,70 @@ function WorkoutCardContent({
   );
 }
 
-function WorkoutDetailPanel({
-  workout,
-  onLinkClick,
-}: {
-  workout: WorkoutNote;
-  onLinkClick: (href: string) => boolean;
-}) {
+function WorkoutNotePaneSkeleton() {
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-start gap-3 border-b border-foreground/10 pb-4">
-        <div className="min-w-0">
-          <p className="eyebrow">Workout Note</p>
-          <h2 className="mt-2 text-2xl font-black">{workout.title}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{formatDisplayDate(workout.date)}</p>
-        </div>
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="mb-4 border-b border-foreground/10 pb-4">
+        <Skeleton className="size-9 rounded-[0.35rem]" />
       </div>
 
-      <Accordion className="mt-5 border-b border-foreground/10" collapsible type="single">
-        <AccordionItem className="border-b-0" value="metadata">
-          <AccordionTrigger className="py-3 text-base font-semibold">
-            Metadata
-          </AccordionTrigger>
-          <AccordionContent>
-            <div className="grid gap-4 pt-1 text-sm">
-              <MetadataRow label="Event type" value={getWorkoutEventTypeMeta(workout.eventType).label} />
-              <MetadataRow label="Expected distance" value={formatDistance(workout.expectedDistanceKm)} />
-              <MetadataRow label="Actual distance" value={formatDistance(workout.actualDistanceKm)} />
-              <MetadataRow label="Status" value={formatCompletedTimestamp(workout.completed)} />
-              <MetadataRow
-                label="Strava activity"
-                value={workout.stravaId === null ? "Not linked" : String(workout.stravaId)}
-              />
-              <MetadataRow label="All day" value={workout.allDay ? "Yes" : "No"} />
-              <MetadataRow label="Type" value={workout.type} />
-              <MetadataRow label="Source file" value={workout.sourcePath} />
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-
-      {workout.summaryPolyline ? (
-        <div className="mt-5 border-b border-foreground/10 pb-5">
-          <RouteMap
-            activityId={workout.stravaId}
-            generatedAt={generatedAt}
-            hasStravaStreams={workout.hasStravaStreams}
-            polyline={workout.summaryPolyline}
-            title={workout.title}
-          />
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="w-full max-w-24 opacity-95">
+            <BrandMark className="block h-auto w-full" />
+          </div>
         </div>
-      ) : null}
 
-      <div className="markdown-prose mt-5 flex-1">
-        <MarkdownContent content={workout.body} onLinkClick={onLinkClick} />
+        <div className="flex h-full min-h-0 flex-col gap-5 lg:hidden">
+          <section className="space-y-3 border-b border-foreground/10 pb-4">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-9 w-3/5" />
+            <Skeleton className="h-4 w-32" />
+          </section>
+          <Skeleton className="h-10 w-full rounded-[0.75rem]" />
+          <Skeleton className="h-48 w-full rounded-[1rem]" />
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-[92%]" />
+            <Skeleton className="h-4 w-[88%]" />
+            <Skeleton className="h-4 w-[84%]" />
+            <Skeleton className="h-4 w-[90%]" />
+            <Skeleton className="h-4 w-[72%]" />
+          </div>
+        </div>
+
+        <div className="hidden h-full min-h-0 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8">
+          <div className="space-y-4">
+            <section className="space-y-3 border-b border-foreground/10 pb-4">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-9 w-3/5" />
+              <Skeleton className="h-4 w-32" />
+            </section>
+
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-[94%]" />
+              <Skeleton className="h-4 w-[91%]" />
+              <Skeleton className="h-4 w-[88%]" />
+              <Skeleton className="h-4 w-[93%]" />
+              <Skeleton className="h-4 w-[86%]" />
+              <Skeleton className="h-4 w-[82%]" />
+              <Skeleton className="h-4 w-[74%]" />
+            </div>
+          </div>
+
+          <aside className="space-y-5 pt-6">
+            <Skeleton className="h-56 w-full rounded-[1rem]" />
+            <div className="space-y-4">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </aside>
+        </div>
       </div>
     </div>
   );
@@ -1788,6 +1945,14 @@ function getWorkoutEventTypeMeta(eventType: WorkoutEventType) {
   return EVENT_TYPE_META[eventType];
 }
 
+function getWorkoutCardRouteOutlinePath(summaryPolyline: string | null) {
+  if (!summaryPolyline) {
+    return null;
+  }
+
+  return buildRouteOutlinePath(decodePolyline(summaryPolyline));
+}
+
 function getWorkoutCardDistance(workout: WorkoutNote) {
   const distanceKm = getWorkoutCardDistanceKm(workout);
   if (distanceKm === null || distanceKm <= 0) {
@@ -1846,22 +2011,113 @@ function getWorkoutStatusTone(workout: WorkoutNote) {
 }
 
 function getWorkoutCardToneClasses(
-  tone: "completed" | "default" | "overdue",
+  _tone: "completed" | "default" | "overdue",
   selected: boolean,
 ) {
   if (selected) {
     return "bg-primary text-primary-foreground hover:bg-primary/90";
   }
 
+  return "bg-surface-panel-alt text-foreground hover:bg-surface-hero/65";
+}
+
+function getWorkoutStatusIconMeta(tone: "completed" | "default" | "overdue") {
   if (tone === "completed") {
-    return "bg-emerald-100 text-emerald-950 hover:bg-emerald-200";
+    return {
+      className: "text-emerald-700",
+      icon: CircleCheck,
+      label: "Completed",
+    };
   }
 
   if (tone === "overdue") {
-    return "bg-rose-100 text-rose-950 hover:bg-rose-200";
+    return {
+      className: "text-rose-700",
+      icon: CircleX,
+      label: "Overdue",
+    };
   }
 
-  return "bg-surface-panel-alt text-foreground hover:bg-surface-hero/65";
+  return {
+    className: "text-muted-foreground",
+    icon: Circle,
+    label: "Planned",
+  };
+}
+
+function WorkoutCardRouteOutline({
+  compact,
+  path,
+  selected,
+}: {
+  compact: boolean;
+  path: string;
+  selected: boolean;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "pointer-events-none absolute inset-0 overflow-hidden",
+        compact ? "px-1 py-0.5" : "px-1.5 py-1",
+      )}
+    >
+      <svg className="size-full" preserveAspectRatio="xMidYMid meet" viewBox="0 0 100 60">
+        <path
+          d={path}
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeOpacity={selected ? 0.24 : 0.16}
+          strokeWidth={compact ? 1.8 : 1.5}
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+    </span>
+  );
+}
+
+function buildRouteOutlinePath(coordinates: RouteCoordinate[]) {
+  if (coordinates.length < 2) {
+    return null;
+  }
+
+  let minLatitude = coordinates[0][0];
+  let maxLatitude = coordinates[0][0];
+  let minLongitude = coordinates[0][1];
+  let maxLongitude = coordinates[0][1];
+
+  for (const [latitude, longitude] of coordinates) {
+    minLatitude = Math.min(minLatitude, latitude);
+    maxLatitude = Math.max(maxLatitude, latitude);
+    minLongitude = Math.min(minLongitude, longitude);
+    maxLongitude = Math.max(maxLongitude, longitude);
+  }
+
+  const longitudeSpan = Math.max(maxLongitude - minLongitude, 0.00001);
+  const latitudeSpan = Math.max(maxLatitude - minLatitude, 0.00001);
+  const viewBoxWidth = 100;
+  const viewBoxHeight = 60;
+  const padding = 5;
+  const scale = Math.min(
+    (viewBoxWidth - padding * 2) / longitudeSpan,
+    (viewBoxHeight - padding * 2) / latitudeSpan,
+  );
+  const horizontalInset = (viewBoxWidth - longitudeSpan * scale) / 2;
+  const verticalInset = (viewBoxHeight - latitudeSpan * scale) / 2;
+
+  return coordinates
+    .map(([latitude, longitude], index) => {
+      const x = horizontalInset + (longitude - minLongitude) * scale;
+      const y = verticalInset + (maxLatitude - latitude) * scale;
+      return `${index === 0 ? "M" : "L"}${formatRouteOutlineCoordinate(x)} ${formatRouteOutlineCoordinate(y)}`;
+    })
+    .join(" ");
+}
+
+function formatRouteOutlineCoordinate(value: number) {
+  return value.toFixed(2);
 }
 
 function formatCompactDistance(value: number) {
@@ -1977,16 +2233,58 @@ function chunkCalendarWeeks(cells: CalendarCell[]) {
   return weeks;
 }
 
-function buildContinuousCalendarRange(workouts: WorkoutNote[], focusDate: string) {
-  const workoutDates = workouts.map((workout) => workout.date);
-  const earliestDate = workoutDates[0] ?? focusDate;
-  const latestDate = workoutDates[workoutDates.length - 1] ?? focusDate;
-  const rangeStartDate = startOfWeek(addDaysToDate(parseDateKey(minDateKey(earliestDate, focusDate)), -182));
-  const rangeEndDate = endOfWeek(addDaysToDate(parseDateKey(maxDateKey(latestDate, focusDate)), 182));
+function buildCalendarWindow(focusDate: string, isMobileViewport: boolean) {
+  const resolvedFocusDate = focusDate || getTodayDateKey();
+  const focus = parseDateKey(resolvedFocusDate);
+
+  if (isMobileViewport) {
+    const rangeStartDate = startOfWeek(startOfMonth(focus));
+    return {
+      startDate: formatDateKey(rangeStartDate),
+      endDate: formatDateKey(addDaysToDate(rangeStartDate, MOBILE_CALENDAR_WINDOW_WEEKS * 7 - 1)),
+    };
+  }
+
+  const rangeStartDate = addDaysToDate(startOfWeek(focus), -Math.floor(DESKTOP_CALENDAR_WINDOW_WEEKS / 2) * 7);
 
   return {
     startDate: formatDateKey(rangeStartDate),
-    endDate: formatDateKey(rangeEndDate),
+    endDate: formatDateKey(addDaysToDate(rangeStartDate, DESKTOP_CALENDAR_WINDOW_WEEKS * 7 - 1)),
+  };
+}
+
+function shiftCalendarWindow(
+  range: { startDate: string; endDate: string },
+  direction: "backward" | "forward",
+) {
+  const dayOffset = (direction === "backward" ? -1 : 1) * CALENDAR_WINDOW_SHIFT_WEEKS * 7;
+  return {
+    startDate: formatDateKey(addDaysToDate(parseDateKey(range.startDate), dayOffset)),
+    endDate: formatDateKey(addDaysToDate(parseDateKey(range.endDate), dayOffset)),
+  };
+}
+
+function getCalendarWindowShiftScrollOffset(isMobileViewport: boolean) {
+  if (isMobileViewport) {
+    return CALENDAR_WINDOW_SHIFT_WEEKS * 7 * (MOBILE_CALENDAR_CARD_HEIGHT + MOBILE_CALENDAR_CARD_GAP);
+  }
+
+  return CALENDAR_WINDOW_SHIFT_WEEKS * DESKTOP_CALENDAR_ROW_HEIGHT;
+}
+
+function freezeViewportScroll(viewport: HTMLDivElement) {
+  const previousOverflowY = viewport.style.overflowY;
+  const previousOverscrollBehavior = viewport.style.overscrollBehavior;
+  const lockedScrollTop = viewport.scrollTop;
+
+  viewport.style.overflowY = "hidden";
+  viewport.style.overscrollBehavior = "none";
+  viewport.scrollTop = lockedScrollTop;
+
+  return () => {
+    viewport.style.overflowY = previousOverflowY;
+    viewport.style.overscrollBehavior = previousOverscrollBehavior;
+    viewport.scrollTop = viewport.scrollTop;
   };
 }
 
@@ -2045,16 +2343,8 @@ function startOfWeek(value: Date) {
   return addDaysToDate(value, -((value.getDay() + 6) % 7));
 }
 
-function endOfWeek(value: Date) {
-  return addDaysToDate(startOfWeek(value), 6);
-}
-
-function minDateKey(left: string, right: string) {
-  return left <= right ? left : right;
-}
-
-function maxDateKey(left: string, right: string) {
-  return left >= right ? left : right;
+function startOfMonth(value: Date) {
+  return new Date(value.getFullYear(), value.getMonth(), 1);
 }
 
 function workoutHrefToSlug(href: string) {

@@ -6,12 +6,13 @@ import type {
   ChangelogEntry,
   GoalNote,
   PlanDocument,
+  WorkoutDataSource,
   WorkoutNote,
   WorkoutRouteStreams,
   WorkoutEventType,
   WorkoutsData,
 } from "../src/lib/workouts/schema";
-import { WORKOUT_EVENT_TYPES } from "../src/lib/workouts/schema";
+import { WORKOUT_DATA_SOURCES, WORKOUT_EVENT_TYPES } from "../src/lib/workouts/schema";
 
 const rootDir = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const generatedPath = path.resolve(rootDir, "src/generated/workouts.json");
@@ -382,13 +383,18 @@ function buildWorkoutNote(
   const parsed = matter(fileContent);
   const data = parsed.data;
   const stravaId = normalizeOptionalInteger(data.stravaId, fileName, "stravaId");
+  const notedDataSource = normalizeWorkoutDataSource(data.dataSource, fileName);
   const validFallback =
     existingFallback && existingFallback.stravaId === stravaId ? existingFallback : null;
   const importedFromStrava =
     stravaId !== null && /(^|\n)##\s+Imported from Strava\b/u.test(parsed.content);
+  if (stravaId !== null && notedDataSource !== null && notedDataSource !== "strava") {
+    throw new Error(`${fileName}: dataSource must be "strava" when stravaId is present`);
+  }
   const notedExpectedDistance = normalizeNullableString(data.expectedDistance);
   const notedActualDistance = normalizeNullableString(data.actualDistance);
   const cachedActivity = stravaId !== null ? stravaActivities[String(stravaId)] ?? null : null;
+  const dataSource = stravaId !== null ? "strava" : notedDataSource;
   const expectedDistance =
     importedFromStrava && notedActualDistance === null ? null : notedExpectedDistance;
   const expectedDistanceKm = normalizeDistanceKm(expectedDistance);
@@ -414,6 +420,7 @@ function buildWorkoutNote(
     actualDistanceKm,
     completed: normalizeCompleted(data.completed, fileName),
     stravaId,
+    dataSource,
     actualMovingTimeSeconds: normalizeCachedInteger(cachedActivity?.movingTimeSeconds) ?? validFallback?.actualMovingTimeSeconds ?? null,
     actualElapsedTimeSeconds:
       normalizeCachedInteger(cachedActivity?.elapsedTimeSeconds) ?? validFallback?.actualElapsedTimeSeconds ?? null,
@@ -504,6 +511,27 @@ function normalizeDistanceKm(value: unknown) {
 
   const match = raw.match(/-?\d+(?:\.\d+)?/u);
   return match ? Number.parseFloat(match[0]) : null;
+}
+
+function normalizeWorkoutDataSource(value: unknown, fileName: string): WorkoutDataSource | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value !== "string") {
+    throw new Error(`${fileName}: dataSource must be one of ${WORKOUT_DATA_SOURCES.join(", ")}`);
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return null;
+  }
+
+  if (WORKOUT_DATA_SOURCES.includes(normalized as WorkoutDataSource)) {
+    return normalized as WorkoutDataSource;
+  }
+
+  throw new Error(`${fileName}: dataSource must be one of ${WORKOUT_DATA_SOURCES.join(", ")}`);
 }
 
 function normalizeCachedDistanceKm(activity: StravaCachedActivity | null) {

@@ -1,6 +1,8 @@
 export const WORKOUT_EVENT_TYPES = ["run", "basketball", "strength", "mobility", "race"] as const;
+export const WORKOUT_DATA_SOURCES = ["strava", "apple-health"] as const;
 
 export type WorkoutEventType = (typeof WORKOUT_EVENT_TYPES)[number];
+export type WorkoutDataSource = (typeof WORKOUT_DATA_SOURCES)[number];
 
 export interface WorkoutRouteStreams {
   latlng: Array<[number, number]> | null;
@@ -22,6 +24,7 @@ export interface WorkoutNote {
   actualDistanceKm: number | null;
   completed: string | null;
   stravaId: number | null;
+  dataSource: WorkoutDataSource | null;
   actualMovingTimeSeconds: number | null;
   actualElapsedTimeSeconds: number | null;
   averageHeartrate: number | null;
