@@ -1,4 +1,4 @@
-.PHONY: help setup install sync build-data dev build typecheck lint test preview clean
+.PHONY: help setup install sync build-data dev build typecheck lint test preview vercel-link deploy-preview deploy-prod clean
 
 help:
 	@echo "Available targets:"
@@ -18,6 +18,11 @@ help:
 	@echo "  typecheck       - Run TypeScript checks"
 	@echo "  lint            - Run ESLint"
 	@echo "  test            - Run Vitest"
+	@echo ""
+	@echo "Deploy:"
+	@echo "  vercel-link     - Link this repo to a Vercel project"
+	@echo "  deploy-preview  - Build locally and upload a prebuilt preview deployment"
+	@echo "  deploy-prod     - Build locally and upload a prebuilt production deployment"
 	@echo ""
 	@echo "Cleaning:"
 	@echo "  clean           - Remove generated workout data"
@@ -53,6 +58,15 @@ test:
 
 preview:
 	pnpm run preview
+
+vercel-link:
+	pnpm run vercel:link
+
+deploy-preview:
+	pnpm run deploy:vercel:preview
+
+deploy-prod:
+	pnpm run deploy:vercel:prod
 
 clean:
 	rm -f src/generated/workouts.json
