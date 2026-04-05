@@ -9,7 +9,7 @@ The recommended workflow is:
 3. Deploy that prebuilt output to Vercel.
 
 That remains the most reliable path for publishing freshly synced Strava-backed data.
-The repo now also supports Git-triggered cloud builds better than before by allowing committed generated artifacts to act as a fallback when the local Strava cache is unavailable during the build.
+This repo is configured to turn off automatic Git-triggered deployments in Vercel so the expected workflow is local prebuild plus CLI upload, not cloud builds on push.
 
 ## Why This Path
 
@@ -23,7 +23,7 @@ Those routes are implemented in [`src/App.tsx`](src/App.tsx), so the host needs 
 
 The repo now includes:
 
-- [`vercel.json`](vercel.json) for SPA rewrites
+- [`vercel.json`](vercel.json) for SPA rewrites and disabled automatic Git deployments
 - `pnpm run vercel:link`
 - `pnpm run deploy:vercel:preview`
 - `pnpm run deploy:vercel:prod`
@@ -107,6 +107,24 @@ After deploy, verify:
 
 If `/plan` or `/calendar` 404, the rewrite config is missing or not applied.
 
+## Automatic Git Deployments
+
+Automatic Git deployments are intentionally disabled for this project in [`vercel.json`](vercel.json):
+
+```json
+{
+  "git": {
+    "deploymentEnabled": false
+  }
+}
+```
+
+That is meant to stop Vercel from starting cloud builds for branch pushes and merges.
+If you push this config to GitHub before it has been applied in Vercel, expect one last Git-based deployment to apply the setting.
+After that, deploy through the local CLI flow in this document.
+
+If you want the strongest guarantee in the Vercel dashboard as well, disconnect the Git repository from the project after this config has landed.
+
 ## What Is Configured In Repo
 
 ### SPA routing fallback
@@ -114,6 +132,12 @@ If `/plan` or `/calendar` 404, the rewrite config is missing or not applied.
 [`vercel.json`](vercel.json) rewrites unmatched routes to `/index.html`.
 
 That is what makes direct loads of `/plan` and `/calendar` work on Vercel.
+
+### Automatic deployment guard
+
+[`vercel.json`](vercel.json) also sets `git.deploymentEnabled` to `false`.
+
+That disables automatic Git-based deployments for the project and keeps the intended workflow aligned with the prebuilt CLI scripts below.
 
 ### Local deploy scripts
 
@@ -128,7 +152,7 @@ They also upload the prebuilt output as a `.tgz` archive, which is the path Verc
 
 ## Important Constraint
 
-This repo still prefers local prebuilt deploys when you want the latest Strava sync reflected in production immediately.
+This repo uses local prebuilt deploys when you want the latest Strava sync reflected in production immediately.
 
 Reasons:
 
@@ -136,12 +160,10 @@ Reasons:
 - cloud builds usually do not have that cache available
 - a cloud build can only preserve the last committed generated artifacts, not invent newer Strava-backed data
 
-So if you import this repo into Vercel and let Vercel build directly from source:
+So even if committed generated artifacts are present, the intended deploy path stays local and prebuilt.
+That is the only path that reliably ships the exact synced training data you just generated on this machine.
 
-- committed generated artifacts will keep existing route maps and Strava-enriched metrics available
-- but newly synced Strava data will not appear until those generated artifacts are rebuilt locally and committed or deployed prebuilt
-
-## If You Want Full Git-Triggered CI/CD Later
+## If You Want Git-Triggered CI/CD Later
 
 That needs one more design decision. Pick one:
 
