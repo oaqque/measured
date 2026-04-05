@@ -682,7 +682,7 @@ function SidebarContent({
 
       <div className="mt-4 border-t border-foreground/10 pt-4">
         <SidebarExternalLink
-          href="https://github.com/oaqque/measured"
+          href="https://measured.thecaffeinatedleaf.xyz"
           icon={<Github className="size-4" />}
           label="GitHub"
         />
@@ -1282,6 +1282,10 @@ function CalendarMonthGrid({
   const previousViewportScrollTopRef = useRef<number | null>(null);
   const pendingFocusScrollRef = useRef(false);
   const restoreViewportScrollRef = useRef<(() => void) | null>(null);
+  const queuedWindowShiftRef = useRef<{
+    count: number;
+    direction: "backward" | "forward";
+  } | null>(null);
   const previousFocusDateRef = useRef<string | null>(null);
   const previousFocusViewportRequestRef = useRef(focusViewportRequest);
   const pendingShiftAdjustmentRef = useRef<{
@@ -1322,6 +1326,7 @@ function CalendarMonthGrid({
     }
     pendingShiftAdjustmentRef.current = null;
     edgeLockRef.current = null;
+    queuedWindowShiftRef.current = null;
     restoreViewportScrollRef.current?.();
     restoreViewportScrollRef.current = null;
     setWindowShiftDirection(null);
@@ -1377,6 +1382,9 @@ function CalendarMonthGrid({
         ? getCalendarWindowShiftScrollOffset(isMobileViewport)
         : -getCalendarWindowShiftScrollOffset(isMobileViewport);
     viewport.scrollTop = Math.max(0, pendingShift.scrollTop + adjustment);
+    if (shouldReleaseCalendarEdgeLock(viewport, pendingShift.direction, isMobileViewport)) {
+      edgeLockRef.current = null;
+    }
     pendingShiftAdjustmentRef.current = null;
     requestAnimationFrame(() => {
       restoreViewportScrollRef.current?.();
@@ -1516,14 +1524,13 @@ function CalendarMonthGrid({
       }
 
       const threshold = isMobileViewport ? MOBILE_CALENDAR_CARD_HEIGHT : DESKTOP_CALENDAR_ROW_HEIGHT;
-      const releaseThreshold = threshold * 2;
       const remainingScroll = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
 
-      if (edgeLockRef.current === "backward" && viewport.scrollTop > releaseThreshold) {
+      if (edgeLockRef.current === "backward" && shouldReleaseCalendarEdgeLock(viewport, "backward", isMobileViewport)) {
         edgeLockRef.current = null;
       }
 
-      if (edgeLockRef.current === "forward" && remainingScroll > releaseThreshold) {
+      if (edgeLockRef.current === "forward" && shouldReleaseCalendarEdgeLock(viewport, "forward", isMobileViewport)) {
         edgeLockRef.current = null;
       }
 
@@ -1542,6 +1549,76 @@ function CalendarMonthGrid({
       viewport.removeEventListener("scroll", handleScroll);
     };
   }, [isMobileViewport, scrollViewportRef, windowShiftDirection]);
+
+  useEffect(() => {
+    if (isMobileViewport) {
+      return;
+    }
+
+    const viewport = desktopWeeksViewportRef.current;
+    if (!viewport) {
+      return;
+    }
+
+    const handleWheel = (event: WheelEvent) => {
+      if (!focusReadyRef.current || !windowShiftEnabledRef.current) {
+        return;
+      }
+
+      const direction = event.deltaY < 0 ? "backward" : event.deltaY > 0 ? "forward" : null;
+      if (!direction) {
+        return;
+      }
+
+      const threshold = DESKTOP_CALENDAR_ROW_HEIGHT;
+      const remainingScroll = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
+      const isAtMatchingEdge =
+        direction === "backward" ? viewport.scrollTop <= threshold : remainingScroll <= threshold;
+      const isLockedForDirection =
+        windowShiftDirection === direction || edgeLockRef.current === direction;
+
+      if (!isAtMatchingEdge || !isLockedForDirection) {
+        return;
+      }
+
+      if (queuedWindowShiftRef.current?.direction === direction) {
+        queuedWindowShiftRef.current.count = Math.min(queuedWindowShiftRef.current.count + 1, 3);
+        return;
+      }
+
+      queuedWindowShiftRef.current = {
+        count: 1,
+        direction,
+      };
+    };
+
+    viewport.addEventListener("wheel", handleWheel, { passive: true });
+    return () => {
+      viewport.removeEventListener("wheel", handleWheel);
+    };
+  }, [isMobileViewport, windowShiftDirection]);
+
+  useEffect(() => {
+    if (isMobileViewport || windowShiftDirection) {
+      return;
+    }
+
+    const queuedWindowShift = queuedWindowShiftRef.current;
+    if (!queuedWindowShift || queuedWindowShift.count < 1) {
+      return;
+    }
+
+    if (!focusReadyRef.current || !windowShiftEnabledRef.current) {
+      return;
+    }
+
+    queuedWindowShift.count -= 1;
+    if (queuedWindowShift.count === 0) {
+      queuedWindowShiftRef.current = null;
+    }
+
+    scheduleCalendarWindowShift(queuedWindowShift.direction);
+  }, [isMobileViewport, windowShiftDirection]);
 
   const scheduleCalendarWindowShift = (direction: "backward" | "forward") => {
     const viewport = isMobileViewport ? scrollViewportRef.current : desktopWeeksViewportRef.current;
@@ -2465,6 +2542,22 @@ function getCalendarWindowShiftScrollOffset(isMobileViewport: boolean) {
   return CALENDAR_WINDOW_SHIFT_WEEKS * DESKTOP_CALENDAR_ROW_HEIGHT;
 }
 
+function shouldReleaseCalendarEdgeLock(
+  viewport: HTMLDivElement,
+  direction: "backward" | "forward",
+  isMobileViewport: boolean,
+) {
+  const threshold = isMobileViewport ? MOBILE_CALENDAR_CARD_HEIGHT : DESKTOP_CALENDAR_ROW_HEIGHT;
+  const releaseThreshold = threshold * 2;
+
+  if (direction === "backward") {
+    return viewport.scrollTop > releaseThreshold;
+  }
+
+  const remainingScroll = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
+  return remainingScroll > releaseThreshold;
+}
+
 function freezeViewportScroll(viewport: HTMLDivElement) {
   const previousOverflowY = viewport.style.overflowY;
   const previousOverscrollBehavior = viewport.style.overscrollBehavior;
@@ -2562,3 +2655,24 @@ function workoutHrefToSlug(href: string) {
     .replace(/[^a-z0-9]+/gu, "-")
     .replace(/^-+|-+$/gu, "");
 }
+
+export const calendarTestUtils = {
+  addDaysToDate,
+  buildCalendarCells,
+  buildCalendarWindow,
+  chunkCalendarWeeks,
+  formatDateKey,
+  formatDayLabel,
+  formatDayWeekday,
+  formatMonthFromDate,
+  formatMonthLabel,
+  freezeViewportScroll,
+  getCalendarWindowShiftScrollOffset,
+  getTodayDateKey,
+  parseDateKey,
+  resolveDefaultFocusDate,
+  shiftCalendarWindow,
+  shouldReleaseCalendarEdgeLock,
+  startOfMonth,
+  startOfWeek,
+};
