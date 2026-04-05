@@ -24,6 +24,7 @@ Those routes are implemented in [`src/App.tsx`](src/App.tsx), so the host needs 
 The repo now includes:
 
 - [`vercel.json`](vercel.json) for SPA rewrites and disabled automatic Git deployments
+- local-only generated artifacts under `src/generated/` and `public/generated/workout-routes/`
 - `pnpm run vercel:link`
 - `pnpm run deploy:vercel:preview`
 - `pnpm run deploy:vercel:prod`
@@ -150,6 +151,23 @@ In [`package.json`](package.json):
 These are intentionally local-first scripts. They preserve your current data model better than a remote source build.
 They also upload the prebuilt output as a `.tgz` archive, which is the path Vercel documents for reducing uploaded file count.
 
+### Generated artifact policy
+
+[`src/generated/workouts.json`](src/generated/workouts.json) and [`public/generated/workout-routes`](public/generated/workout-routes) are generated locally and intentionally ignored by git.
+
+That means the repo source of truth is:
+
+- `data/training/**`
+- local Strava cache under `vault/strava/`
+- the generation scripts in `scripts/`
+
+Before deploying from a fresh clone or another machine, regenerate these artifacts locally with:
+
+```bash
+pnpm run sync:strava
+pnpm run build:data
+```
+
 ## Important Constraint
 
 This repo uses local prebuilt deploys when you want the latest Strava sync reflected in production immediately.
@@ -158,10 +176,10 @@ Reasons:
 
 - `build:data` reads Strava cache data from `vault/strava/cache-export.json` when it exists
 - cloud builds usually do not have that cache available
-- a cloud build can only preserve the last committed generated artifacts, not invent newer Strava-backed data
+- generated route files and generated workout JSON are intentionally not committed
 
-So even if committed generated artifacts are present, the intended deploy path stays local and prebuilt.
-That is the only path that reliably ships the exact synced training data you just generated on this machine.
+So the intended deploy path stays local and prebuilt.
+That is the only path that reliably ships the exact synced training data and route files you just generated on this machine.
 
 ## If You Want Git-Triggered CI/CD Later
 

@@ -3,6 +3,8 @@ dist/
 .venv/
 .vercel/
 *.tsbuildinfo
+/src/generated/workouts.json
+/public/generated/workout-routes/
 /vault/strava/*.json
 /vault/strava/.session.lock
 /vault/strava/*.sqlite3

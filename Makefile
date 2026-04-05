@@ -25,7 +25,7 @@ help:
 	@echo "  deploy-prod     - Build locally and upload a prebuilt production deployment"
 	@echo ""
 	@echo "Cleaning:"
-	@echo "  clean           - Remove generated workout data"
+	@echo "  clean           - Remove generated workout data and route files"
 
 install:
 	pnpm install
@@ -70,3 +70,4 @@ deploy-prod:
 
 clean:
 	rm -f src/generated/workouts.json
+	rm -rf public/generated/workout-routes

@@ -28,3 +28,10 @@ pnpm run build:data -- --source /absolute/path/to/workouts
 
 The training data root lives under [`data/training/PLAN.md`](data/training/PLAN.md).
 The welcome page source is [`data/training/WELCOME.md`](data/training/WELCOME.md), and individual workout notes live under [`data/training/notes`](data/training/notes).
+
+Generated app data is local-only:
+
+- `src/generated/workouts.json`
+- `public/generated/workout-routes/`
+
+Regenerate those artifacts locally with `pnpm run build:data` before running the app or deploying from a fresh clone.
