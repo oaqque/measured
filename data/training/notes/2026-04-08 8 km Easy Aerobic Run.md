@@ -10,3 +10,7 @@ expectedDistance: 8 km
 ## Program
 
 - 8 km easy aerobic run
+- Keep this fully conversational after Tuesday's threshold session.
+- Start the first 10 to 15 minutes very controlled, then settle into relaxed aerobic running without turning it into a steady day.
+- Let the route be rolling if you want, but flatten the effort on climbs so heart rate stays supportive rather than drifting toward threshold again.
+- If Tuesday leaves more residual fatigue than expected, shorten to `6 to 7 km` instead of forcing the full `8 km`.

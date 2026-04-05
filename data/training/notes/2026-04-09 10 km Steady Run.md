@@ -10,3 +10,8 @@ expectedDistance: 10 km
 ## Program
 
 - 10 km steady run
+- 2 km easy warm-up
+- 6 km at steady aerobic-marathon effort, controlled enough that you could still speak in short phrases
+- 2 km easy cool down
+- This is the week's second useful run, but it is still a notch below Tuesday's threshold session.
+- If the legs feel flat or the shins feel loaded, keep the middle block honest and aerobic rather than trying to force pace.
