@@ -682,7 +682,7 @@ function SidebarContent({
 
       <div className="mt-4 border-t border-foreground/10 pt-4">
         <SidebarExternalLink
-          href="https://measured.thecaffeinatedleaf.xyz"
+          href="https://github.com/oaqque/measured"
           icon={<Github className="size-4" />}
           label="GitHub"
         />
