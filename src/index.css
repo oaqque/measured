@@ -172,6 +172,15 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  .calendar-scroll-pane {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .calendar-scroll-pane::-webkit-scrollbar {
+    display: none;
+  }
+
   .leaflet-container {
     z-index: 0;
   }

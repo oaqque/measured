@@ -19,6 +19,12 @@ import {
   Circle,
   CircleCheck,
   CircleX,
+  Cloud,
+  CloudDrizzle,
+  CloudFog,
+  CloudLightning,
+  CloudRain,
+  CloudSnow,
   Dribbble,
   Dumbbell,
   FileText,
@@ -27,8 +33,11 @@ import {
   History,
   ListFilter,
   Menu,
+  Moon,
   NotebookText,
+  Sun,
   Trophy,
+  Wind,
 } from "lucide-react";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { Button } from "@/components/ui/button";
@@ -556,7 +565,7 @@ export default function App() {
                 <>
                   <div
                     className={cn(
-                      "app-scroll-pane h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10",
+                      "app-scroll-pane calendar-scroll-pane h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10",
                       showSelectedWorkoutPane && "hidden",
                     )}
                     ref={calendarScrollViewportRef}
@@ -1784,7 +1793,7 @@ function CalendarMonthGrid({
         </div>
 
         <div
-          className="app-scroll-pane relative overflow-y-auto border-l border-foreground/10"
+          className="app-scroll-pane calendar-scroll-pane relative overflow-y-auto border-l border-foreground/10"
           ref={desktopWeeksViewportRef}
           style={{ height: `${DESKTOP_CALENDAR_ROW_HEIGHT * 3}px` }}
         >
@@ -1904,6 +1913,9 @@ function WorkoutCardContent({
   const routeOutlinePath = getWorkoutCardRouteOutlinePath(workout.summaryPolyline);
   const StatusIcon = statusMeta.icon;
   const hasBackgroundImage = workout.primaryImageUrl !== null;
+  const weatherIconMeta = getWorkoutWeatherIconMeta(workout);
+  const WeatherIcon = weatherIconMeta?.icon ?? null;
+  const weatherIconClassName = weatherIconMeta?.className ?? null;
 
   return (
     <span
@@ -1947,6 +1959,21 @@ function WorkoutCardContent({
           )}
         />
       </span>
+      {WeatherIcon ? (
+        <span className="absolute bottom-0 right-0 flex items-end justify-end">
+          <WeatherIcon
+            aria-hidden="true"
+            className={cn(
+              compact ? "size-3.5" : "size-4",
+              selected
+                ? "text-primary-foreground/90"
+                : hasBackgroundImage
+                  ? "text-white/90"
+                  : weatherIconClassName,
+            )}
+          />
+        </span>
+      ) : null}
       {displayDistance ? (
         <span
           className={cn(
@@ -2427,6 +2454,83 @@ function getWorkoutStatusIconMeta(tone: "completed" | "default" | "overdue") {
     className: "text-muted-foreground",
     icon: Circle,
     label: "Planned",
+  };
+}
+
+function getWorkoutWeatherIconMeta(workout: WorkoutNote) {
+  const weatherCode = workout.weather?.weatherCode;
+  if (weatherCode === null || weatherCode === undefined) {
+    return null;
+  }
+
+  if (weatherCode === 0) {
+    return {
+      className: "text-amber-600",
+      icon: Sun,
+      label: "Clear",
+    };
+  }
+
+  if (weatherCode === 1 || weatherCode === 2 || weatherCode === 3) {
+    return {
+      className: "text-sky-700",
+      icon: Cloud,
+      label: "Cloudy",
+    };
+  }
+
+  if (weatherCode === 45 || weatherCode === 48) {
+    return {
+      className: "text-slate-500",
+      icon: CloudFog,
+      label: "Fog",
+    };
+  }
+
+  if (weatherCode >= 51 && weatherCode <= 57) {
+    return {
+      className: "text-cyan-700",
+      icon: CloudDrizzle,
+      label: "Drizzle",
+    };
+  }
+
+  if ((weatherCode >= 61 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 82)) {
+    return {
+      className: "text-blue-700",
+      icon: CloudRain,
+      label: "Rain",
+    };
+  }
+
+  if ((weatherCode >= 71 && weatherCode <= 77) || weatherCode === 85 || weatherCode === 86) {
+    return {
+      className: "text-sky-500",
+      icon: CloudSnow,
+      label: "Snow",
+    };
+  }
+
+  if (weatherCode >= 95) {
+    return {
+      className: "text-violet-700",
+      icon: CloudLightning,
+      label: "Thunderstorm",
+    };
+  }
+
+  if ((workout.weather?.windSpeedKph ?? 0) >= 20) {
+    return {
+      className: "text-teal-700",
+      icon: Wind,
+      label: "Windy",
+    };
+  }
+
+  return {
+    className: "text-indigo-700",
+    icon: Moon,
+    label: "Night",
   };
 }
 
