@@ -13,6 +13,21 @@ export interface WorkoutRouteStreams {
   moving: boolean[] | null;
 }
 
+export interface WorkoutWeather {
+  provider: string;
+  lookedUpAt: string;
+  startTemperatureC: number | null;
+  endTemperatureC: number | null;
+  averageTemperatureC: number | null;
+  apparentTemperatureC: number | null;
+  humidityPercent: number | null;
+  precipitationMm: number | null;
+  windSpeedKph: number | null;
+  windGustKph: number | null;
+  weatherCode: number | null;
+  summary: string | null;
+}
+
 export interface WorkoutNote {
   slug: string;
   title: string;
@@ -31,6 +46,7 @@ export interface WorkoutNote {
   maxHeartrate: number | null;
   summaryPolyline: string | null;
   primaryImageUrl: string | null;
+  weather: WorkoutWeather | null;
   hasStravaStreams: boolean;
   allDay: boolean;
   type: string;

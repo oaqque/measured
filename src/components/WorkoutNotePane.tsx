@@ -11,7 +11,7 @@ import {
   formatDistance,
   generatedAt,
 } from "@/lib/workouts/load";
-import type { WorkoutDataSource, WorkoutEventType, WorkoutNote } from "@/lib/workouts/schema";
+import type { WorkoutDataSource, WorkoutEventType, WorkoutNote, WorkoutWeather } from "@/lib/workouts/schema";
 import { cn } from "@/lib/utils";
 
 const WORKOUT_EVENT_TYPE_LABELS: Record<WorkoutEventType, string> = {
@@ -213,6 +213,8 @@ function WorkoutMetadataGrid({
   className?: string;
   workout: WorkoutNote;
 }) {
+  const weatherRows = getWorkoutWeatherRows(workout.weather);
+
   return (
     <div className={cn("grid gap-4 pt-1 text-sm", className)}>
       <MetadataRow label="Event type" value={WORKOUT_EVENT_TYPE_LABELS[workout.eventType]} />
@@ -225,6 +227,9 @@ function WorkoutMetadataGrid({
       />
       <MetadataRow label="All day" value={workout.allDay ? "Yes" : "No"} />
       <MetadataRow label="Type" value={workout.type} />
+      {weatherRows.map((row) => (
+        <MetadataRow key={row.label} label={row.label} value={row.value} />
+      ))}
       <MetadataRow label="Source file" value={workout.sourcePath} />
     </div>
   );
@@ -245,4 +250,101 @@ function getWorkoutDataSourceMeta(dataSource: WorkoutDataSource | null) {
   }
 
   return WORKOUT_SOURCE_BADGE_META[dataSource];
+}
+
+function getWorkoutWeatherRows(weather: WorkoutWeather | null) {
+  if (!weather) {
+    return [];
+  }
+
+  const rows: Array<{ label: string; value: string }> = [];
+  if (weather.summary) {
+    rows.push({ label: "Weather", value: weather.summary });
+  }
+
+  const temperatureValue = formatTemperatureRange(
+    weather.averageTemperatureC,
+    weather.startTemperatureC,
+    weather.endTemperatureC,
+  );
+  if (temperatureValue) {
+    rows.push({ label: "Temperature", value: temperatureValue });
+  }
+
+  const apparentTemperatureValue = formatDegrees(weather.apparentTemperatureC);
+  if (apparentTemperatureValue) {
+    rows.push({ label: "Feels like", value: apparentTemperatureValue });
+  }
+
+  const humidityValue = formatPercent(weather.humidityPercent);
+  if (humidityValue) {
+    rows.push({ label: "Humidity", value: humidityValue });
+  }
+
+  const precipitationValue = formatMillimeters(weather.precipitationMm);
+  if (precipitationValue) {
+    rows.push({ label: "Rain", value: precipitationValue });
+  }
+
+  const windValue = formatWind(weather.windSpeedKph, weather.windGustKph);
+  if (windValue) {
+    rows.push({ label: "Wind", value: windValue });
+  }
+
+  return rows;
+}
+
+function formatTemperatureRange(
+  averageTemperatureC: number | null,
+  startTemperatureC: number | null,
+  endTemperatureC: number | null,
+) {
+  const average = formatDegrees(averageTemperatureC);
+  const start = formatDegrees(startTemperatureC);
+  const end = formatDegrees(endTemperatureC);
+
+  if (average && start && end) {
+    return `${average} avg (${start} to ${end})`;
+  }
+
+  return average ?? (start && end ? `${start} to ${end}` : start ?? end ?? null);
+}
+
+function formatDegrees(value: number | null) {
+  if (value === null) {
+    return null;
+  }
+
+  return `${trimTrailingZero(value)} C`;
+}
+
+function formatPercent(value: number | null) {
+  if (value === null) {
+    return null;
+  }
+
+  return `${trimTrailingZero(value)}%`;
+}
+
+function formatMillimeters(value: number | null) {
+  if (value === null) {
+    return null;
+  }
+
+  return `${trimTrailingZero(value)} mm`;
+}
+
+function formatWind(speedKph: number | null, gustKph: number | null) {
+  const speed = speedKph === null ? null : `${trimTrailingZero(speedKph)} km/h`;
+  const gust = gustKph === null ? null : `${trimTrailingZero(gustKph)} km/h gusts`;
+
+  if (speed && gust) {
+    return `${speed}, ${gust}`;
+  }
+
+  return speed ?? gust ?? null;
+}
+
+function trimTrailingZero(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/u, "");
 }

@@ -9,7 +9,7 @@ import re
 import shutil
 import sqlite3
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from urllib import error as urllib_error
@@ -29,6 +29,17 @@ DEFAULT_IMAGE_CACHE_DIR_NAME = "cache-images"
 DEFAULT_PER_PAGE = 200
 DETAIL_RESERVE_REQUESTS = 5
 STREAM_RESERVE_REQUESTS = 12
+OPEN_METEO_PROVIDER = "open-meteo"
+OPEN_METEO_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
+OPEN_METEO_HOURLY_FIELDS = (
+    "temperature_2m",
+    "apparent_temperature",
+    "relative_humidity_2m",
+    "precipitation",
+    "wind_speed_10m",
+    "wind_gusts_10m",
+    "weather_code",
+)
 STANDARD_STREAM_TYPES = (
     "time",
     "distance",
@@ -155,6 +166,7 @@ def main(argv: list[str] | None = None) -> int:
                 athlete_id=athlete_id,
                 rate_state=rate_state,
             )
+        weather_requests = hydrate_missing_weather(connection=connection)
 
         write_export(connection, export_path, image_cache_dir=image_cache_dir)
         store_rate_state(connection, rate_state)
@@ -163,7 +175,11 @@ def main(argv: list[str] | None = None) -> int:
             sync_run_id=sync_run_id,
             finished_at=iso_now(),
             status="completed",
-            request_count=activities.request_count + detail_requests + image_requests + stream_requests,
+            request_count=activities.request_count
+            + detail_requests
+            + image_requests
+            + stream_requests
+            + weather_requests,
             error_text=None,
         )
 
@@ -177,6 +193,7 @@ def main(argv: list[str] | None = None) -> int:
                 "detailRequests": detail_requests,
                 "imageDownloads": image_requests,
                 "streamRequests": stream_requests,
+                "weatherRequests": weather_requests,
                 "rateLimits": rate_state.summary(),
             },
             indent=2,
@@ -272,6 +289,21 @@ def initialize_schema(connection: sqlite3.Connection) -> None:
           source_url TEXT NOT NULL,
           content_type TEXT,
           image_bytes BLOB NOT NULL,
+          fetched_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (activity_id) REFERENCES activities(activity_id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS activity_weather (
+          activity_id INTEGER PRIMARY KEY,
+          provider TEXT NOT NULL,
+          lookup_lat REAL NOT NULL,
+          lookup_lng REAL NOT NULL,
+          lookup_timezone TEXT NOT NULL,
+          lookup_start_local TEXT NOT NULL,
+          lookup_end_local TEXT NOT NULL,
+          weather_json TEXT NOT NULL,
+          summary_json TEXT NOT NULL,
           fetched_at TEXT NOT NULL,
           updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (activity_id) REFERENCES activities(activity_id) ON DELETE CASCADE
@@ -566,6 +598,77 @@ def hydrate_missing_images(*, connection: sqlite3.Connection) -> int:
     return request_count
 
 
+def hydrate_missing_weather(*, connection: sqlite3.Connection) -> int:
+    rows = connection.execute(
+        """
+        SELECT
+          activities.activity_id,
+          activities.start_date_local,
+          activities.timezone,
+          activities.start_lat,
+          activities.start_lng,
+          COALESCE(activities.elapsed_time_s, activities.moving_time_s, 0) AS duration_s
+        FROM activities
+        LEFT JOIN activity_weather ON activity_weather.activity_id = activities.activity_id
+        WHERE activity_weather.activity_id IS NULL
+          AND activities.start_date_local IS NOT NULL
+          AND activities.start_lat IS NOT NULL
+          AND activities.start_lng IS NOT NULL
+        ORDER BY activities.start_date DESC, activities.activity_id DESC
+        """
+    ).fetchall()
+
+    request_count = 0
+    for row in rows:
+        activity_id = int(row["activity_id"])
+        start_date_local = _as_optional_text(row["start_date_local"])
+        timezone_name = _extract_timezone_name(_as_optional_text(row["timezone"])) or "auto"
+        lookup_lat = _as_optional_float(row["start_lat"])
+        lookup_lng = _as_optional_float(row["start_lng"])
+        duration_s = max(_as_optional_int(row["duration_s"]) or 0, 0)
+        local_start = _parse_local_datetime(start_date_local)
+        if local_start is None or lookup_lat is None or lookup_lng is None:
+            continue
+
+        local_end = local_start + timedelta(seconds=duration_s)
+        try:
+            weather_payload = fetch_open_meteo_archive(
+                latitude=lookup_lat,
+                longitude=lookup_lng,
+                start_date=local_start.date().isoformat(),
+                end_date=local_end.date().isoformat(),
+                timezone_name=timezone_name,
+            )
+            summary = summarize_open_meteo_weather(
+                weather_payload=weather_payload,
+                local_start=local_start,
+                local_end=local_end,
+            )
+        except RuntimeError as exc:
+            print(f"Warning: unable to hydrate weather for activity {activity_id}: {exc}")
+            continue
+
+        if summary is None:
+            continue
+
+        upsert_activity_weather(
+            connection,
+            activity_id=activity_id,
+            provider=OPEN_METEO_PROVIDER,
+            lookup_lat=lookup_lat,
+            lookup_lng=lookup_lng,
+            lookup_timezone=timezone_name,
+            lookup_start_local=local_start.isoformat(timespec="seconds"),
+            lookup_end_local=local_end.isoformat(timespec="seconds"),
+            weather_payload=weather_payload,
+            summary=summary,
+        )
+        request_count += 1
+        connection.commit()
+
+    return request_count
+
+
 def upsert_activity_summary(
     connection: sqlite3.Connection, *, athlete_id: int, summary: dict[str, Any]
 ) -> None:
@@ -703,6 +806,64 @@ def upsert_activity_image(
     )
 
 
+def upsert_activity_weather(
+    connection: sqlite3.Connection,
+    *,
+    activity_id: int,
+    provider: str,
+    lookup_lat: float,
+    lookup_lng: float,
+    lookup_timezone: str,
+    lookup_start_local: str,
+    lookup_end_local: str,
+    weather_payload: dict[str, Any],
+    summary: dict[str, Any],
+) -> None:
+    now = iso_now()
+    connection.execute(
+        """
+        INSERT INTO activity_weather (
+          activity_id,
+          provider,
+          lookup_lat,
+          lookup_lng,
+          lookup_timezone,
+          lookup_start_local,
+          lookup_end_local,
+          weather_json,
+          summary_json,
+          fetched_at,
+          updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(activity_id) DO UPDATE SET
+          provider = excluded.provider,
+          lookup_lat = excluded.lookup_lat,
+          lookup_lng = excluded.lookup_lng,
+          lookup_timezone = excluded.lookup_timezone,
+          lookup_start_local = excluded.lookup_start_local,
+          lookup_end_local = excluded.lookup_end_local,
+          weather_json = excluded.weather_json,
+          summary_json = excluded.summary_json,
+          fetched_at = excluded.fetched_at,
+          updated_at = excluded.updated_at
+        """,
+        (
+            activity_id,
+            provider,
+            lookup_lat,
+            lookup_lng,
+            lookup_timezone,
+            lookup_start_local,
+            lookup_end_local,
+            json.dumps(weather_payload, sort_keys=True),
+            json.dumps(summary, sort_keys=True),
+            now,
+            now,
+        ),
+    )
+
+
 def scan_note_links(notes_dir: Path) -> list[tuple[str, str, int, str, str]]:
     if not notes_dir.is_dir():
         return []
@@ -763,12 +924,14 @@ def write_export(
           activities.max_heartrate,
           activities.summary_polyline,
           activities.detail_fetched_at,
+          activity_weather.summary_json AS weather_summary_json,
           EXISTS(
             SELECT 1
             FROM activity_streams
             WHERE activity_streams.activity_id = activities.activity_id
           ) AS has_streams
         FROM activities
+        LEFT JOIN activity_weather ON activity_weather.activity_id = activities.activity_id
         ORDER BY activities.start_date DESC, activities.activity_id DESC
         """
     ).fetchall()
@@ -791,6 +954,7 @@ def write_export(
                 "summaryPolyline": row["summary_polyline"],
                 "primaryImageFileName": image_assets.get(int(row["activity_id"]), {}).get("fileName"),
                 "detailFetchedAt": row["detail_fetched_at"],
+                "weather": load_exportable_weather(row["weather_summary_json"]),
                 "hasStreams": bool(row["has_streams"]),
                 "routeStreams": load_exportable_streams(
                     connection=connection, activity_id=int(row["activity_id"])
@@ -905,6 +1069,18 @@ def load_exportable_streams(
     }
 
 
+def load_exportable_weather(value: Any) -> dict[str, Any] | None:
+    if not isinstance(value, str) or value.strip() == "":
+        return None
+
+    try:
+        payload = json.loads(value)
+    except json.JSONDecodeError:
+        return None
+
+    return payload if isinstance(payload, dict) else None
+
+
 def extract_primary_image_ref(detail: dict[str, Any]) -> ActivityImageRef | None:
     photos = detail.get("photos")
     if not isinstance(photos, dict):
@@ -954,6 +1130,98 @@ def download_image_bytes(url: str) -> tuple[bytes, str | None]:
         raise RuntimeError(f"Image download returned no bytes for {url}")
 
     return payload, content_type if content_type != "application/octet-stream" else None
+
+
+def fetch_open_meteo_archive(
+    *,
+    latitude: float,
+    longitude: float,
+    start_date: str,
+    end_date: str,
+    timezone_name: str,
+) -> dict[str, Any]:
+    encoded_query = urllib_parse.urlencode(
+        {
+            "latitude": latitude,
+            "longitude": longitude,
+            "start_date": start_date,
+            "end_date": end_date,
+            "timezone": timezone_name,
+            "hourly": ",".join(OPEN_METEO_HOURLY_FIELDS),
+            "wind_speed_unit": "kmh",
+            "temperature_unit": "celsius",
+            "precipitation_unit": "mm",
+        }
+    )
+    url = f"{OPEN_METEO_ARCHIVE_URL}?{encoded_query}"
+    request = urllib_request.Request(
+        url,
+        headers={"Accept": "application/json"},
+        method="GET",
+    )
+    try:
+        with urllib_request.urlopen(request, timeout=30) as response:
+            payload = json.load(response)
+    except urllib_error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(
+            f"Open-Meteo request failed ({exc.code}) for {url}: {body}"
+        ) from exc
+    except urllib_error.URLError as exc:
+        raise RuntimeError(f"Unable to reach Open-Meteo for {url}: {exc.reason}") from exc
+
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"Open-Meteo response for {url} was not a JSON object.")
+    if payload.get("error") is True:
+        raise RuntimeError(f"Open-Meteo request failed for {url}: {payload.get('reason')}")
+    return payload
+
+
+def summarize_open_meteo_weather(
+    *, weather_payload: dict[str, Any], local_start: datetime, local_end: datetime
+) -> dict[str, Any] | None:
+    hourly = weather_payload.get("hourly")
+    if not isinstance(hourly, dict):
+        return None
+
+    times = _parse_hourly_timestamps(hourly.get("time"))
+    if not times:
+        return None
+
+    start_index = _nearest_time_index(times, local_start)
+    end_index = _nearest_time_index(times, local_end)
+    if start_index is None or end_index is None:
+        return None
+
+    window_indices = _hourly_window_indices(times, local_start, local_end)
+    if not window_indices:
+        window_indices = [start_index]
+
+    temperature = _coerce_numeric_list(hourly.get("temperature_2m"))
+    apparent_temperature = _coerce_numeric_list(hourly.get("apparent_temperature"))
+    humidity = _coerce_numeric_list(hourly.get("relative_humidity_2m"))
+    precipitation = _coerce_numeric_list(hourly.get("precipitation"))
+    wind_speed = _coerce_numeric_list(hourly.get("wind_speed_10m"))
+    wind_gusts = _coerce_numeric_list(hourly.get("wind_gusts_10m"))
+    weather_code = _coerce_integer_list(hourly.get("weather_code"))
+    selected_code = _select_weather_code(weather_code, window_indices)
+
+    return {
+        "provider": OPEN_METEO_PROVIDER,
+        "lookedUpAt": iso_now(),
+        "startTemperatureC": _round_weather_value(_value_at_index(temperature, start_index)),
+        "endTemperatureC": _round_weather_value(_value_at_index(temperature, end_index)),
+        "averageTemperatureC": _round_weather_value(_mean_for_indices(temperature, window_indices)),
+        "apparentTemperatureC": _round_weather_value(
+            _mean_for_indices(apparent_temperature, window_indices)
+        ),
+        "humidityPercent": _round_weather_value(_mean_for_indices(humidity, window_indices)),
+        "precipitationMm": _round_weather_value(_sum_for_indices(precipitation, window_indices)),
+        "windSpeedKph": _round_weather_value(_mean_for_indices(wind_speed, window_indices)),
+        "windGustKph": _round_weather_value(_max_for_indices(wind_gusts, window_indices)),
+        "weatherCode": selected_code,
+        "summary": _weather_code_label(selected_code),
+    }
 
 
 def infer_image_suffix(content_type: str | None, source_url: str | None) -> str:
@@ -1061,6 +1329,195 @@ def _meters_to_km(value: Any) -> float | None:
     if meters is None:
         return None
     return round(meters / 1000.0, 3)
+
+
+def _extract_timezone_name(value: str | None) -> str | None:
+    if value is None:
+        return None
+    match = re.search(r"\)\s*(.+)$", value)
+    if match is not None:
+        timezone_name = match.group(1).strip()
+        return timezone_name or None
+    return value.strip() or None
+
+
+def _parse_local_datetime(value: str | None) -> datetime | None:
+    if value is None:
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).replace(tzinfo=None)
+    except ValueError:
+        return None
+
+
+def _parse_hourly_timestamps(value: Any) -> list[datetime]:
+    if not isinstance(value, list):
+        return []
+    timestamps: list[datetime] = []
+    for item in value:
+        if not isinstance(item, str):
+            return []
+        try:
+            timestamps.append(datetime.fromisoformat(item))
+        except ValueError:
+            return []
+    return timestamps
+
+
+def _coerce_numeric_list(value: Any) -> list[float | None]:
+    if not isinstance(value, list):
+        return []
+    return [_as_optional_float(item) for item in value]
+
+
+def _coerce_integer_list(value: Any) -> list[int | None]:
+    if not isinstance(value, list):
+        return []
+    return [_as_optional_int(item) for item in value]
+
+
+def _nearest_time_index(times: list[datetime], target: datetime) -> int | None:
+    if not times:
+        return None
+    return min(range(len(times)), key=lambda index: abs((times[index] - target).total_seconds()))
+
+
+def _hourly_window_indices(
+    times: list[datetime], local_start: datetime, local_end: datetime
+) -> list[int]:
+    if not times:
+        return []
+    window_start = local_start.replace(minute=0, second=0, microsecond=0)
+    window_end = local_end.replace(minute=0, second=0, microsecond=0)
+    return [
+        index for index, timestamp in enumerate(times) if window_start <= timestamp <= window_end
+    ]
+
+
+def _value_at_index(values: list[float | None], index: int) -> float | None:
+    if index < 0 or index >= len(values):
+        return None
+    return values[index]
+
+
+def _mean_for_indices(values: list[float | None], indices: list[int]) -> float | None:
+    samples = [
+        values[index]
+        for index in indices
+        if 0 <= index < len(values) and values[index] is not None
+    ]
+    if not samples:
+        return None
+    return sum(samples) / len(samples)
+
+
+def _sum_for_indices(values: list[float | None], indices: list[int]) -> float | None:
+    samples = [
+        values[index]
+        for index in indices
+        if 0 <= index < len(values) and values[index] is not None
+    ]
+    if not samples:
+        return None
+    return sum(samples)
+
+
+def _max_for_indices(values: list[float | None], indices: list[int]) -> float | None:
+    samples = [
+        values[index]
+        for index in indices
+        if 0 <= index < len(values) and values[index] is not None
+    ]
+    if not samples:
+        return None
+    return max(samples)
+
+
+def _select_weather_code(values: list[int | None], indices: list[int]) -> int | None:
+    codes = [
+        values[index]
+        for index in indices
+        if 0 <= index < len(values) and values[index] is not None
+    ]
+    if not codes:
+        return None
+    return max(codes, key=_weather_code_severity)
+
+
+def _round_weather_value(value: float | None) -> float | None:
+    if value is None:
+        return None
+    return round(value, 1)
+
+
+def _weather_code_severity(code: int) -> int:
+    severity = {
+        0: 0,
+        1: 1,
+        2: 2,
+        3: 3,
+        45: 10,
+        48: 11,
+        51: 20,
+        53: 21,
+        55: 22,
+        56: 23,
+        57: 24,
+        61: 30,
+        63: 31,
+        65: 32,
+        66: 33,
+        67: 34,
+        71: 40,
+        73: 41,
+        75: 42,
+        77: 43,
+        80: 50,
+        81: 51,
+        82: 52,
+        85: 53,
+        86: 54,
+        95: 60,
+        96: 61,
+        99: 62,
+    }
+    return severity.get(code, code)
+
+
+def _weather_code_label(code: int | None) -> str | None:
+    if code is None:
+        return None
+    labels = {
+        0: "Clear sky",
+        1: "Mainly clear",
+        2: "Partly cloudy",
+        3: "Overcast",
+        45: "Fog",
+        48: "Depositing rime fog",
+        51: "Light drizzle",
+        53: "Moderate drizzle",
+        55: "Dense drizzle",
+        56: "Light freezing drizzle",
+        57: "Dense freezing drizzle",
+        61: "Slight rain",
+        63: "Moderate rain",
+        65: "Heavy rain",
+        66: "Light freezing rain",
+        67: "Heavy freezing rain",
+        71: "Slight snow",
+        73: "Moderate snow",
+        75: "Heavy snow",
+        77: "Snow grains",
+        80: "Slight rain showers",
+        81: "Moderate rain showers",
+        82: "Violent rain showers",
+        85: "Slight snow showers",
+        86: "Heavy snow showers",
+        95: "Thunderstorm",
+        96: "Thunderstorm with slight hail",
+        99: "Thunderstorm with heavy hail",
+    }
+    return labels.get(code)
 
 
 if __name__ == "__main__":

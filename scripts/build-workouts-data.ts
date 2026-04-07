@@ -9,6 +9,7 @@ import type {
   WorkoutDataSource,
   WorkoutNote,
   WorkoutRouteStreams,
+  WorkoutWeather,
   WorkoutEventType,
   WorkoutsData,
 } from "../src/lib/workouts/schema";
@@ -40,6 +41,7 @@ interface GeneratedWorkoutFallback {
   maxHeartrate: number | null;
   summaryPolyline: string | null;
   primaryImageUrl: string | null;
+  weather: WorkoutWeather | null;
   hasStravaStreams: boolean;
   stravaId: number | null;
 }
@@ -59,6 +61,7 @@ interface StravaCachedActivity {
   summaryPolyline: string | null;
   primaryImageFileName: string | null;
   detailFetchedAt: string | null;
+  weather: StravaCachedWeather | null;
   hasStreams: boolean;
   routeStreams: StravaCachedRouteStreams | null;
 }
@@ -70,6 +73,21 @@ interface StravaCachedRouteStreams {
   heartrate: number[] | null;
   velocitySmooth: number[] | null;
   moving: boolean[] | null;
+}
+
+interface StravaCachedWeather {
+  provider: string;
+  lookedUpAt: string;
+  startTemperatureC: number | null;
+  endTemperatureC: number | null;
+  averageTemperatureC: number | null;
+  apparentTemperatureC: number | null;
+  humidityPercent: number | null;
+  precipitationMm: number | null;
+  windSpeedKph: number | null;
+  windGustKph: number | null;
+  weatherCode: number | null;
+  summary: string | null;
 }
 
 async function main() {
@@ -100,6 +118,7 @@ async function main() {
         maxHeartrate: workout.maxHeartrate,
         summaryPolyline: workout.summaryPolyline,
         primaryImageUrl: workout.primaryImageUrl,
+        weather: workout.weather,
         hasStravaStreams: workout.hasStravaStreams,
         stravaId: workout.stravaId,
       } satisfies GeneratedWorkoutFallback,
@@ -434,6 +453,7 @@ function buildWorkoutNote(
     maxHeartrate: normalizeCachedNumber(cachedActivity?.maxHeartrate) ?? validFallback?.maxHeartrate ?? null,
     summaryPolyline: normalizeNullableString(cachedActivity?.summaryPolyline) ?? validFallback?.summaryPolyline ?? null,
     primaryImageUrl: normalizeCachedImageUrl(cachedActivity) ?? validFallback?.primaryImageUrl ?? null,
+    weather: normalizeCachedWeather(cachedActivity?.weather) ?? validFallback?.weather ?? null,
     hasStravaStreams: cachedActivity?.hasStreams === true || validFallback?.hasStravaStreams === true,
     allDay: expectBoolean(data.allDay, fileName, "allDay"),
     type: expectString(data.type, fileName, "type"),
@@ -565,6 +585,34 @@ function normalizeCachedImageUrl(activity: StravaCachedActivity | null) {
   }
 
   return `/generated/workout-images/${encodeURIComponent(fileName)}`;
+}
+
+function normalizeCachedWeather(value: unknown): WorkoutWeather | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const candidate = value as Partial<StravaCachedWeather>;
+  const provider = normalizeNullableString(candidate.provider);
+  const lookedUpAt = normalizeNullableString(candidate.lookedUpAt);
+  if (!provider || !lookedUpAt) {
+    return null;
+  }
+
+  return {
+    provider,
+    lookedUpAt,
+    startTemperatureC: normalizeCachedNumber(candidate.startTemperatureC),
+    endTemperatureC: normalizeCachedNumber(candidate.endTemperatureC),
+    averageTemperatureC: normalizeCachedNumber(candidate.averageTemperatureC),
+    apparentTemperatureC: normalizeCachedNumber(candidate.apparentTemperatureC),
+    humidityPercent: normalizeCachedNumber(candidate.humidityPercent),
+    precipitationMm: normalizeCachedNumber(candidate.precipitationMm),
+    windSpeedKph: normalizeCachedNumber(candidate.windSpeedKph),
+    windGustKph: normalizeCachedNumber(candidate.windGustKph),
+    weatherCode: normalizeCachedInteger(candidate.weatherCode),
+    summary: normalizeNullableString(candidate.summary),
+  };
 }
 
 function normalizeCachedNumber(value: unknown) {
