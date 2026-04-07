@@ -13,5 +13,6 @@ expectedDistance: 10 km
 - 2 km easy warm-up
 - 6 km at steady aerobic-marathon effort, controlled enough that you could still speak in short phrases
 - 2 km easy cool down
-- This is the week's second useful run, but it is still a notch below Tuesday's threshold session.
+- This is still the week's second useful run, but it should not turn into make-up threshold work for what Tuesday did not include.
+- Tuesday became a shorter hill-repeat session after Monday drifted harder than planned, so the job here is controlled steady volume rather than forcing a second hard day.
 - If the legs feel flat or the shins feel loaded, keep the middle block honest and aerobic rather than trying to force pace.

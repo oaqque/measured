@@ -10,7 +10,7 @@ tags:
 affectedFiles:
   - PLAN.md
   - notes/2026-04-06 8 km Easy Aerobic Run.md
-  - notes/2026-04-07 12 km Threshold Run.md
+  - notes/2026-04-07 7 km Hill Repeat Run.md
   - notes/2026-04-12 15 km Easy Long Run.md
 ---
 

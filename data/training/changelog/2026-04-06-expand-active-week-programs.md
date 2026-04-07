@@ -8,7 +8,7 @@ tags:
   - basketball
 affectedFiles:
   - notes/2026-04-06 8 km Easy Aerobic Run.md
-  - notes/2026-04-07 12 km Threshold Run.md
+  - notes/2026-04-07 7 km Hill Repeat Run.md
   - notes/2026-04-08 8 km Easy Aerobic Run.md
   - notes/2026-04-09 10 km Steady Run.md
   - notes/2026-04-10 6 km Easy Recovery Run.md
