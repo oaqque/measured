@@ -124,6 +124,7 @@ const EVENT_TYPE_META: Record<WorkoutEventType, { icon: WorkoutEventTypeIcon; la
   mobility: { icon: Accessibility, label: "Mobility" },
   race: { icon: Trophy, label: "Race" },
 };
+const DEFAULT_EVENT_TYPES: WorkoutEventType[] = ["run", "race"];
 
 export default function App() {
   const [{ view, noteSlug: selectedWorkoutSlug }, navigateRoute] = useAppRoute();
@@ -135,7 +136,7 @@ export default function App() {
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(296);
   const [rightSidebarWidth, setRightSidebarWidth] = useState(RIGHT_SIDEBAR_DEFAULT_WIDTH);
-  const [eventType, setEventType] = useState<WorkoutFilters["eventType"]>("all");
+  const [eventType, setEventType] = useState<WorkoutFilters["eventType"]>(DEFAULT_EVENT_TYPES);
   const [status, setStatus] = useState<WorkoutStatus>("all");
   const previousSelectedWorkoutSlugRef = useRef<string | null>(selectedWorkoutSlug);
   const previousSelectedWorkoutDateRef = useRef<string | null>(null);
@@ -220,7 +221,7 @@ export default function App() {
       return;
     }
 
-    setEventType("all");
+    setEventType(DEFAULT_EVENT_TYPES);
     setStatus("all");
     setCalendarFocusDate((current) => (current === selectedWorkout.date ? current : selectedWorkout.date));
     if (!isDesktop) {
@@ -365,7 +366,7 @@ export default function App() {
       return;
     }
 
-    setEventType("all");
+    setEventType(DEFAULT_EVENT_TYPES);
     setStatus("all");
     if (syncCalendarDate) {
       focusCalendarDate(workout.date);
@@ -1071,8 +1072,10 @@ function CalendarControls({
   onTodayClick: () => void;
   onStatusChange: (value: WorkoutStatus) => void;
 }) {
+  const isDesktopViewport = useMediaQuery("(min-width: 1024px)");
+
   return (
-    <div className="flex items-stretch gap-2 lg:inline-flex lg:gap-0">
+    <div className="flex items-stretch gap-2 lg:inline-flex lg:flex-wrap lg:items-stretch lg:gap-0">
       <Button
         aria-label="Jump to today"
         className="size-10 shrink-0 rounded-[0.5rem] p-0 lg:rounded-none lg:rounded-l-[0.35rem] lg:border-r lg:border-foreground/10"
@@ -1093,13 +1096,55 @@ function CalendarControls({
         onDateChange={onFocusDateChange}
       />
 
+      {isDesktopViewport ? (
+        <DesktopEventTypeFilters eventType={eventType} onEventTypeChange={onEventTypeChange} />
+      ) : null}
+
       <CalendarFilterMenu
         eventType={eventType}
+        includeEventTypes={!isDesktopViewport}
         status={status}
         triggerClassName="size-10 shrink-0 rounded-[0.5rem] p-0 lg:rounded-none lg:rounded-r-[0.35rem]"
         onEventTypeChange={onEventTypeChange}
         onStatusChange={onStatusChange}
       />
+    </div>
+  );
+}
+
+function DesktopEventTypeFilters({
+  eventType,
+  onEventTypeChange,
+}: {
+  eventType: WorkoutFilters["eventType"];
+  onEventTypeChange: (value: WorkoutFilters["eventType"]) => void;
+}) {
+  return (
+    <div className="hidden lg:inline-flex lg:items-stretch">
+      {availableEventTypes.map((item) => {
+        const EventTypeIcon = getWorkoutEventTypeMeta(item).icon;
+        const selected = eventType.includes(item);
+        const label = getWorkoutEventTypeMeta(item).label;
+
+        return (
+          <Button
+            className={cn(
+              "size-10 rounded-none border-r border-foreground/10 p-0",
+              selected
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "bg-surface-panel-alt text-foreground hover:bg-surface-hero/65",
+            )}
+            aria-label={`${selected ? "Hide" : "Show"} ${label}`}
+            key={item}
+            type="button"
+            variant="secondary"
+            onClick={() => onEventTypeChange(toggleWorkoutEventType(eventType, item))}
+          >
+            <EventTypeIcon className="size-4" />
+            <span className="sr-only">{`${selected ? "Hide" : "Show"} ${label}`}</span>
+          </Button>
+        );
+      })}
     </div>
   );
 }
@@ -1118,7 +1163,6 @@ function MonthPicker({
   const [pickerMonth, setPickerMonth] = useState<Date>(() => selectedDate ?? new Date());
   const isMobileViewport = useMediaQuery("(max-width: 1023px)");
   const selectedMonthLabel = selectedDate ? formatMonthLabel(selectedDateKey) : "Pick month";
-  const viewingMonthLabel = formatMonthFromDate(pickerMonth);
 
   useEffect(() => {
     if (selectedDateKey) {
@@ -1140,11 +1184,6 @@ function MonthPicker({
         >
           <span className="flex min-w-0 flex-col items-start text-left leading-tight">
             <span className="truncate">{selectedMonthLabel}</span>
-            {open ? (
-              <span className="truncate text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Viewing {viewingMonthLabel}
-              </span>
-            ) : null}
           </span>
         </Button>
       </PopoverTrigger>
@@ -1176,18 +1215,20 @@ function MonthPicker({
 
 function CalendarFilterMenu({
   eventType,
+  includeEventTypes = true,
   status,
   triggerClassName,
   onEventTypeChange,
   onStatusChange,
 }: {
   eventType: WorkoutFilters["eventType"];
+  includeEventTypes?: boolean;
   status: WorkoutStatus;
   triggerClassName?: string;
   onEventTypeChange: (value: WorkoutFilters["eventType"]) => void;
   onStatusChange: (value: WorkoutStatus) => void;
 }) {
-  const activeFilterCount = Number(eventType !== "all") + Number(status !== "all");
+  const activeFilterCount = Number(!hasDefaultEventTypes(eventType)) + Number(status !== "all");
 
   return (
     <DropdownMenu>
@@ -1221,28 +1262,33 @@ function CalendarFilterMenu({
           Completed
         </DropdownMenuCheckboxItem>
 
-        <DropdownMenuSeparator />
-        {availableEventTypes.map((item) => {
-          const EventTypeIcon = getWorkoutEventTypeMeta(item).icon;
+        {includeEventTypes ? (
+          <>
+            <DropdownMenuSeparator />
+            {availableEventTypes.map((item) => {
+              const EventTypeIcon = getWorkoutEventTypeMeta(item).icon;
+              const selected = eventType.includes(item);
 
-          return (
-            <DropdownMenuCheckboxItem
-              checked={eventType === item}
-              key={item}
-              onCheckedChange={(checked) => onEventTypeChange(checked ? item : "all")}
-            >
-              <EventTypeIcon className="size-4" />
-              {getWorkoutEventTypeMeta(item).label}
-            </DropdownMenuCheckboxItem>
-          );
-        })}
+              return (
+                <DropdownMenuCheckboxItem
+                  checked={selected}
+                  key={item}
+                  onCheckedChange={() => onEventTypeChange(toggleWorkoutEventType(eventType, item))}
+                >
+                  <EventTypeIcon className="size-4" />
+                  {getWorkoutEventTypeMeta(item).label}
+                </DropdownMenuCheckboxItem>
+              );
+            })}
+          </>
+        ) : null}
 
         {activeFilterCount > 0 ? (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onSelect={() => {
-                onEventTypeChange("all");
+                onEventTypeChange(DEFAULT_EVENT_TYPES);
                 onStatusChange("all");
               }}
             >
@@ -1705,7 +1751,7 @@ function CalendarMonthGrid({
                   return (
                     <Button
                       className={cn(
-                        "h-full min-w-[10rem] flex-1 items-start justify-start rounded-[0.35rem] px-3 py-2 text-left whitespace-normal",
+                        "relative h-full min-w-[10rem] flex-1 items-start justify-start overflow-hidden rounded-[0.35rem] px-3 py-2 text-left whitespace-normal",
                         getWorkoutCardToneClasses(statusTone, selected),
                       )}
                       key={workout.slug}
@@ -1713,6 +1759,7 @@ function CalendarMonthGrid({
                       variant="secondary"
                       onClick={() => onSelectWorkout(workout.slug)}
                     >
+                      <WorkoutCardBackground selected={selected} workout={workout} />
                       <WorkoutCardContent selected={selected} workout={workout} />
                     </Button>
                   );
@@ -1812,7 +1859,7 @@ function CalendarWeeksDesktop({
                       return (
                         <Button
                           className={cn(
-                            "h-full min-h-0 w-full items-start justify-start overflow-hidden rounded-[0.35rem] px-2 py-1.5 text-left whitespace-normal",
+                            "relative h-full min-h-0 w-full items-start justify-start overflow-hidden rounded-[0.35rem] px-2 py-1.5 text-left whitespace-normal",
                             cell.isOutsideRange && "opacity-80",
                             compactCards && "px-2 py-1",
                             getWorkoutCardToneClasses(statusTone, selected),
@@ -1822,6 +1869,7 @@ function CalendarWeeksDesktop({
                           variant="secondary"
                           onClick={() => onSelectWorkout(workout.slug)}
                         >
+                          <WorkoutCardBackground selected={selected} workout={workout} />
                           <WorkoutCardContent compact={compactCards} selected={selected} workout={workout} />
                         </Button>
                       );
@@ -1855,6 +1903,7 @@ function WorkoutCardContent({
   const iconSizeClass = compact ? "size-3.5" : "size-4";
   const routeOutlinePath = getWorkoutCardRouteOutlinePath(workout.summaryPolyline);
   const StatusIcon = statusMeta.icon;
+  const hasBackgroundImage = workout.primaryImageUrl !== null;
 
   return (
     <span
@@ -1869,12 +1918,20 @@ function WorkoutCardContent({
       className="relative flex h-full w-full"
     >
       {routeOutlinePath ? (
-        <WorkoutCardRouteOutline compact={compact} path={routeOutlinePath} selected={selected} />
+        <WorkoutCardRouteOutline
+          compact={compact}
+          hasBackgroundImage={hasBackgroundImage}
+          path={routeOutlinePath}
+          selected={selected}
+        />
       ) : null}
       <span className="absolute left-0 top-0 flex items-start justify-start">
         <EventTypeIcon
           aria-hidden="true"
-          className={cn(iconSizeClass, selected ? "text-primary-foreground" : "text-foreground")}
+          className={cn(
+            iconSizeClass,
+            selected || hasBackgroundImage ? "text-primary-foreground" : "text-foreground",
+          )}
         />
       </span>
       <span className="absolute right-0 top-0 flex items-start justify-end">
@@ -1882,7 +1939,11 @@ function WorkoutCardContent({
           aria-hidden="true"
           className={cn(
             compact ? "size-3.5" : "size-4",
-            selected ? "text-primary-foreground" : statusMeta.className,
+            selected
+              ? "text-primary-foreground"
+              : hasBackgroundImage
+                ? "text-white"
+                : statusMeta.className,
           )}
         />
       </span>
@@ -1891,7 +1952,7 @@ function WorkoutCardContent({
           className={cn(
             "flex h-full w-full items-center justify-center font-extrabold tabular-nums",
             getWorkoutCardDistanceSizeClass(displayDistanceKm, compact),
-            selected ? "text-primary-foreground" : "text-foreground",
+            selected || hasBackgroundImage ? "text-primary-foreground" : "text-foreground",
           )}
         >
           {displayDistance}
@@ -1900,6 +1961,40 @@ function WorkoutCardContent({
         <span className="h-full w-full" />
       )}
     </span>
+  );
+}
+
+function WorkoutCardBackground({
+  selected,
+  workout,
+}: {
+  selected: boolean;
+  workout: WorkoutNote;
+}) {
+  if (!workout.primaryImageUrl) {
+    return null;
+  }
+
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat",
+          selected ? "opacity-[0.9]" : "opacity-[0.98]",
+        )}
+        style={{ backgroundImage: `url("${workout.primaryImageUrl}")` }}
+      />
+      <span
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none absolute inset-0",
+          selected
+            ? "bg-gradient-to-br from-primary/55 via-primary/28 to-primary/52"
+            : "bg-gradient-to-br from-black/48 via-black/22 to-black/56",
+        )}
+      />
+    </>
   );
 }
 
@@ -2215,6 +2310,26 @@ function getWorkoutEventTypeMeta(eventType: WorkoutEventType) {
   return EVENT_TYPE_META[eventType];
 }
 
+function hasDefaultEventTypes(eventTypes: WorkoutFilters["eventType"]) {
+  return (
+    eventTypes.length === DEFAULT_EVENT_TYPES.length &&
+    DEFAULT_EVENT_TYPES.every((item) => eventTypes.includes(item))
+  );
+}
+
+function toggleWorkoutEventType(
+  eventTypes: WorkoutFilters["eventType"],
+  item: WorkoutEventType,
+): WorkoutFilters["eventType"] {
+  const selected = eventTypes.includes(item);
+  if (selected) {
+    const nextEventTypes = eventTypes.filter((eventType) => eventType !== item);
+    return nextEventTypes.length > 0 ? nextEventTypes : eventTypes;
+  }
+
+  return [...eventTypes, item];
+}
+
 function getWorkoutCardRouteOutlinePath(summaryPolyline: string | null) {
   if (!summaryPolyline) {
     return null;
@@ -2317,10 +2432,12 @@ function getWorkoutStatusIconMeta(tone: "completed" | "default" | "overdue") {
 
 function WorkoutCardRouteOutline({
   compact,
+  hasBackgroundImage,
   path,
   selected,
 }: {
   compact: boolean;
+  hasBackgroundImage: boolean;
   path: string;
   selected: boolean;
 }) {
@@ -2336,10 +2453,10 @@ function WorkoutCardRouteOutline({
         <path
           d={path}
           fill="none"
-          stroke="currentColor"
+          stroke={hasBackgroundImage ? "#ffffff" : "currentColor"}
           strokeLinecap="round"
           strokeLinejoin="round"
-          strokeOpacity={selected ? 0.24 : 0.16}
+          strokeOpacity={hasBackgroundImage ? (selected ? 0.72 : 0.62) : selected ? 0.24 : 0.16}
           strokeWidth={compact ? 1.8 : 1.5}
           vectorEffect="non-scaling-stroke"
         />

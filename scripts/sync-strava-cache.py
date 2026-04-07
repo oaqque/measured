@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -24,6 +25,7 @@ DEFAULT_ROOT = Path("vault/strava")
 DEFAULT_NOTES_DIR = Path("data/training/notes")
 DEFAULT_DB_NAME = "cache.sqlite3"
 DEFAULT_EXPORT_NAME = "cache-export.json"
+DEFAULT_IMAGE_CACHE_DIR_NAME = "cache-images"
 DEFAULT_PER_PAGE = 200
 DETAIL_RESERVE_REQUESTS = 5
 STREAM_RESERVE_REQUESTS = 12
@@ -92,6 +94,12 @@ class RateState:
         }
 
 
+@dataclass(slots=True)
+class ActivityImageRef:
+    source_url: str
+    unique_id: str | None
+
+
 def main(argv: list[str] | None = None) -> int:
     load_dotenv()
     parser = build_parser()
@@ -100,6 +108,7 @@ def main(argv: list[str] | None = None) -> int:
     root = args.root.expanduser()
     db_path = (root / DEFAULT_DB_NAME) if args.db is None else args.db.expanduser()
     export_path = (root / DEFAULT_EXPORT_NAME) if args.export is None else args.export.expanduser()
+    image_cache_dir = root / DEFAULT_IMAGE_CACHE_DIR_NAME
     notes_dir = args.notes_dir.expanduser()
 
     root.mkdir(parents=True, exist_ok=True)
@@ -137,6 +146,7 @@ def main(argv: list[str] | None = None) -> int:
             athlete_id=athlete_id,
             rate_state=rate_state,
         )
+        image_requests = hydrate_missing_images(connection=connection)
         stream_requests = 0
         if args.with_streams:
             stream_requests = hydrate_missing_streams(
@@ -146,14 +156,14 @@ def main(argv: list[str] | None = None) -> int:
                 rate_state=rate_state,
             )
 
-        write_export(connection, export_path)
+        write_export(connection, export_path, image_cache_dir=image_cache_dir)
         store_rate_state(connection, rate_state)
         complete_sync_run(
             connection,
             sync_run_id=sync_run_id,
             finished_at=iso_now(),
             status="completed",
-            request_count=activities.request_count + detail_requests + stream_requests,
+            request_count=activities.request_count + detail_requests + image_requests + stream_requests,
             error_text=None,
         )
 
@@ -165,6 +175,7 @@ def main(argv: list[str] | None = None) -> int:
                 "runsSeen": activities.run_count,
                 "listRequests": activities.request_count,
                 "detailRequests": detail_requests,
+                "imageDownloads": image_requests,
                 "streamRequests": stream_requests,
                 "rateLimits": rate_state.summary(),
             },
@@ -252,6 +263,17 @@ def initialize_schema(connection: sqlite3.Connection) -> None:
           stream_json TEXT NOT NULL,
           fetched_at TEXT NOT NULL,
           PRIMARY KEY (activity_id, stream_set),
+          FOREIGN KEY (activity_id) REFERENCES activities(activity_id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS activity_images (
+          activity_id INTEGER PRIMARY KEY,
+          unique_id TEXT,
+          source_url TEXT NOT NULL,
+          content_type TEXT,
+          image_bytes BLOB NOT NULL,
+          fetched_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (activity_id) REFERENCES activities(activity_id) ON DELETE CASCADE
         );
 
@@ -477,6 +499,73 @@ def hydrate_missing_streams(
     return request_count
 
 
+def hydrate_missing_images(*, connection: sqlite3.Connection) -> int:
+    rows = connection.execute(
+        """
+        SELECT activity_id, detail_json
+        FROM activities
+        WHERE detail_json IS NOT NULL
+        ORDER BY start_date DESC, activity_id DESC
+        """
+    ).fetchall()
+    existing_rows = connection.execute(
+        """
+        SELECT activity_id, unique_id, source_url
+        FROM activity_images
+        """
+    ).fetchall()
+    existing_images = {
+        int(row["activity_id"]): (
+            _as_optional_text(row["source_url"]),
+            _as_optional_text(row["unique_id"]),
+        )
+        for row in existing_rows
+    }
+
+    request_count = 0
+    for row in rows:
+        activity_id = int(row["activity_id"])
+        detail_json = row["detail_json"]
+        if not isinstance(detail_json, str) or detail_json.strip() == "":
+            continue
+
+        try:
+            detail = json.loads(detail_json)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(detail, dict):
+            continue
+
+        image_ref = extract_primary_image_ref(detail)
+        if image_ref is None:
+            if activity_id in existing_images:
+                connection.execute(
+                    "DELETE FROM activity_images WHERE activity_id = ?",
+                    (activity_id,),
+                )
+                connection.commit()
+            continue
+
+        existing_image = existing_images.get(activity_id)
+        if existing_image == (image_ref.source_url, image_ref.unique_id):
+            continue
+
+        image_bytes, content_type = download_image_bytes(image_ref.source_url)
+        upsert_activity_image(
+            connection,
+            activity_id=activity_id,
+            unique_id=image_ref.unique_id,
+            source_url=image_ref.source_url,
+            content_type=content_type,
+            image_bytes=image_bytes,
+        )
+        existing_images[activity_id] = (image_ref.source_url, image_ref.unique_id)
+        request_count += 1
+        connection.commit()
+
+    return request_count
+
+
 def upsert_activity_summary(
     connection: sqlite3.Connection, *, athlete_id: int, summary: dict[str, Any]
 ) -> None:
@@ -580,6 +669,40 @@ def upsert_activity_detail(
     )
 
 
+def upsert_activity_image(
+    connection: sqlite3.Connection,
+    *,
+    activity_id: int,
+    unique_id: str | None,
+    source_url: str,
+    content_type: str | None,
+    image_bytes: bytes,
+) -> None:
+    now = iso_now()
+    connection.execute(
+        """
+        INSERT INTO activity_images (
+          activity_id,
+          unique_id,
+          source_url,
+          content_type,
+          image_bytes,
+          fetched_at,
+          updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(activity_id) DO UPDATE SET
+          unique_id = excluded.unique_id,
+          source_url = excluded.source_url,
+          content_type = excluded.content_type,
+          image_bytes = excluded.image_bytes,
+          fetched_at = excluded.fetched_at,
+          updated_at = excluded.updated_at
+        """,
+        (activity_id, unique_id, source_url, content_type, image_bytes, now, now),
+    )
+
+
 def scan_note_links(notes_dir: Path) -> list[tuple[str, str, int, str, str]]:
     if not notes_dir.is_dir():
         return []
@@ -620,8 +743,11 @@ def refresh_note_links(
     connection.commit()
 
 
-def write_export(connection: sqlite3.Connection, export_path: Path) -> None:
+def write_export(
+    connection: sqlite3.Connection, export_path: Path, *, image_cache_dir: Path
+) -> None:
     export_path.parent.mkdir(parents=True, exist_ok=True)
+    image_assets = write_exportable_images(connection, image_cache_dir)
     rows = connection.execute(
         """
         SELECT
@@ -663,6 +789,7 @@ def write_export(connection: sqlite3.Connection, export_path: Path) -> None:
                 "averageHeartrate": row["average_heartrate"],
                 "maxHeartrate": row["max_heartrate"],
                 "summaryPolyline": row["summary_polyline"],
+                "primaryImageFileName": image_assets.get(int(row["activity_id"]), {}).get("fileName"),
                 "detailFetchedAt": row["detail_fetched_at"],
                 "hasStreams": bool(row["has_streams"]),
                 "routeStreams": load_exportable_streams(
@@ -673,6 +800,41 @@ def write_export(connection: sqlite3.Connection, export_path: Path) -> None:
         },
     }
     export_path.write_text(f"{json.dumps(payload, indent=2, sort_keys=True)}\n", encoding="utf-8")
+
+
+def write_exportable_images(
+    connection: sqlite3.Connection, image_cache_dir: Path
+) -> dict[int, dict[str, str]]:
+    rows = connection.execute(
+        """
+        SELECT activity_id, content_type, source_url, image_bytes
+        FROM activity_images
+        ORDER BY activity_id ASC
+        """
+    ).fetchall()
+
+    shutil.rmtree(image_cache_dir, ignore_errors=True)
+    if not rows:
+        return {}
+
+    image_cache_dir.mkdir(parents=True, exist_ok=True)
+    assets: dict[int, dict[str, str]] = {}
+    for row in rows:
+        image_bytes = row["image_bytes"]
+        if not isinstance(image_bytes, bytes) or len(image_bytes) == 0:
+            continue
+
+        activity_id = int(row["activity_id"])
+        suffix = infer_image_suffix(
+            _as_optional_text(row["content_type"]),
+            _as_optional_text(row["source_url"]),
+        )
+        file_name = f"{activity_id}{suffix}"
+        file_path = image_cache_dir / file_name
+        file_path.write_bytes(image_bytes)
+        assets[activity_id] = {"fileName": file_name}
+
+    return assets
 
 
 def api_get_json(
@@ -741,6 +903,76 @@ def load_exportable_streams(
         "velocitySmooth": _stream_data(payload.get("velocity_smooth")),
         "moving": _stream_data(payload.get("moving")),
     }
+
+
+def extract_primary_image_ref(detail: dict[str, Any]) -> ActivityImageRef | None:
+    photos = detail.get("photos")
+    if not isinstance(photos, dict):
+        return None
+
+    primary = photos.get("primary")
+    if not isinstance(primary, dict):
+        return None
+
+    urls = primary.get("urls")
+    if not isinstance(urls, dict):
+        return None
+
+    candidates: list[tuple[int, str]] = []
+    for key, value in urls.items():
+        if not isinstance(value, str) or value.strip() == "":
+            continue
+        try:
+            rank = int(str(key))
+        except ValueError:
+            rank = 0
+        candidates.append((rank, value.strip()))
+
+    if not candidates:
+        return None
+
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    return ActivityImageRef(
+        source_url=candidates[0][1],
+        unique_id=_as_optional_text(primary.get("unique_id")),
+    )
+
+
+def download_image_bytes(url: str) -> tuple[bytes, str | None]:
+    request = urllib_request.Request(url, headers={"Accept": "image/*"}, method="GET")
+    try:
+        with urllib_request.urlopen(request, timeout=30) as response:
+            payload = response.read()
+            content_type = response.headers.get_content_type()
+    except urllib_error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Image download failed ({exc.code}) for {url}: {body}") from exc
+    except urllib_error.URLError as exc:
+        raise RuntimeError(f"Unable to reach image URL {url}: {exc.reason}") from exc
+
+    if not payload:
+        raise RuntimeError(f"Image download returned no bytes for {url}")
+
+    return payload, content_type if content_type != "application/octet-stream" else None
+
+
+def infer_image_suffix(content_type: str | None, source_url: str | None) -> str:
+    normalized_content_type = (content_type or "").strip().lower()
+    if normalized_content_type == "image/jpeg":
+        return ".jpg"
+    if normalized_content_type == "image/png":
+        return ".png"
+    if normalized_content_type == "image/webp":
+        return ".webp"
+    if normalized_content_type == "image/gif":
+        return ".gif"
+
+    parsed_url = urllib_parse.urlparse(source_url or "")
+    suffix = Path(parsed_url.path).suffix.lower()
+    if suffix in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
+        return ".jpg" if suffix == ".jpeg" else suffix
+
+    return ".img"
 
 
 def iso_now() -> str:

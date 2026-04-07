@@ -30,6 +30,7 @@ export interface WorkoutNote {
   averageHeartrate: number | null;
   maxHeartrate: number | null;
   summaryPolyline: string | null;
+  primaryImageUrl: string | null;
   hasStravaStreams: boolean;
   allDay: boolean;
   type: string;
@@ -75,6 +76,6 @@ export interface WorkoutsData {
 
 export interface WorkoutFilters {
   query: string;
-  eventType: "all" | WorkoutEventType;
+  eventType: WorkoutEventType[];
   status: "all" | "planned" | "completed";
 }

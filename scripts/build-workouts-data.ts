@@ -17,9 +17,11 @@ import { WORKOUT_DATA_SOURCES, WORKOUT_EVENT_TYPES } from "../src/lib/workouts/s
 const rootDir = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const generatedPath = path.resolve(rootDir, "src/generated/workouts.json");
 const generatedRouteStreamsDir = path.resolve(rootDir, "public/generated/workout-routes");
+const generatedWorkoutImagesDir = path.resolve(rootDir, "public/generated/workout-images");
 const legacyGeneratedRouteStreamsPath = path.resolve(rootDir, "public/generated/workout-route-streams.json");
 const defaultWorkoutsDir = path.resolve(rootDir, "data/training");
 const defaultStravaCacheExportPath = path.resolve(rootDir, "vault/strava/cache-export.json");
+const defaultStravaCacheImagesDir = path.resolve(rootDir, "vault/strava/cache-images");
 const changelogDirName = "changelog";
 const goalsDirName = "goals";
 const notesDirName = "notes";
@@ -37,6 +39,7 @@ interface GeneratedWorkoutFallback {
   averageHeartrate: number | null;
   maxHeartrate: number | null;
   summaryPolyline: string | null;
+  primaryImageUrl: string | null;
   hasStravaStreams: boolean;
   stravaId: number | null;
 }
@@ -54,6 +57,7 @@ interface StravaCachedActivity {
   averageHeartrate: number | null;
   maxHeartrate: number | null;
   summaryPolyline: string | null;
+  primaryImageFileName: string | null;
   detailFetchedAt: string | null;
   hasStreams: boolean;
   routeStreams: StravaCachedRouteStreams | null;
@@ -95,6 +99,7 @@ async function main() {
         averageHeartrate: workout.averageHeartrate,
         maxHeartrate: workout.maxHeartrate,
         summaryPolyline: workout.summaryPolyline,
+        primaryImageUrl: workout.primaryImageUrl,
         hasStravaStreams: workout.hasStravaStreams,
         stravaId: workout.stravaId,
       } satisfies GeneratedWorkoutFallback,
@@ -165,6 +170,7 @@ async function main() {
   await fs.mkdir(path.dirname(generatedPath), { recursive: true });
   await fs.writeFile(generatedPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
   await writeRouteStreamFiles(routeStreamsPayload);
+  await writeWorkoutImageFiles(stravaCache.activities);
   console.log(`Generated ${workouts.length} workout notes at ${generatedPath}`);
 }
 
@@ -427,6 +433,7 @@ function buildWorkoutNote(
     averageHeartrate: normalizeCachedNumber(cachedActivity?.averageHeartrate) ?? validFallback?.averageHeartrate ?? null,
     maxHeartrate: normalizeCachedNumber(cachedActivity?.maxHeartrate) ?? validFallback?.maxHeartrate ?? null,
     summaryPolyline: normalizeNullableString(cachedActivity?.summaryPolyline) ?? validFallback?.summaryPolyline ?? null,
+    primaryImageUrl: normalizeCachedImageUrl(cachedActivity) ?? validFallback?.primaryImageUrl ?? null,
     hasStravaStreams: cachedActivity?.hasStreams === true || validFallback?.hasStravaStreams === true,
     allDay: expectBoolean(data.allDay, fileName, "allDay"),
     type: expectString(data.type, fileName, "type"),
@@ -551,6 +558,15 @@ function normalizeCachedDistanceLabel(activity: StravaCachedActivity | null) {
   return `${trimTrailingZero(distanceKm)} km`;
 }
 
+function normalizeCachedImageUrl(activity: StravaCachedActivity | null) {
+  const fileName = normalizeNullableString(activity?.primaryImageFileName);
+  if (!fileName) {
+    return null;
+  }
+
+  return `/generated/workout-images/${encodeURIComponent(fileName)}`;
+}
+
 function normalizeCachedNumber(value: unknown) {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return null;
@@ -611,6 +627,42 @@ async function writeRouteStreamFiles(routeStreamsByActivity: Record<string, Work
     Object.entries(routeStreamsByActivity).map(async ([activityId, routeStreams]) => {
       const outputPath = path.join(generatedRouteStreamsDir, `${activityId}.json`);
       await fs.writeFile(outputPath, `${JSON.stringify(routeStreams, null, 2)}\n`, "utf8");
+    }),
+  );
+}
+
+async function writeWorkoutImageFiles(activities: Record<string, StravaCachedActivity>) {
+  const imageFileNames = Array.from(
+    new Set(
+      Object.values(activities)
+        .map((activity) => normalizeNullableString(activity.primaryImageFileName))
+        .filter((fileName): fileName is string => fileName !== null),
+    ),
+  );
+
+  await fs.rm(generatedWorkoutImagesDir, { force: true, recursive: true });
+  if (imageFileNames.length === 0) {
+    return;
+  }
+
+  await fs.mkdir(generatedWorkoutImagesDir, { recursive: true });
+  await Promise.all(
+    imageFileNames.map(async (fileName) => {
+      const sourcePath = path.join(defaultStravaCacheImagesDir, fileName);
+      const outputPath = path.join(generatedWorkoutImagesDir, fileName);
+
+      try {
+        await fs.copyFile(sourcePath, outputPath);
+      } catch (error) {
+        const nodeError = error as NodeJS.ErrnoException;
+        if (nodeError?.code === "ENOENT") {
+          throw new Error(
+            `Expected cached Strava image at ${sourcePath} because cache-export.json references ${fileName}`,
+          );
+        }
+
+        throw error;
+      }
     }),
   );
 }

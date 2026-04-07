@@ -5,8 +5,11 @@ dist/
 *.tsbuildinfo
 /src/generated/workouts.json
 /public/generated/workout-routes/
+/public/generated/workout-images/
 /vault/strava/*.json
+/vault/strava/cache-images/
 /vault/strava/.session.lock
 /vault/strava/*.sqlite3
+/vault/strava/*.sqlite3-*
 /vault/strava/cache-export.json
 .vercel

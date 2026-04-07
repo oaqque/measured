@@ -136,6 +136,17 @@ function WorkoutDetailPanel({
         </div>
       </div>
 
+      {workout.primaryImageUrl ? (
+        <div className="mt-5 overflow-hidden rounded-[1rem] border border-foreground/10 bg-surface-elevated">
+          <img
+            alt={`Strava activity photo for ${workout.title}`}
+            className="block max-h-[32rem] w-full object-contain"
+            loading="lazy"
+            src={workout.primaryImageUrl}
+          />
+        </div>
+      ) : null}
+
       <div className="mt-5 lg:hidden">
         <Accordion className="border-b border-foreground/10" collapsible type="single">
           <AccordionItem className="border-b-0" value="metadata">

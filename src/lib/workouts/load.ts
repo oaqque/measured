@@ -109,6 +109,7 @@ export function getCurrentBlockSummary(referenceDate = todayKey()) {
 
 export function filterWorkouts(filters: WorkoutFilters) {
   const query = filters.query.trim().toLowerCase();
+  const selectedEventTypes = new Set(filters.eventType);
 
   return workouts.filter((workout) => {
     const matchesQuery =
@@ -116,7 +117,7 @@ export function filterWorkouts(filters: WorkoutFilters) {
       workout.title.toLowerCase().includes(query) ||
       workout.body.toLowerCase().includes(query);
     const matchesEventType =
-      filters.eventType === "all" || workout.eventType === filters.eventType;
+      selectedEventTypes.size === 0 || selectedEventTypes.has(workout.eventType);
     const matchesStatus =
       filters.status === "all" ||
       (filters.status === "completed" ? workout.completed !== null : workout.completed === null);

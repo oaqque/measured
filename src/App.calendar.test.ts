@@ -19,6 +19,7 @@ function createWorkout(overrides: Partial<WorkoutNote> = {}): WorkoutNote {
     averageHeartrate: null,
     maxHeartrate: null,
     summaryPolyline: null,
+    primaryImageUrl: null,
     hasStravaStreams: false,
     allDay: true,
     type: "note",
