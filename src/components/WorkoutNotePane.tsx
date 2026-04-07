@@ -4,6 +4,7 @@ import { MarkdownContent } from "@/components/MarkdownContent";
 import { RouteMap } from "@/components/RouteMap";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { WorkoutShareButton } from "@/components/WorkoutShareButton";
 import {
   formatCompletedTimestamp,
   formatDisplayDate,
@@ -116,20 +117,23 @@ function WorkoutDetailPanel({
           <h2 className="mt-2 text-2xl font-black">{workout.title}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{formatDisplayDate(workout.date)}</p>
         </div>
-        {dataSourceMeta ? (
-          <div
-            aria-label={`Data source: ${dataSourceMeta.label}`}
-            className="shrink-0"
-            title={dataSourceMeta.label}
-          >
-            <img
-              alt=""
-              aria-hidden="true"
-              className={cn("block h-auto max-w-full object-contain", dataSourceMeta.className)}
-              src={dataSourceMeta.badgeSrc}
-            />
-          </div>
-        ) : null}
+        <div className="flex shrink-0 items-start gap-2">
+          <WorkoutShareButton slug={workout.slug} title={workout.title} />
+          {dataSourceMeta ? (
+            <div
+              aria-label={`Data source: ${dataSourceMeta.label}`}
+              className="flex h-9 items-center"
+              title={dataSourceMeta.label}
+            >
+              <img
+                alt=""
+                aria-hidden="true"
+                className={cn("block h-auto max-w-full object-contain", dataSourceMeta.className)}
+                src={dataSourceMeta.badgeSrc}
+              />
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-5 lg:hidden">
