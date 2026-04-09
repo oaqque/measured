@@ -3,10 +3,13 @@ title: 10 km Threshold Run
 allDay: true
 type: single
 date: '2026-04-01'
-completed: 2026-04-01T00:04:07Z
+completed: 2026-04-01T00:04:07.000Z
 eventType: run
 expectedDistance: 10 km
 stravaId: 17932415058
+activityRefs:
+  strava: '17932415058'
+  appleHealth: 37F40A94-0162-4DC5-8D46-CF8A5B0AE275
 ---
 ## Program
 

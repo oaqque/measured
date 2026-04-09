@@ -3,10 +3,13 @@ title: 6 km Easy Recovery Run
 allDay: true
 type: single
 date: '2026-04-03'
-completed: 2026-04-03T05:30:45Z
+completed: 2026-04-03T05:30:45.000Z
 eventType: run
 expectedDistance: 6 km
 stravaId: 17957921745
+activityRefs:
+  strava: '17957921745'
+  appleHealth: 98EFE56C-8DE8-4C28-9356-01DD346BCBCE
 ---
 ## Program
 

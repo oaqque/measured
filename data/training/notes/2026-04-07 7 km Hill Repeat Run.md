@@ -3,11 +3,14 @@ title: Threshold Session Reduced to Hill Repeats (7 km Hill Repeat Run)
 allDay: true
 type: single
 date: '2026-04-07'
-completed: 2026-04-07T06:59:14Z
+completed: 2026-04-07T06:59:14.000Z
 eventType: run
 expectedDistance: 12 km
 actualDistance: 7 km
 stravaId: 18009242456
+activityRefs:
+  strava: '18009242456'
+  appleHealth: 2CE02A13-6CBB-4A03-915F-EC5CA673FF5A
 ---
 ## Program
 

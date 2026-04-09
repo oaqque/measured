@@ -1,14 +1,16 @@
 ---
-title: '30 km Morning Run'
+title: 30 km Morning Run
 allDay: true
 type: single
-date: 2025-09-20
-completed: 2025-09-19T21:40:40Z
+date: 2025-09-20T00:00:00.000Z
+completed: 2025-09-19T21:40:40.000Z
 eventType: run
 expectedDistance: 30 km
 stravaId: 15870611569
+activityRefs:
+  strava: '15870611569'
+  appleHealth: 94959BA3-4A7F-4A00-B2D2-1595212063D8
 ---
-
 ## Imported from Strava
 
 - Activity: Morning Run

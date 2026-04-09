@@ -21,7 +21,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { decodePolyline, type RouteCoordinate } from "@/lib/workouts/polyline";
 import type { WorkoutRouteStreams } from "@/lib/workouts/schema";
-import { clearRouteStreamsCache, loadRouteStreamsForActivity } from "@/lib/workouts/routes";
+import { clearRouteStreamsCache, loadRouteStreamsForActivity, loadRouteStreamsForPath } from "@/lib/workouts/routes";
 import { cn } from "@/lib/utils";
 type RouteColorMode = "route" | "pace" | "heartrate" | "moving" | "elevation";
 type RouteLegendItem = {
@@ -63,15 +63,17 @@ export function RouteMap({
   activityId,
   className,
   generatedAt,
-  hasStravaStreams,
+  hasRouteStreams,
   polyline,
+  routePath,
   title,
 }: {
   activityId: number | null;
   className?: string;
   generatedAt: string;
-  hasStravaStreams: boolean;
+  hasRouteStreams: boolean;
   polyline: string;
+  routePath?: string | null;
   title: string;
 }) {
   const [routeStreams, setRouteStreams] = useState<WorkoutRouteStreams | null>(null);
@@ -100,7 +102,7 @@ export function RouteMap({
   useEffect(() => {
     let cancelled = false;
 
-    if (!hasStravaStreams || activityId === null) {
+    if (!hasRouteStreams || (routePath === null || routePath === undefined) && activityId === null) {
       setRouteStreams(null);
       setRouteStreamsLoaded(false);
       return () => {
@@ -109,7 +111,11 @@ export function RouteMap({
     }
 
     setRouteStreamsLoaded(false);
-    loadRouteStreamsForActivity(activityId, `${generatedAt}:${hmrEpoch}`)
+    const routeStreamsRequest =
+      routePath && routePath.length > 0
+        ? loadRouteStreamsForPath(routePath, `${generatedAt}:${hmrEpoch}`)
+        : loadRouteStreamsForActivity(activityId as number, `${generatedAt}:${hmrEpoch}`);
+    routeStreamsRequest
       .then((payload) => {
         if (cancelled) {
           return;
@@ -128,7 +134,7 @@ export function RouteMap({
     return () => {
       cancelled = true;
     };
-  }, [activityId, generatedAt, hasStravaStreams, hmrEpoch]);
+  }, [activityId, generatedAt, hasRouteStreams, hmrEpoch, routePath]);
 
   const [mode, setMode] = useState<RouteColorMode>("route");
   const streamedCoordinates = routeStreams?.latlng ?? null;
@@ -162,7 +168,7 @@ export function RouteMap({
 
   useEffect(() => {
     setAnimationNonce((current) => current + 1);
-  }, [activityId, generatedAt]);
+  }, [activityId, generatedAt, routePath]);
 
   useEffect(() => {
     if (segments.length === 0) {
@@ -196,6 +202,19 @@ export function RouteMap({
   }, [animationNonce, segments]);
 
   if (baseCoordinates.length === 0 || !bounds) {
+    if (hasRouteStreams && !routeStreamsLoaded) {
+      return (
+        <div
+          className={cn(
+            "flex h-60 items-center justify-center border border-foreground/10 bg-background/50 text-sm text-muted-foreground",
+            className,
+          )}
+        >
+          Loading route stream data...
+        </div>
+      );
+    }
+
     return (
       <div
         className={cn(
@@ -292,7 +311,7 @@ export function RouteMap({
           </DropdownMenu>
         </div>
       </div>
-      {hasStravaStreams && !routeStreamsLoaded ? (
+      {hasRouteStreams && !routeStreamsLoaded ? (
         <div className="border-b border-foreground/10 px-3 py-2 text-[11px] font-medium text-muted-foreground">
           Loading route stream data…
         </div>

@@ -1,14 +1,16 @@
 ---
-title: '7 km Morning Run'
+title: 7 km Morning Run
 allDay: true
 type: single
-date: 2025-05-27
-completed: 2025-05-26T20:34:19Z
+date: 2025-05-27T00:00:00.000Z
+completed: 2025-05-26T20:34:19.000Z
 eventType: run
 expectedDistance: 7 km
 stravaId: 14604536171
+activityRefs:
+  strava: '14604536171'
+  appleHealth: 4A342FDD-9B2E-41C2-96AA-5597E59F7BA5
 ---
-
 ## Imported from Strava
 
 - Activity: Morning Run

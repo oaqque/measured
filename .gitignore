@@ -4,6 +4,8 @@ dist/
 .vercel/
 *.tsbuildinfo
 /src/generated/workouts.json
+/public/generated/workout-source-details.json
+/public/generated/workout-measurements/
 /public/generated/workout-routes/
 /public/generated/workout-images/
 /vault/strava/*.json
@@ -12,4 +14,8 @@ dist/
 /vault/strava/*.sqlite3
 /vault/strava/*.sqlite3-*
 /vault/strava/cache-export.json
+/vault/apple-health/*.json
+/vault/apple-health/*.sqlite3
 .vercel
+apps/apple-health-bridge/build/
+apps/apple-health-bridge/AppleHealthBridge.xcodeproj/

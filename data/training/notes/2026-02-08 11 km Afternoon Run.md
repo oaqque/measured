@@ -1,14 +1,16 @@
 ---
-title: '11 km Afternoon Run'
+title: 11 km Afternoon Run
 allDay: true
 type: single
-date: 2026-02-08
-completed: 2026-02-08T03:33:45Z
+date: 2026-02-08T00:00:00.000Z
+completed: 2026-02-08T03:33:45.000Z
 eventType: run
 expectedDistance: 11 km
 stravaId: 17324137558
+activityRefs:
+  strava: '17324137558'
+  appleHealth: 7F5205CA-0AC8-48F7-B000-44CA76EB79E0
 ---
-
 ## Imported from Strava
 
 - Activity: Afternoon Run

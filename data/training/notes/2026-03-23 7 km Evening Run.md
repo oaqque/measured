@@ -1,14 +1,16 @@
 ---
-title: '7 km Evening Run'
+title: 7 km Evening Run
 allDay: true
 type: single
-date: 2026-03-23
-completed: 2026-03-23T08:50:19Z
+date: 2026-03-23T00:00:00.000Z
+completed: 2026-03-23T08:50:19.000Z
 eventType: run
 expectedDistance: 7 km
 stravaId: 17825146574
+activityRefs:
+  strava: '17825146574'
+  appleHealth: 106A9225-1BDF-436E-9FF5-0BCC5040EA12
 ---
-
 ## Imported from Strava
 
 - Activity: Evening Run

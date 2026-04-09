@@ -4,8 +4,9 @@ This document describes the frontmatter fields supported by workout notes in
 `data/training/notes/*.md`.
 
 The current build logic lives in `scripts/build-workouts-data.ts`. Notes are the
-authored source of truth. Some Strava-backed values are derived at build time
-from the local cache and do not need to be written into every note manually.
+authored source of truth. Imported provider data should stay in provider caches
+under `vault/` and should be linked from notes rather than copied into note
+frontmatter unless there is a deliberate manual override.
 
 ## Required Frontmatter
 
@@ -25,8 +26,9 @@ Every workout note should include:
 | Field | Type | Required | Meaning |
 | --- | --- | --- | --- |
 | `expectedDistance` | string | no | Planned distance, for example `10 km`. |
-| `actualDistance` | string | no | Manual actual distance snapshot, for example `8.2 km`. Usually leave this to the Strava cache unless you need an override. |
-| `stravaId` | positive integer | no | Stable link to the Strava activity for this note. |
+| `actualDistance` | string | no | Manual actual distance snapshot, for example `8.2 km`. Use only when you want a note-level override instead of provider-derived data. |
+| `activityRefs` | object | no | Map of provider ids linked to this note, for example Strava and Apple Health. |
+| `stravaId` | positive integer | no | Legacy Strava link field. Keep reading it for back-compat, but prefer `activityRefs.strava` for new multi-provider notes. |
 
 ## Field Semantics
 
@@ -46,17 +48,32 @@ Every workout note should include:
 ### `actualDistance`
 
 - This is optional.
-- Prefer using it only when you want to pin a manual actual distance in the note
-  itself.
-- If a note has `stravaId`, the app can derive actual distance from the local
-  Strava cache instead.
+- Prefer using it only when you want to pin a manual actual distance in the note itself.
+- If a note links provider data, the app can derive actual distance from the provider cache instead.
+
+### `activityRefs`
+
+- Use this to link one note to one or more provider records.
+- Current providers are expected to include:
+  - `strava`
+  - `appleHealth`
+- Provider ids should be stored as strings in this map.
+- One note may include both providers at the same time.
+- Linking both providers does not mean their data should be merged into one stored record.
+
+Example:
+
+```yaml
+activityRefs:
+  strava: '17909794797'
+  appleHealth: '2E5A1E76-6C98-4B89-8D3B-4B0A45D8C9E1'
+```
 
 ### `stravaId`
 
-- Use the numeric Strava activity ID.
-- This is the preferred way to connect a note to a Strava run.
-- Once linked, the local sync/cache layer can refresh Strava-backed fields
-  without changing the authored note body.
+- Use the numeric Strava activity ID only for legacy notes that still rely on the older field.
+- Prefer `activityRefs.strava` for new linkage.
+- The build layer should treat `stravaId` as a migration alias for `activityRefs.strava`.
 
 ## Body Content
 
@@ -91,7 +108,7 @@ expectedDistance: 10 km
 - Cool down easy to 10 km total
 ```
 
-## Strava-Linked Completed Note Example
+## Multi-Provider Completed Note Example
 
 ```md
 ---
@@ -102,7 +119,9 @@ date: '2026-03-30'
 completed: 2026-03-30T20:33:42+11:00
 eventType: run
 expectedDistance: 6 km
-stravaId: 17909794797
+activityRefs:
+  strava: '17909794797'
+  appleHealth: '2E5A1E76-6C98-4B89-8D3B-4B0A45D8C9E1'
 ---
 
 ## Program
@@ -131,5 +150,5 @@ it as planned distance in the generated data.
 For new notes, prefer:
 
 - `expectedDistance` for planned sessions
-- `stravaId` for Strava linkage
+- `activityRefs` for provider linkage
 - `actualDistance` only when you intentionally want a manual note-level override

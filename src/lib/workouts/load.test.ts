@@ -28,4 +28,11 @@ describe("workout data", () => {
     expect(summary.sessions).toBeGreaterThan(0);
     expect(summary.plannedDistanceKm).toBeGreaterThan(0);
   });
+
+  it("preserves cached weather on imported workouts", () => {
+    const workout = getWorkoutBySlug("2024-02-15-3-7-km-morning-run-07-51");
+    expect(workout?.weather).not.toBeNull();
+    expect(workout?.weather?.provider).toBe("open-meteo");
+    expect(workout?.weather?.summary).toBe("Light drizzle");
+  });
 });

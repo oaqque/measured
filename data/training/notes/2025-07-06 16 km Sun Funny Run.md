@@ -1,14 +1,16 @@
 ---
-title: '16 km Sun Funny Run'
+title: 16 km Sun Funny Run
 allDay: true
 type: single
-date: 2025-07-06
-completed: 2025-07-06T00:44:22Z
+date: 2025-07-06T00:00:00.000Z
+completed: 2025-07-06T00:44:22.000Z
 eventType: run
 expectedDistance: 16 km
 stravaId: 15020513815
+activityRefs:
+  strava: '15020513815'
+  appleHealth: B7E73473-7950-4463-BB16-7403D407F8DF
 ---
-
 ## Imported from Strava
 
 - Activity: Sun Funny Run

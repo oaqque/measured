@@ -1,14 +1,16 @@
 ---
-title: '7 km Morning Run with Jono'
+title: 7 km Morning Run with Jono
 allDay: true
 type: single
-date: 2025-02-12
-completed: 2025-02-11T19:14:52Z
+date: 2025-02-12T00:00:00.000Z
+completed: 2025-02-11T19:14:52.000Z
 eventType: run
 expectedDistance: 7 km
 stravaId: 13602704759
+activityRefs:
+  strava: '13602704759'
+  appleHealth: C67DBC1B-2CE1-4E61-85BA-232097190424
 ---
-
 ## Imported from Strava
 
 - Activity: Morning Run with Jono

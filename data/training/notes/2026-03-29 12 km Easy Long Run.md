@@ -2,13 +2,15 @@
 title: 12 km Easy Long Run
 allDay: true
 type: single
-date: 2026-03-29
-completed: 2026-03-30T07:56:09.844+11:00
+date: 2026-03-29T00:00:00.000Z
+completed: 2026-03-29T20:56:09.844Z
 eventType: run
 expectedDistance: 12 km
 stravaId: 17896779074
+activityRefs:
+  strava: '17896779074'
+  appleHealth: 7FED99A9-143C-47B0-BC9D-151EFE051BBD
 ---
-
 ## Program
 
 - 12 km easy long run

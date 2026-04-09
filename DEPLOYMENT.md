@@ -4,12 +4,12 @@ This repo now has a minimal Vercel deployment path.
 
 The recommended workflow is:
 
-1. Sync Strava locally.
-2. Build locally on the same machine that has `vault/strava/cache-export.json`.
+1. Sync or import provider caches locally.
+2. Build locally on the same machine that has the latest cache exports under `vault/`.
 3. Deploy that prebuilt output to Vercel.
 
-That remains the most reliable path for publishing freshly synced Strava-backed data.
-This repo is configured to turn off automatic Git-triggered deployments in Vercel so the expected workflow is local prebuild plus CLI upload, not cloud builds on push.
+That remains the most reliable path for publishing freshly synced provider-backed data.
+The repo now also supports Git-triggered cloud builds better than before by allowing committed generated artifacts to act as a fallback when local provider caches are unavailable during the build.
 
 ## Why This Path
 
@@ -39,10 +39,11 @@ uv sync
 pnpm run build
 ```
 
-If you want the deployed site to include the latest Strava-backed data, refresh it first:
+If you want the deployed site to include the latest imported data, refresh it first:
 
 ```bash
 pnpm run sync:strava
+pnpm run import:apple-health -- --from /path/to/apple-health-export
 pnpm run build
 ```
 
@@ -75,13 +76,14 @@ Use this when you want a test deploy.
 
 ```bash
 pnpm run sync:strava
+pnpm run import:apple-health -- --from /path/to/apple-health-export
 pnpm run deploy:vercel:preview
 ```
 
 What this does:
 
 1. `vercel build` runs locally
-2. the local build has access to your Strava cache
+2. the local build has access to your provider caches
 3. `vercel deploy --prebuilt --archive=tgz` uploads the generated output to Vercel
 
 This is the recommended deploy path for this repo.
@@ -92,6 +94,7 @@ Use this when you want to update the main public site.
 
 ```bash
 pnpm run sync:strava
+pnpm run import:apple-health -- --from /path/to/apple-health-export
 pnpm run deploy:vercel:prod
 ```
 
@@ -104,7 +107,7 @@ After deploy, verify:
 1. `/` loads
 2. `/plan` loads directly in a fresh tab
 3. `/calendar` loads directly in a fresh tab
-4. a Strava-linked workout still shows its route and Strava-backed fields
+4. linked workout sources still show their route and source-backed fields
 
 If `/plan` or `/calendar` 404, the rewrite config is missing or not applied.
 
@@ -174,14 +177,17 @@ This repo uses local prebuilt deploys when you want the latest Strava sync refle
 
 Reasons:
 
-- `build:data` reads Strava cache data from `vault/strava/cache-export.json` when it exists
-- cloud builds usually do not have that cache available
-- generated route files and generated workout JSON are intentionally not committed
+- `build:data` reads provider cache data from `vault/` when it exists
+- cloud builds usually do not have those caches available
+- a cloud build can only preserve the last committed generated artifacts, not invent newer provider-backed data
 
 So the intended deploy path stays local and prebuilt.
 That is the only path that reliably ships the exact synced training data and route files you just generated on this machine.
 
-## If You Want Git-Triggered CI/CD Later
+- committed generated artifacts will keep existing route maps and source-enriched metrics available
+- but newly synced or imported provider data will not appear until those generated artifacts are rebuilt locally and committed or deployed prebuilt
+
+## If You Want Full Git-Triggered CI/CD Later
 
 That needs one more design decision. Pick one:
 

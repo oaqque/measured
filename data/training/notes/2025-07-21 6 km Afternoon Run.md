@@ -1,14 +1,16 @@
 ---
-title: '6 km Afternoon Run'
+title: 6 km Afternoon Run
 allDay: true
 type: single
-date: 2025-07-21
-completed: 2025-07-21T07:44:57Z
+date: 2025-07-21T00:00:00.000Z
+completed: 2025-07-21T07:44:57.000Z
 eventType: run
 expectedDistance: 6 km
 stravaId: 15184091594
+activityRefs:
+  strava: '15184091594'
+  appleHealth: B2927F8B-F53C-4CC2-9633-A2BFF787BCCC
 ---
-
 ## Imported from Strava
 
 - Activity: Afternoon Run

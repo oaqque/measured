@@ -68,3 +68,18 @@ This project uses or can display data from the following external sources:
   [CARTO Attribution](https://carto.com/attribution)
 
 Where this repo derives summaries or transforms source data, those derived fields remain attributable to the original data providers.
+
+## Workout Sources
+
+The repo now supports separate provider caches for Strava and Apple Health.
+
+Useful commands:
+
+```bash
+pnpm run sync:strava
+pnpm run import:apple-health -- --from /path/to/apple-health-export
+pnpm run diagnose:workout-sources
+pnpm run link:workout-source -- --note 2026-03-30-6-km-easy-run --provider appleHealth --activity-id UUID
+```
+
+Apple Health bridge scaffolding lives under [`apps/apple-health-bridge`](apps/apple-health-bridge).

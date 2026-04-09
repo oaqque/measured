@@ -875,19 +875,55 @@ def scan_note_links(notes_dir: Path) -> list[tuple[str, str, int, str, str]]:
         frontmatter_match = _FRONTMATTER_PATTERN.search(content)
         if not frontmatter_match:
             continue
-        activity_match = _STRAVA_ID_PATTERN.search(frontmatter_match.group(1))
-        if not activity_match:
+        activity_id = extract_frontmatter_strava_id(frontmatter_match.group(1))
+        if activity_id is None:
             continue
         rows.append(
             (
                 file_path.as_posix(),
                 slugify(file_path.stem),
-                int(activity_match.group(1)),
+                activity_id,
                 linked_at,
                 "frontmatter",
             )
         )
     return rows
+
+
+def extract_frontmatter_strava_id(frontmatter: str) -> int | None:
+    legacy_match = _STRAVA_ID_PATTERN.search(frontmatter)
+    if legacy_match:
+        return int(legacy_match.group(1))
+
+    in_activity_refs = False
+    activity_refs_indent = 0
+
+    for raw_line in frontmatter.splitlines():
+        line = raw_line.rstrip()
+        stripped = line.lstrip()
+        indent = len(line) - len(stripped)
+
+        if not stripped:
+            continue
+
+        if not in_activity_refs:
+            if stripped == "activityRefs:":
+                in_activity_refs = True
+                activity_refs_indent = indent
+            continue
+
+        if indent <= activity_refs_indent:
+            in_activity_refs = False
+            if stripped == "activityRefs:":
+                in_activity_refs = True
+                activity_refs_indent = indent
+            continue
+
+        match = re.match(r"strava:\s*['\"]?(\d+)['\"]?\s*$", stripped)
+        if match:
+            return int(match.group(1))
+
+    return None
 
 
 def refresh_note_links(

@@ -1,14 +1,16 @@
 ---
-title: '12 km Morning Run'
+title: 12 km Morning Run
 allDay: true
 type: single
-date: 2025-05-17
-completed: 2025-05-16T20:49:42Z
+date: 2025-05-17T00:00:00.000Z
+completed: 2025-05-16T20:49:42.000Z
 eventType: run
 expectedDistance: 12 km
 stravaId: 14502302396
+activityRefs:
+  strava: '14502302396'
+  appleHealth: E6EBE43D-7E79-44C4-9FCE-AA6A42074F86
 ---
-
 ## Imported from Strava
 
 - Activity: Morning Run

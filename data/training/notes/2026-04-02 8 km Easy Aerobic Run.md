@@ -3,10 +3,13 @@ title: 8 km Easy Aerobic Run
 allDay: true
 type: single
 date: '2026-04-02'
-completed: 2026-04-02T08:56:56Z
+completed: 2026-04-02T08:56:56.000Z
 eventType: run
 expectedDistance: 8 km
 stravaId: 17947501959
+activityRefs:
+  strava: '17947501959'
+  appleHealth: 50BD9C1F-F3C0-4048-95B9-DF65930A3731
 ---
 ## Program
 

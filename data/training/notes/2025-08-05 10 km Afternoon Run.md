@@ -1,14 +1,16 @@
 ---
-title: '10 km Afternoon Run'
+title: 10 km Afternoon Run
 allDay: true
 type: single
-date: 2025-08-05
-completed: 2025-08-05T07:14:21Z
+date: 2025-08-05T00:00:00.000Z
+completed: 2025-08-05T07:14:21.000Z
 eventType: run
 expectedDistance: 10 km
 stravaId: 15349220821
+activityRefs:
+  strava: '15349220821'
+  appleHealth: 47362B18-2225-478A-B76C-B1562D437EEE
 ---
-
 ## Imported from Strava
 
 - Activity: Afternoon Run
