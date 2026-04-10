@@ -25,7 +25,6 @@ targets:
         SWIFT_VERSION: 5.10
         DEVELOPMENT_TEAM: ""
         CODE_SIGN_ENTITLEMENTS: Sources/App/AppleHealthBridge.entitlements
-        SWIFT_OBJC_BRIDGING_HEADER: Sources/App/AppleHealthBridge-Bridging-Header.h
     info:
       path: Sources/App/Info.plist
       properties:
@@ -34,7 +33,5 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         NSHealthShareUsageDescription: Apple Health workout data is read locally to export a repo-friendly training snapshot.
-        NSAppTransportSecurity:
-          NSAllowsArbitraryLoads: true
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true

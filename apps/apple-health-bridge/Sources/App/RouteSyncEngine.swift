@@ -5,58 +5,21 @@ import HealthKit
 @MainActor
 final class RouteSyncEngine: ObservableObject {
     @Published private(set) var routes: [String: BridgeRoute] = [:]
-    @Published private(set) var isRestoringCache = true
     @Published private(set) var isSyncing = false
     @Published private(set) var lastError: String?
     @Published private(set) var lastSyncSummary: String?
 
-    private let routeStore = BridgeFileStore<[String: BridgeRoute]>(filename: "routes.json")
-    private let checkedWorkoutIdStore = BridgeFileStore<[String]>(filename: "route-checked-workout-ids.json")
-    private var checkedWorkoutIds: Set<String>
-
-    init() {
-        checkedWorkoutIds = []
-        restorePersistedState()
-    }
-
-    func syncRoutes(
-        for workouts: [HKWorkout],
-        changedWorkoutIds: [String],
-        deletedWorkoutIds: [String],
-        using healthStore: HKHealthStore
-    ) async {
+    func syncRoutes(for workouts: [HKWorkout], using healthStore: HKHealthStore) async {
         isSyncing = true
         defer { isSyncing = false }
         lastError = nil
-        var nextRoutes = routes
-        var nextCheckedWorkoutIds = checkedWorkoutIds
+        var nextRoutes: [String: BridgeRoute] = [:]
         var failedWorkouts = 0
 
-        for deletedWorkoutId in deletedWorkoutIds {
-            nextRoutes.removeValue(forKey: deletedWorkoutId)
-            nextCheckedWorkoutIds.remove(deletedWorkoutId)
-        }
-
-        let workoutSamplesById = Dictionary(
-            uniqueKeysWithValues: workouts.map { ($0.uuid.uuidString, $0) }
-        )
-        let missingRouteCheckWorkoutIds = Set(workoutSamplesById.keys).subtracting(nextCheckedWorkoutIds)
-        let candidateWorkoutIds = Set(changedWorkoutIds).union(missingRouteCheckWorkoutIds)
-
-        for workoutId in candidateWorkoutIds.sorted() {
+        for workout in workouts {
             do {
-                guard let workout = try await workoutForRouteSync(
-                    workoutId: workoutId,
-                    cachedWorkoutsById: workoutSamplesById,
-                    using: healthStore
-                ) else {
-                    continue
-                }
-
                 let workoutRoutes = try await healthStore.workoutRoutes(for: workout)
                 guard !workoutRoutes.isEmpty else {
-                    nextRoutes.removeValue(forKey: workout.uuid.uuidString)
-                    nextCheckedWorkoutIds.insert(workout.uuid.uuidString)
                     continue
                 }
 
@@ -66,8 +29,6 @@ final class RouteSyncEngine: ObservableObject {
                     locations.append(contentsOf: try await healthStore.locations(for: routeSample))
                 }
                 guard locations.count > 1 else {
-                    nextRoutes.removeValue(forKey: workout.uuid.uuidString)
-                    nextCheckedWorkoutIds.insert(workout.uuid.uuidString)
                     continue
                 }
 
@@ -85,7 +46,6 @@ final class RouteSyncEngine: ObservableObject {
                     distance: distance,
                     velocitySmooth: velocity
                 )
-                nextCheckedWorkoutIds.insert(workout.uuid.uuidString)
             } catch {
                 failedWorkouts += 1
                 lastError = error.localizedDescription
@@ -93,42 +53,12 @@ final class RouteSyncEngine: ObservableObject {
         }
 
         routes = nextRoutes
-        checkedWorkoutIds = nextCheckedWorkoutIds
-        try? routeStore.saveValue(routes)
-        try? checkedWorkoutIdStore.saveValue(Array(checkedWorkoutIds).sorted())
         lastSyncSummary = buildRouteSyncSummary(
-            workoutCount: candidateWorkoutIds.count,
+            workoutCount: workouts.count,
             routeCount: nextRoutes.count,
             failedWorkoutCount: failedWorkouts
         )
     }
-
-    private func restorePersistedState() {
-        Task.detached(priority: .userInitiated) {
-            let restoredRoutes = (try? BridgeFileStore<[String: BridgeRoute]>(filename: "routes.json").loadValue()) ?? [:]
-            let restoredCheckedWorkoutIds = Set(
-                (try? BridgeFileStore<[String]>(filename: "route-checked-workout-ids.json").loadValue()) ?? []
-            )
-
-            await MainActor.run {
-                self.routes = restoredRoutes
-                self.checkedWorkoutIds = restoredCheckedWorkoutIds
-                self.isRestoringCache = false
-            }
-        }
-    }
-}
-
-private func workoutForRouteSync(
-    workoutId: String,
-    cachedWorkoutsById: [String: HKWorkout],
-    using healthStore: HKHealthStore
-) async throws -> HKWorkout? {
-    if let cachedWorkout = cachedWorkoutsById[workoutId] {
-        return cachedWorkout
-    }
-
-    return try await healthStore.workout(withUUIDString: workoutId)
 }
 
 private func buildRouteSyncSummary(workoutCount: Int, routeCount: Int, failedWorkoutCount: Int) -> String {
@@ -148,30 +78,6 @@ private func buildRouteSyncSummary(workoutCount: Int, routeCount: Int, failedWor
 }
 
 private extension HKHealthStore {
-    func workout(withUUIDString workoutId: String) async throws -> HKWorkout? {
-        guard let uuid = UUID(uuidString: workoutId) else {
-            return nil
-        }
-
-        return try await withCheckedThrowingContinuation { continuation in
-            let query = HKSampleQuery(
-                sampleType: HKObjectType.workoutType(),
-                predicate: HKQuery.predicateForObject(with: uuid),
-                limit: 1,
-                sortDescriptors: nil
-            ) { _, samples, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                    return
-                }
-
-                continuation.resume(returning: samples?.first as? HKWorkout)
-            }
-
-            execute(query)
-        }
-    }
-
     func workoutRoutes(for workout: HKWorkout) async throws -> [HKWorkoutRoute] {
         try await withCheckedThrowingContinuation { continuation in
             let predicate = HKQuery.predicateForObjects(from: workout)

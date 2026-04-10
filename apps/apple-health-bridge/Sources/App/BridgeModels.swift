@@ -51,7 +51,7 @@ struct AppleHealthExportRouteStreams: Codable, Sendable {
     let moving: [Bool]?
 }
 
-struct AppleHealthExportSource: Codable, Sendable, Equatable {
+struct AppleHealthExportSource: Codable, Sendable {
     let bundleIdentifier: String?
     let name: String?
     let deviceName: String?
@@ -81,7 +81,7 @@ struct AppleHealthExportSample: Codable, Sendable {
     let metadata: [String: String]?
 }
 
-struct BridgeWorkout: Identifiable, Codable, Sendable, Equatable {
+struct BridgeWorkout: Identifiable, Sendable {
     let id: String
     let sportType: String?
     let startDate: Date?
@@ -95,7 +95,7 @@ struct BridgeWorkout: Identifiable, Codable, Sendable, Equatable {
     let deviceModel: String?
 }
 
-struct BridgeRoute: Codable, Sendable, Equatable {
+struct BridgeRoute: Sendable {
     let activityId: String
     let coordinates: [CLLocationCoordinate]
     let altitude: [Double]?
@@ -103,7 +103,7 @@ struct BridgeRoute: Codable, Sendable, Equatable {
     let velocitySmooth: [Double]?
 }
 
-struct BridgeHealthCollection: Codable, Sendable, Equatable {
+struct BridgeHealthCollection: Sendable {
     let key: String
     let kind: String
     let displayName: String
@@ -114,7 +114,7 @@ struct BridgeHealthCollection: Codable, Sendable, Equatable {
     let samples: [BridgeHealthSample]
 }
 
-struct BridgeHealthSample: Codable, Sendable, Equatable {
+struct BridgeHealthSample: Sendable {
     let sampleId: String
     let startDate: Date?
     let endDate: Date?
@@ -126,7 +126,7 @@ struct BridgeHealthSample: Codable, Sendable, Equatable {
     let metadata: [String: String]?
 }
 
-struct CLLocationCoordinate: Codable, Sendable, Equatable {
+struct CLLocationCoordinate: Sendable {
     let latitude: Double
     let longitude: Double
 }
