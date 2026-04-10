@@ -98,7 +98,6 @@ private enum SnapshotExportFileWriter {
         try handle.write(contentsOf: Data("{".utf8))
         try writeObjectField("generatedAt", value: generatedAt, to: handle, trailingComma: true)
         try writeObjectField("provider", value: "appleHealth", to: handle, trailingComma: true)
-        try writeObjectField("registryGeneratedAt", value: GeneratedHealthKitCatalog.generatedAt, to: handle, trailingComma: true)
 
         try handle.write(contentsOf: Data("\"activities\":{".utf8))
         let sortedWorkouts = workouts.sorted {
@@ -158,14 +157,6 @@ private enum SnapshotExportFileWriter {
             try writeObjectField("kind", value: collection.kind, to: handle, trailingComma: true)
             try writeObjectField("displayName", value: collection.displayName, to: handle, trailingComma: true)
             try writeObjectField("unit", value: collection.unit, to: handle, trailingComma: true)
-            try writeObjectField("objectTypeIdentifier", value: collection.objectTypeIdentifier, to: handle, trailingComma: true)
-            try writeObjectField("queryStrategy", value: collection.queryStrategy, to: handle, trailingComma: true)
-            try writeObjectField(
-                "requiresPerObjectAuthorization",
-                value: collection.requiresPerObjectAuthorization,
-                to: handle,
-                trailingComma: true
-            )
             try handle.write(contentsOf: Data("\"samples\":[".utf8))
 
             for (sampleIndex, sample) in collection.samples.enumerated() {
@@ -175,8 +166,6 @@ private enum SnapshotExportFileWriter {
                     endDate: sample.endDate?.ISO8601Format(),
                     numericValue: sample.numericValue,
                     categoryValue: sample.categoryValue,
-                    textValue: sample.textValue,
-                    payload: sample.payload,
                     source: sample.source,
                     metadata: sample.metadata
                 )

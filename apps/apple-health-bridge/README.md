@@ -19,33 +19,20 @@ publishes. Publication happens later as a repo-side projection step.
 - `Sources/App/AppleHealthBridgeApp.swift`: app entry point
 - `Sources/App/ContentView.swift`: simple sync/export UI
 - `Sources/App/HealthAuthorizationManager.swift`: HealthKit permission boundary
-- `Sources/App/GeneratedHealthKitCatalog.swift`: generated current-SDK HealthKit catalog
-- `Sources/App/HealthKitTypeRegistry.swift`: runtime registry that groups the catalog by query strategy
 - `Sources/App/WorkoutSyncEngine.swift`: workout summary sync
 - `Sources/App/RouteSyncEngine.swift`: workout route extraction
 - `Sources/App/HealthDataSyncEngine.swift`: broader Apple Health sample sync
 - `Sources/App/ExportWriter.swift`: normalized snapshot writer
 - `Sources/App/ExportShareController.swift`: share/export handoff
-- `scripts/generate-healthkit-registry.mjs`: refreshes the generated catalog from Apple's doc JSON feeds
-
-## Registry Refresh
-
-Refresh the generated catalog when Apple expands the HealthKit SDK surface:
-
-```bash
-cd apps/apple-health-bridge
-./scripts/generate-healthkit-registry.mjs
-```
 
 ## Expected Flow
 
-1. Refresh the generated HealthKit catalog if needed.
-2. Generate an Xcode project from `project.yml` with XcodeGen.
-3. Open the generated project in Xcode.
-4. Set a signing team so the HealthKit entitlement can be provisioned on your device.
-5. Build to an iPhone with Health access enabled.
-6. Build an export snapshot, then use `Export with Taildrop` to open the share sheet and send `cache-export.json` and `export-manifest.json` to a device on your tailnet.
-7. Import the snapshot on your machine with:
+1. Generate an Xcode project from `project.yml` with XcodeGen.
+2. Open the generated project in Xcode.
+3. Set a signing team so the HealthKit entitlement can be provisioned on your device.
+4. Build to an iPhone with Health access enabled.
+5. Build an export snapshot, then use `Export with Taildrop` to open the share sheet and send `cache-export.json` and `export-manifest.json` to a device on your tailnet.
+6. Import the snapshot on your machine with:
 
 ```bash
 pnpm run import:apple-health -- --from /path/to/cache-export.json
