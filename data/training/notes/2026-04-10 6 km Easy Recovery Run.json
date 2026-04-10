@@ -10,7 +10,8 @@
   "actualDistance": "16 km",
   "stravaId": 18046807889,
   "activityRefs": {
-    "strava": "18046807889"
+    "strava": "18046807889",
+    "appleHealth": "4904B164-6716-492F-8400-9973BA5711A4"
   },
   "sections": [
     {
@@ -22,7 +23,7 @@
       "sections": [
         {
           "kind": "intention",
-          "markdown": "- This run happened on Friday, `2026-04-10`, after Thursday's planned `10 km` steady run on `2026-04-09` was missed, and it effectively absorbed both that lost mileage and Friday's scheduled `6 km` recovery volume. The completed run covered `16.037 km` in `1:32:48` moving time (`1:35:47` elapsed), so it finished `10.037 km` over Friday's note and `0.037 km` over the combined planned `16 km`.\n- It reclaimed the distance, but not the exact steady-plus-recovery structure the week originally asked for. The first `10.00 km` averaged about `5:46 /km` at average HR about `155.5`, then the final `6.04 km` slowed to about `6:05 /km` while average HR rose to about `159.3` and climbing added another `114.4 m`. That reads more like one extended aerobic run with a hillier, costlier back end than a clean `10 km` steady session followed by an easy recovery shuffle.\n- The run still stayed controlled enough to avoid looking like a disguised threshold day. Average HR was `157.1`, well below Tuesday's `165.2`, and the route-stream thirds came in at about `5:38 /km`, `5:53 /km`, and `6:09 /km` with HR moving from about `155.4` to `156.1` to `159.2`, so the main pattern was steady aerobic fade rather than a hard push.\n- The latest Apple Health cache on disk still stops at Wednesday, `2026-04-08`, so this note's segment read comes from Strava summary data and route streams rather than Apple Health measurements."
+          "markdown": "- This run happened on Friday, `2026-04-10`, after Thursday's planned `10 km` steady run on `2026-04-09` was missed, and it effectively absorbed both that lost mileage and Friday's scheduled `6 km` recovery volume. The completed run covered `16.037 km` in `1:32:48` moving time (`1:35:47` elapsed), so it finished `10.037 km` over Friday's note and `0.037 km` over the combined planned `16 km`.\n- It reclaimed the distance, but not the exact steady-plus-recovery structure the week originally asked for. The first `10.00 km` averaged about `5:46 /km` at average HR about `155.5`, then the final `6.04 km` slowed to about `6:05 /km` while average HR rose to about `159.3` and climbing added another `114.4 m`. That reads more like one extended aerobic run with a hillier, costlier back end than a clean `10 km` steady session followed by an easy recovery shuffle.\n- The run still stayed controlled enough to avoid looking like a disguised threshold day. Average HR was `157.1`, well below Tuesday's `165.2`, and the route-stream thirds came in at about `5:38 /km`, `5:53 /km`, and `6:09 /km` with HR moving from about `155.4` to `156.1` to `159.2`, so the main pattern was steady aerobic fade rather than a hard push.\n- Apple Health now includes the matching workout at the same `2026-04-09T20:27:35Z` start time, so the note is linked to both providers rather than relying on a Strava-only fallback."
         },
         {
           "kind": "shortTermGoal",
@@ -35,6 +36,16 @@
         {
           "kind": "personalNote",
           "markdown": "- None provided."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Apple Health recorded `83` during-run heart-rate samples. Average HR was `151.3 bpm`, ranging from `94.0` to `164.0 bpm`.\n- First-half average HR was `151.3 bpm` and second-half average HR was `156.0 bpm` (+4.7 bpm), which shows a modest late rise in aerobic cost."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health cadence averaged `178.9 spm`, with a working range of `111.1` to `191.1 spm` after excluding `2` start-stop outliers below `100 spm`.\n- First-half cadence averaged `178.2 spm` and second-half cadence averaged `179.5 spm` (+1.3 spm), which looks mechanically stable."
         },
         {
           "kind": "stravaMeasurement",

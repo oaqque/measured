@@ -20,7 +20,14 @@ Read [`references/data-shapes.md`](references/data-shapes.md) before creating or
 ## Sync and Refresh
 
 1. Fetch the current local date and time first using Linux CLI utilities such as `date`. Do this at the start of every training-analysis run so any references to "today", "yesterday", or "this week" are grounded in the machine's current time.
-2. Fetch the latest Apple Health export from the Taildrop inbox with `tailscale file get ~/Downloads` before analysis that depends on current device data. Do not assume the file is already present in `~/Downloads`.
+2. Fetch the latest Apple Health export from the Taildrop inbox before analysis that depends on current device data. Do not assume the file is already present in `~/Downloads`, and do not assume `tailscale file get ~/Downloads` will overwrite stale files with the same names.
+   - If `~/Downloads/cache-export.json` or `~/Downloads/export-manifest.json` already exist, move or delete them first so the refresh can replace them cleanly.
+   - A safe pattern is:
+     ```bash
+     mv ~/Downloads/cache-export.json ~/Downloads/cache-export.previous.json 2>/dev/null || true
+     mv ~/Downloads/export-manifest.json ~/Downloads/export-manifest.previous.json 2>/dev/null || true
+     tailscale file get ~/Downloads
+     ```
 3. Import the latest Apple Health cache export with `pnpm run import:apple-health -- --from /home/willye/Downloads/cache-export.json`.
 4. Run `pnpm run sync:strava` from the repo root. This repo defaults that command to sync with streams.
 5. If the user asked for new analysis, identify the relevant Strava and Apple Health activities from the refreshed caches and the corresponding note by `activityRefs`, `stravaId`, date, or schedule context.
