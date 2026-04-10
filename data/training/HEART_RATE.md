@@ -91,6 +91,17 @@ Read: this is the most running-specific method here because it is anchored to su
 
 ## Comparison
 
+| Zone | % Max HR | HR Reserve | LTHR / Friel |
+| --- | --- | --- | --- |
+| Z1 | `100-119 bpm` | `128-141 bpm` | `<147 bpm` |
+| Z2 | `120-139 bpm` | `142-156 bpm` | `147-154 bpm` |
+| Z3 | `140-159 bpm` | `157-170 bpm` | `156-163 bpm` |
+| Z4 | `160-179 bpm` | `171-185 bpm` | `164-171 bpm` |
+| Z5 | `180+ bpm` | `186+ bpm` | split into `Z5a-Z5c` |
+| Z5a | not split | not split | `173-176 bpm` |
+| Z5b | not split | not split | `178-183 bpm` |
+| Z5c | not split | not split | `185+ bpm` |
+
 - `% max HR` is the coarsest method. It is easy to compute, but it usually underspecifies easy running and oversimplifies threshold work.
 - `HR reserve` is a better general-purpose method when you trust resting HR and want a full-range model that adjusts for your own baseline.
 - `LTHR` is the most useful method for run-workout analysis because it tracks threshold and sub-threshold work more directly than the other two methods.
@@ -100,7 +111,22 @@ Read: this is the most running-specific method here because it is anchored to su
 - Use `LTHR` as the primary lens for running-session analysis.
 - Use `HR reserve` as a secondary check for easy and aerobic days.
 - Keep `% max HR` as a rough sanity check, not the main prescription system.
-- Do not treat the current route-map heart-rate colors as personalized until the UI is updated to consume one of these models directly.
+
+## Primary App Bands
+
+The app now consumes the LTHR model as the primary heart-rate zone system for route-map coloring.
+
+| App zone | LTHR range |
+| --- | --- |
+| Z1 | `<147 bpm` |
+| Z2 | `147-155 bpm` |
+| Z3 | `156-163 bpm` |
+| Z4 | `164-172 bpm` |
+| Z5 | `173-177 bpm` |
+| Z6 | `178+ bpm` |
+
+This is a pragmatic 6-band version of the running-specific LTHR model above.
+It keeps the app's existing `Z1-Z6` presentation while making the underlying bands personalized instead of fixed absolute buckets.
 
 ## Next Update Trigger
 

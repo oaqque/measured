@@ -45,6 +45,14 @@ const ROUTE_MODES: Array<{ id: RouteColorMode; label: string }> = [
   { id: "moving", label: "Moving" },
   { id: "elevation", label: "Elevation" },
 ];
+const HEART_RATE_ZONE_BANDS: Array<{ color: string; label: string; minimum: number }> = [
+  { color: "#1d4ed8", label: "Z1 < 147 bpm", minimum: Number.NEGATIVE_INFINITY },
+  { color: "#0284c7", label: "Z2 147-155 bpm", minimum: 147 },
+  { color: "#ca8a04", label: "Z3 156-163 bpm", minimum: 156 },
+  { color: "#ea580c", label: "Z4 164-172 bpm", minimum: 164 },
+  { color: "#b91c1c", label: "Z5 173-177 bpm", minimum: 173 },
+  { color: "#7f1d1d", label: "Z6 178+ bpm", minimum: 178 },
+];
 
 const START_MARKER_RADIUS = 9;
 const FINISH_FLAG_ICON = divIcon({
@@ -506,14 +514,7 @@ function getLegendItems(
   }
 
   if (mode === "heartrate") {
-    return [
-      { color: "#1d4ed8", label: "Z1 < 135 bpm" },
-      { color: "#0284c7", label: "Z2 135-144 bpm" },
-      { color: "#ca8a04", label: "Z3 145-154 bpm" },
-      { color: "#ea580c", label: "Z4 155-164 bpm" },
-      { color: "#b91c1c", label: "Z5 165-174 bpm" },
-      { color: "#7f1d1d", label: "Z6 175+ bpm" },
-    ];
+    return HEART_RATE_ZONE_BANDS.map(({ color, label }) => ({ color, label }));
   }
 
   if (mode === "moving") {
@@ -740,22 +741,13 @@ function speedToColor(speedMps: number) {
 }
 
 function heartrateToColor(heartrate: number) {
-  if (heartrate >= 175) {
-    return "#7f1d1d";
+  for (let index = HEART_RATE_ZONE_BANDS.length - 1; index >= 0; index -= 1) {
+    if (heartrate >= HEART_RATE_ZONE_BANDS[index].minimum) {
+      return HEART_RATE_ZONE_BANDS[index].color;
+    }
   }
-  if (heartrate >= 165) {
-    return "#b91c1c";
-  }
-  if (heartrate >= 155) {
-    return "#ea580c";
-  }
-  if (heartrate >= 145) {
-    return "#ca8a04";
-  }
-  if (heartrate >= 135) {
-    return "#0284c7";
-  }
-  return "#1d4ed8";
+
+  return HEART_RATE_ZONE_BANDS[0].color;
 }
 
 function getElevationLegendItems(values: number[] | null): RouteLegendItem[] {

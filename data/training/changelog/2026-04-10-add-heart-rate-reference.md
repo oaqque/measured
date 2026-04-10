@@ -18,4 +18,6 @@ The new page captures the current working inputs from local data: observed max h
 - heart-rate reserve / Karvonen
 - LTHR / Friel-style running zones
 
+The note also includes a side-by-side comparison table so each zone can be compared across methods without flipping between separate sections.
+
 This does not change the current route-map coloring yet. The immediate goal is to make the assumptions explicit in the training source of truth so future workout analysis can compare methods cleanly.
