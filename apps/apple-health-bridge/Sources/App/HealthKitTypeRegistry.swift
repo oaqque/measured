@@ -15,6 +15,12 @@ enum HealthKitCollectionQueryStrategy: Equatable {
     case sample
 }
 
+struct HealthKitAuthorizationStage {
+    let key: String
+    let displayName: String
+    let readTypes: Set<HKObjectType>
+}
+
 struct HealthKitCollectionDescriptor {
     let key: String
     let displayName: String
@@ -67,13 +73,122 @@ enum HealthKitTypeRegistry {
     static var readTypes: Set<HKObjectType> {
         Set(
             collectionDescriptors.compactMap { descriptor in
-                guard !descriptor.requiresPerObjectAuthorization else {
+                guard shouldAttemptSync(for: descriptor) else {
                     return nil
                 }
 
                 return descriptor.objectType
             }
         )
+    }
+
+    static var authorizationReadTypes: Set<HKObjectType> {
+        Set(
+            collectionDescriptors.compactMap { descriptor in
+                guard !descriptor.requiresPerObjectAuthorization else {
+                    return nil
+                }
+
+                // Keep the initial authorization request to the core types that
+                // are broadly readable without additional Health record or
+                // special-sample constraints. The app can still handle
+                // unauthorized collections gracefully during sync.
+                switch descriptor.queryStrategy {
+                case .characteristic, .quantity, .category, .activitySummary:
+                    return descriptor.objectType
+                case .sample:
+                    return nil
+                }
+            }
+        )
+    }
+
+    static var authorizationStages: [HealthKitAuthorizationStage] {
+        [
+            HealthKitAuthorizationStage(
+                key: "core",
+                displayName: "Core Health Data",
+                readTypes: coreAuthorizationReadTypes
+            ),
+            HealthKitAuthorizationStage(
+                key: "correlations",
+                displayName: "Correlations",
+                readTypes: authorizationReadTypes(
+                    matching: collectionDescriptors.filter {
+                        $0.kind == "correlation" && supportsStagedAuthorization($0)
+                    }
+                )
+            ),
+            HealthKitAuthorizationStage(
+                key: "specialSamples",
+                displayName: "Special Samples",
+                readTypes: authorizationReadTypes(
+                    matching: collectionDescriptors.filter {
+                        switch $0.kind {
+                        case "clinicalRecord", "document":
+                            return false
+                        case "correlation", "characteristic", "quantity", "category", "activitySummary":
+                            return false
+                        default:
+                            return $0.queryStrategy == .sample && supportsStagedAuthorization($0)
+                        }
+                    }
+                )
+            ),
+        ]
+        .filter { !$0.readTypes.isEmpty }
+    }
+
+    private static var coreAuthorizationReadTypes: Set<HKObjectType> {
+        authorizationReadTypes(
+            matching: collectionDescriptors.filter {
+                switch $0.queryStrategy {
+                case .characteristic, .quantity, .category, .activitySummary:
+                    return true
+                case .sample:
+                    return false
+                }
+            }
+        )
+    }
+
+    private static func authorizationReadTypes(
+        matching descriptors: [HealthKitCollectionDescriptor]
+    ) -> Set<HKObjectType> {
+        Set(
+            descriptors.compactMap { descriptor in
+                guard !descriptor.requiresPerObjectAuthorization else {
+                    return nil
+                }
+
+                guard descriptor.kind != "clinicalRecord", descriptor.kind != "document" else {
+                    return nil
+                }
+
+                return descriptor.objectType
+            }
+        )
+    }
+
+    private static func supportsStagedAuthorization(_ descriptor: HealthKitCollectionDescriptor) -> Bool {
+        switch descriptor.key {
+        case "bloodPressure", "food", "medicationDoseEvent":
+            return false
+        default:
+            return true
+        }
+    }
+
+    static func shouldAttemptSync(for descriptor: HealthKitCollectionDescriptor) -> Bool {
+        guard !descriptor.requiresPerObjectAuthorization else {
+            return false
+        }
+
+        guard descriptor.kind != "clinicalRecord", descriptor.kind != "document" else {
+            return false
+        }
+
+        return supportsStagedAuthorization(descriptor)
     }
 
     private static var characteristicDescriptors: [HealthKitCollectionDescriptor] {

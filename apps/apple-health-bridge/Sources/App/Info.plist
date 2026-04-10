@@ -24,6 +24,11 @@
 	<true/>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Apple Health workout data is read locally to export a repo-friendly training snapshot.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>UILaunchScreen</key>
