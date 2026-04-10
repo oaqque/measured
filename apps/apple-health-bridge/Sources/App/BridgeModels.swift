@@ -11,6 +11,7 @@ struct BridgeExportBundle: Identifiable, Sendable {
 struct AppleHealthExportSnapshot: Codable, Sendable {
     let generatedAt: String
     let provider: String
+    let registryGeneratedAt: String?
     let activities: [String: AppleHealthExportActivity]
     let collections: [String: AppleHealthExportCollection]
     let deletedActivityIds: [String]
@@ -62,6 +63,9 @@ struct AppleHealthExportCollection: Codable, Sendable {
     let kind: String
     let displayName: String
     let unit: String?
+    let objectTypeIdentifier: String?
+    let queryStrategy: String?
+    let requiresPerObjectAuthorization: Bool?
     let samples: [AppleHealthExportSample]
 }
 
@@ -71,6 +75,8 @@ struct AppleHealthExportSample: Codable, Sendable {
     let endDate: String?
     let numericValue: Double?
     let categoryValue: Int?
+    let textValue: String?
+    let payload: [String: String]?
     let source: AppleHealthExportSource?
     let metadata: [String: String]?
 }
@@ -102,6 +108,9 @@ struct BridgeHealthCollection: Sendable {
     let kind: String
     let displayName: String
     let unit: String?
+    let objectTypeIdentifier: String?
+    let queryStrategy: String?
+    let requiresPerObjectAuthorization: Bool?
     let samples: [BridgeHealthSample]
 }
 
@@ -111,6 +120,8 @@ struct BridgeHealthSample: Sendable {
     let endDate: Date?
     let numericValue: Double?
     let categoryValue: Int?
+    let textValue: String?
+    let payload: [String: String]?
     let source: AppleHealthExportSource?
     let metadata: [String: String]?
 }
