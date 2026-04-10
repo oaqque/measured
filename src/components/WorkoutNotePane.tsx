@@ -20,6 +20,7 @@ import { WorkoutShareButton } from "@/components/WorkoutShareButton";
 import {
   loadAppleHealthWorkoutMeasurements,
 } from "@/lib/workouts/apple-health";
+import { LTHR_HEART_RATE_ZONE_BANDS, getLthrHeartRateZoneColor } from "@/lib/workouts/heart-rate-zones";
 import {
   formatCompletedTimestamp,
   formatDisplayDate,
@@ -691,7 +692,11 @@ function AppleHealthMeasurementChart({
   const offsetRangeLabel = formatMeasurementOffsetRange(series.points);
   const chartData = buildMeasurementChartData(series.points);
   const offsetDomain = getMeasurementOffsetDomain(series.points, series.section);
-  const valueDomain = getMeasurementValueDomain(series.points, series.kind);
+  const valueDomain = getMeasurementValueDomain(series);
+  const heartRateSegments =
+    series.section === "duringWorkout" && series.key === "heartRate"
+      ? buildMeasurementZoneSegments(series.points)
+      : [];
 
   return (
     <div className="space-y-3">
@@ -805,6 +810,33 @@ function AppleHealthMeasurementChart({
                   dot={false}
                   isAnimationActive={false}
                 />
+              ) : heartRateSegments.length > 0 ? (
+                <>
+                  {heartRateSegments.map((segment) => (
+                    <ReferenceLine
+                      key={`${series.key}-${segment.startOffsetSeconds}-${segment.endOffsetSeconds}`}
+                      ifOverflow="extendDomain"
+                      segment={[
+                        { x: segment.startOffsetSeconds, y: segment.startValue },
+                        { x: segment.endOffsetSeconds, y: segment.endValue },
+                      ]}
+                      stroke={segment.color}
+                      strokeLinecap="round"
+                      strokeOpacity={0.96}
+                      strokeWidth={3}
+                    />
+                  ))}
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="currentColor"
+                    strokeOpacity={0.18}
+                    strokeWidth={1}
+                    dot={false}
+                    isAnimationActive={false}
+                    connectNulls
+                  />
+                </>
               ) : (
                 <Line
                   type="monotone"
@@ -820,11 +852,28 @@ function AppleHealthMeasurementChart({
             </ComposedChart>
           </ResponsiveContainer>
         </div>
-        <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+      <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
           <span>{formatMeasurementValue(minValue, series.unit)}</span>
           <span>{offsetRangeLabel}</span>
           <span>{formatMeasurementValue(maxValue, series.unit)}</span>
         </div>
+        {series.section === "duringWorkout" && series.key === "heartRate" ? (
+          <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+            {LTHR_HEART_RATE_ZONE_BANDS.map((band) => (
+              <span
+                key={band.label}
+                className="inline-flex items-center gap-1.5 rounded-full border border-foreground/10 bg-background/70 px-2 py-1"
+              >
+                <span
+                  aria-hidden="true"
+                  className="size-2 rounded-full"
+                  style={{ backgroundColor: band.color }}
+                />
+                {band.label}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -1199,14 +1248,42 @@ function getMeasurementOffsetDomain(
 }
 
 function getMeasurementValueDomain(
-  points: AppleHealthMeasurementSeries["points"],
-  kind: AppleHealthMeasurementSeries["kind"],
+  series: AppleHealthMeasurementSeries,
 ): [number, number] {
-  const minValue = kind === "cumulative" ? 0 : Math.min(...points.map((point) => point.value));
-  const maxValue = Math.max(...points.map((point) => point.value));
+  const points = series.points;
+  const minValue =
+    series.kind === "cumulative"
+      ? 0
+      : series.minValue ?? Math.min(...points.map((point) => point.value));
+  const maxValue = series.maxValue ?? Math.max(...points.map((point) => point.value));
   const range = Math.max(maxValue - minValue, 1);
   const padding = range * 0.12;
   return [minValue - padding, maxValue + padding];
+}
+
+function buildMeasurementZoneSegments(points: AppleHealthMeasurementSeries["points"]) {
+  const segments: Array<{
+    color: string;
+    endOffsetSeconds: number;
+    endValue: number;
+    startOffsetSeconds: number;
+    startValue: number;
+  }> = [];
+
+  for (let index = 1; index < points.length; index += 1) {
+    const previous = points[index - 1];
+    const current = points[index];
+    const zoneColor = getLthrHeartRateZoneColor((previous.value + current.value) / 2);
+    segments.push({
+      color: zoneColor,
+      endOffsetSeconds: current.offsetSeconds,
+      endValue: current.value,
+      startOffsetSeconds: previous.offsetSeconds,
+      startValue: previous.value,
+    });
+  }
+
+  return segments;
 }
 
 function formatMeasurementAxisOffset(

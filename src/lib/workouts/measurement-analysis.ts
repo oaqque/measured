@@ -24,7 +24,7 @@ export function buildAppleHealthMeasurementAnalysisSections(
 
   const cadenceSeries = findAppleHealthSeries(measurements, "cadence");
   if (cadenceSeries) {
-    const markdown = buildAppleHealthCadenceMarkdown(measurements, cadenceSeries.points);
+    const markdown = buildAppleHealthCadenceMarkdown(measurements, cadenceSeries);
     if (markdown) {
       sections.push({
         kind: "appleHealthMeasurement",
@@ -114,17 +114,25 @@ function buildAppleHealthHeartRateMarkdown(measurements: AppleHealthWorkoutMeasu
   return lines.join("\n");
 }
 
-function buildAppleHealthCadenceMarkdown(measurements: AppleHealthWorkoutMeasurements, points: AppleHealthPoint[]) {
-  const filteredPoints = sanitizeAppleHealthPoints(points).filter((point) => point.value >= 100 && point.value <= 230);
-  if (filteredPoints.length === 0) {
+function buildAppleHealthCadenceMarkdown(
+  measurements: AppleHealthWorkoutMeasurements,
+  series: AppleHealthWorkoutMeasurements["series"][number],
+) {
+  const rawPoints = sanitizeAppleHealthPoints(series.points);
+  if (rawPoints.length === 0) {
     return "";
   }
 
-  const averageCadence = average(filteredPoints.map((point) => point.value));
-  const minCadence = Math.min(...filteredPoints.map((point) => point.value));
-  const maxCadence = Math.max(...filteredPoints.map((point) => point.value));
-  const excludedCount = points.length - filteredPoints.length;
-  const split = splitAppleHealthPoints(filteredPoints, measurements.elapsedTimeSeconds);
+  const workingRangePoints = rawPoints.filter((point) => point.value >= 100 && point.value <= 230);
+  if (workingRangePoints.length === 0) {
+    return "";
+  }
+
+  const averageCadence = series.averageValue ?? average(rawPoints.map((point) => point.value));
+  const minCadence = Math.min(...workingRangePoints.map((point) => point.value));
+  const maxCadence = Math.max(...workingRangePoints.map((point) => point.value));
+  const excludedCount = rawPoints.length - workingRangePoints.length;
+  const split = splitAppleHealthPoints(rawPoints.filter((point) => point.value <= 230), measurements.elapsedTimeSeconds);
   const rangeSentence =
     excludedCount > 0
       ? ` after excluding \`${excludedCount}\` start-stop outlier${excludedCount === 1 ? "" : "s"} below \`100 spm\``

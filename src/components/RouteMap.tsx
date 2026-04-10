@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { LTHR_HEART_RATE_ZONE_BANDS, getLthrHeartRateZoneColor } from "@/lib/workouts/heart-rate-zones";
 import { decodePolyline, type RouteCoordinate } from "@/lib/workouts/polyline";
 import type { WorkoutRouteStreams } from "@/lib/workouts/schema";
 import { clearRouteStreamsCache, loadRouteStreamsForActivity, loadRouteStreamsForPath } from "@/lib/workouts/routes";
@@ -44,14 +45,6 @@ const ROUTE_MODES: Array<{ id: RouteColorMode; label: string }> = [
   { id: "heartrate", label: "Heart rate" },
   { id: "moving", label: "Moving" },
   { id: "elevation", label: "Elevation" },
-];
-const HEART_RATE_ZONE_BANDS: Array<{ color: string; label: string; minimum: number }> = [
-  { color: "#1d4ed8", label: "Z1 < 147 bpm", minimum: Number.NEGATIVE_INFINITY },
-  { color: "#0284c7", label: "Z2 147-155 bpm", minimum: 147 },
-  { color: "#ca8a04", label: "Z3 156-163 bpm", minimum: 156 },
-  { color: "#ea580c", label: "Z4 164-172 bpm", minimum: 164 },
-  { color: "#b91c1c", label: "Z5 173-177 bpm", minimum: 173 },
-  { color: "#7f1d1d", label: "Z6 178+ bpm", minimum: 178 },
 ];
 
 const START_MARKER_RADIUS = 9;
@@ -514,7 +507,7 @@ function getLegendItems(
   }
 
   if (mode === "heartrate") {
-    return HEART_RATE_ZONE_BANDS.map(({ color, label }) => ({ color, label }));
+    return LTHR_HEART_RATE_ZONE_BANDS.map(({ color, label }) => ({ color, label }));
   }
 
   if (mode === "moving") {
@@ -741,13 +734,7 @@ function speedToColor(speedMps: number) {
 }
 
 function heartrateToColor(heartrate: number) {
-  for (let index = HEART_RATE_ZONE_BANDS.length - 1; index >= 0; index -= 1) {
-    if (heartrate >= HEART_RATE_ZONE_BANDS[index].minimum) {
-      return HEART_RATE_ZONE_BANDS[index].color;
-    }
-  }
-
-  return HEART_RATE_ZONE_BANDS[0].color;
+  return getLthrHeartRateZoneColor(heartrate);
 }
 
 function getElevationLegendItems(values: number[] | null): RouteLegendItem[] {

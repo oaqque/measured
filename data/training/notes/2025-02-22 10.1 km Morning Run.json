@@ -28,7 +28,7 @@
         {
           "kind": "appleHealthMeasurement",
           "measurement": "cadence",
-          "markdown": "- Apple Health cadence averaged `160.5 spm`, with a working range of `150.0` to `162.8 spm`.\n- First-half cadence averaged `161.1 spm` and second-half cadence averaged `160.0 spm` (-1.1 spm), which looks mechanically stable."
+          "markdown": "- Apple Health cadence averaged `161.5 spm`, with a working range of `141.0` to `162.8 spm` after excluding `2` start-stop outliers below `100 spm`.\n- First-half cadence averaged `161.2 spm` and second-half cadence averaged `161.1 spm` (-0.1 spm), which looks mechanically stable."
         },
         {
           "kind": "stravaMeasurement",

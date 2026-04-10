@@ -1935,37 +1935,68 @@ function buildDerivedCadenceMeasurementSeries(
   workoutEndMs: number,
   samples: AppleHealthCollectionSampleRecord[],
 ): AppleHealthMeasurementSeries | null {
+  const bucketDurationMs = 5_000;
   const sortedSamples = [...samples].sort((left, right) => {
     const leftStart = Date.parse(left.startDate ?? "");
     const rightStart = Date.parse(right.startDate ?? "");
     return leftStart - rightStart;
   });
 
-  const points: AppleHealthMeasurementPoint[] = [];
+  const clippedSamples: Array<{ durationMs: number; endMs: number; startMs: number; value: number }> = [];
+  let totalSteps = 0;
   for (const sample of sortedSamples) {
     const clippedSample = clipAppleHealthSampleToWorkout(sample, workoutStartMs, workoutEndMs);
     if (!clippedSample || clippedSample.durationMs <= 0) {
       continue;
     }
 
-    const cadenceSpm = clippedSample.value / (clippedSample.durationMs / (1000 * 60));
+    totalSteps += clippedSample.value;
+    clippedSamples.push(clippedSample);
+  }
+
+  if (clippedSamples.length === 0) {
+    return null;
+  }
+
+  const points: AppleHealthMeasurementPoint[] = [];
+  for (let bucketStartMs = workoutStartMs; bucketStartMs < workoutEndMs; bucketStartMs += bucketDurationMs) {
+    const bucketEndMs = Math.min(workoutEndMs, bucketStartMs + bucketDurationMs);
+    const bucketWindowMs = bucketEndMs - bucketStartMs;
+    if (bucketWindowMs <= 0) {
+      continue;
+    }
+
+    let bucketSteps = 0;
+    for (const sample of clippedSamples) {
+      if (sample.endMs <= bucketStartMs || sample.startMs >= bucketEndMs) {
+        continue;
+      }
+
+      const overlapMs = Math.min(sample.endMs, bucketEndMs) - Math.max(sample.startMs, bucketStartMs);
+      if (overlapMs <= 0) {
+        continue;
+      }
+
+      bucketSteps += sample.value * (overlapMs / sample.durationMs);
+    }
+
+    const cadenceSpm = Math.min(bucketSteps / (bucketWindowMs / (1000 * 60)), 230);
     if (!Number.isFinite(cadenceSpm)) {
       continue;
     }
 
-    const midpointMs = clippedSample.startMs + clippedSample.durationMs / 2;
+    const midpointMs = bucketStartMs + bucketWindowMs / 2;
     points.push({
       offsetSeconds: Math.max(0, Math.round((midpointMs - workoutStartMs) / 1000)),
       value: roundTo(cadenceSpm, 1),
     });
   }
 
-  if (points.length === 0) {
-    return null;
-  }
-
   const normalizedPoints = downsampleMeasurementPoints(points, 240, "line");
   const values = normalizedPoints.map((point) => point.value);
+  const workoutDurationMinutes = (workoutEndMs - workoutStartMs) / (1000 * 60);
+  const averageCadence = workoutDurationMinutes > 0 ? totalSteps / workoutDurationMinutes : null;
+  const displayValues = values.filter((value) => value >= 100);
 
   return {
     key: "cadence",
@@ -1973,11 +2004,11 @@ function buildDerivedCadenceMeasurementSeries(
     unit: "spm",
     kind: "line",
     section: "duringWorkout",
-    sampleCount: points.length,
-    averageValue: roundTo(values.reduce((sum, value) => sum + value, 0) / values.length, 1),
-    minValue: roundTo(Math.min(...values), 1),
-    maxValue: roundTo(Math.max(...values), 1),
-    totalValue: null,
+    sampleCount: clippedSamples.length,
+    averageValue: averageCadence === null ? null : roundTo(averageCadence, 1),
+    minValue: roundTo(Math.min(...(displayValues.length > 0 ? displayValues : values)), 1),
+    maxValue: roundTo(Math.max(...(displayValues.length > 0 ? displayValues : values)), 1),
+    totalValue: roundTo(totalSteps, 0),
     points: normalizedPoints,
   };
 }

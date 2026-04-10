@@ -62,8 +62,9 @@ describe("measurement analysis helpers", () => {
       kind: "appleHealthMeasurement",
       measurement: "cadence",
     });
+    expect(sections[1]?.markdown).toContain("Apple Health cadence averaged `171.5 spm`");
     expect(sections[1]?.markdown).toContain("excluding `1` start-stop outlier");
-    expect(sections[1]?.markdown).toContain("suggests turnover lifted rather than falling away");
+    expect(sections[1]?.markdown).toContain("suggests some late turnover fade");
   });
 
   it("builds strava pace, heart-rate, moving, and elevation sections", () => {
