@@ -4,13 +4,59 @@
   "allDay": true,
   "type": "single",
   "date": "2026-04-10",
-  "completed": false,
+  "completed": "2026-04-09T20:27:35.000Z",
   "eventType": "run",
   "expectedDistance": "6 km",
+  "actualDistance": "16 km",
+  "stravaId": 18046807889,
+  "activityRefs": {
+    "strava": "18046807889"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- 6 km easy recovery run\n- Keep this genuinely light after Thursday's steady work and gym.\n- Use short relaxed steps and let the effort stay around `3/10`.\n- The point is to freshen the legs for the weekend, not to add more training value on tired legs.\n- If anything in the lower legs feels off, cut the run short and keep the day purely restorative."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This run happened on Friday, `2026-04-10`, after Thursday's planned `10 km` steady run on `2026-04-09` was missed, and it effectively absorbed both that lost mileage and Friday's scheduled `6 km` recovery volume. The completed run covered `16.037 km` in `1:32:48` moving time (`1:35:47` elapsed), so it finished `10.037 km` over Friday's note and `0.037 km` over the combined planned `16 km`.\n- It reclaimed the distance, but not the exact steady-plus-recovery structure the week originally asked for. The first `10.00 km` averaged about `5:46 /km` at average HR about `155.5`, then the final `6.04 km` slowed to about `6:05 /km` while average HR rose to about `159.3` and climbing added another `114.4 m`. That reads more like one extended aerobic run with a hillier, costlier back end than a clean `10 km` steady session followed by an easy recovery shuffle.\n- The run still stayed controlled enough to avoid looking like a disguised threshold day. Average HR was `157.1`, well below Tuesday's `165.2`, and the route-stream thirds came in at about `5:38 /km`, `5:53 /km`, and `6:09 /km` with HR moving from about `155.4` to `156.1` to `159.2`, so the main pattern was steady aerobic fade rather than a hard push.\n- The latest Apple Health cache on disk still stops at Wednesday, `2026-04-08`, so this note's segment read comes from Strava summary data and route streams rather than Apple Health measurements."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate coaching point is that there is no more make-up mileage to chase this week. Through Friday the plan called for `39 km`, and this run brings the week to `43.637 km`; with Saturday's planned `4 km` and Sunday's planned `15 km`, the week would still finish at `62.637 km`, which is essentially on top of the planned `63 km`.\n- That means Saturday should stay genuinely easy or be cut short if the legs feel heavy. Friday already put `1:35:47` on your feet with about `206.0 m` of climbing from the route stream, so the useful next move is absorption before Sunday's long run rather than turning the weekend into more compensation work.\n- The positive part is that you did restore the week's mileage after missing Thursday. The caution is that the restoration came as one longer aerobic load, so the next two days need to protect freshness rather than trying to prove that the reshaped week was easy."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- This is still a useful durability signal for the current block. After Monday's overlong aerobic day, Tuesday's reduced hill session, and Wednesday's aerobic support run, you were still able to cover `16.037 km` on Friday without the heart rate drifting into threshold territory. That matters for both the half-marathon build and the later marathon block.\n- The long-term caution is session separation. Converting a missed Thursday steady run plus Friday recovery run into one Friday make-up run got the weekly volume back, but it also blurred the distinction between steady work, recovery running, and long-run support. For the block to stay repeatable, that needs to be an exception rather than a pattern.\n- The bigger win for the marathon goal is not proving that missed kilometres can always be reclaimed the next day. It is proving that higher weekly volume can still keep each day in its intended lane so the quality work, recovery running, and long runs keep reinforcing each other instead of bleeding together."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:47 /km` across `16.037 km` in `1:32:48` moving time.\n- Estimated first-half moving pace was `5:39 /km` and second-half pace was `5:55 /km` (+17 s/km), so pace faded meaningfully in the back half."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava summary HR came in at `157.1 bpm` average and `172 bpm` max.\n- Distance-split HR averaged `155.1 bpm` in the first half and `158.7 bpm` in the second (+3.7 bpm), which shows a modest late rise in aerobic cost."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `1:32:48` out of `1:35:47` elapsed (96.9%), which shows only minor interruption cost.\n- The downsampled moving stream shows `8` stop segments and `0.9%` stationary samples, so the run was mostly continuous with a few interruptions."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged about `206.0 m` of climbing, with altitude moving between roughly `3.4 m` and `69.8 m`.\n- Estimated climbing was `75.2 m` in the first half and `130.8 m` in the second, so most of the climbing landed later."
+        }
+      ]
     }
   ]
 }
