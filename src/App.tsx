@@ -30,6 +30,7 @@ import {
   FileText,
   Github,
   GripVertical,
+  HeartPulse,
   History,
   ListFilter,
   Menu,
@@ -64,6 +65,7 @@ import {
   generatedAt,
   getChangelogEntriesForFile,
   goalsDocument,
+  heartRateDocument,
   getWorkoutBySlug,
   trainingPlan,
   welcomeDocument,
@@ -78,7 +80,7 @@ import type {
 } from "@/lib/workouts/schema";
 import { cn } from "@/lib/utils";
 
-type View = "welcome" | "goals" | "plan" | "calendar";
+type View = "welcome" | "goals" | "heart-rate" | "plan" | "calendar";
 type WorkoutStatus = WorkoutFilters["status"];
 type ActiveResizePanel = "left" | "right";
 type AppRoute = {
@@ -183,6 +185,10 @@ export default function App() {
     () => getChangelogEntriesForFile(trainingPlan.sourcePath),
     [],
   );
+  const heartRateChanges = useMemo(
+    () => getChangelogEntriesForFile(heartRateDocument.sourcePath),
+    [],
+  );
   const changelogFocusedFile = useMemo(() => {
     if (selectedWorkout) {
       return selectedWorkout.sourcePath;
@@ -196,12 +202,23 @@ export default function App() {
       return goalsDocument.sourcePath;
     }
 
+    if (view === "heart-rate") {
+      return heartRateDocument.sourcePath;
+    }
+
     if (view === "plan") {
       return trainingPlan.sourcePath;
     }
 
     return null;
-  }, [goalsDocument.sourcePath, selectedWorkout, trainingPlan.sourcePath, view, welcomeDocument.sourcePath]);
+  }, [
+    goalsDocument.sourcePath,
+    heartRateDocument.sourcePath,
+    selectedWorkout,
+    trainingPlan.sourcePath,
+    view,
+    welcomeDocument.sourcePath,
+  ]);
   const stravaRunCount = useMemo(
     () => allWorkouts.filter((workout) => workout.stravaId !== null).length,
     [],
@@ -432,6 +449,11 @@ export default function App() {
       return true;
     }
 
+    if (normalizedHref === "HEART_RATE.md") {
+      navigateToView("heart-rate");
+      return true;
+    }
+
     if (normalizedHref === "WELCOME.md") {
       navigateToView("welcome");
       return true;
@@ -620,6 +642,16 @@ export default function App() {
                     onLinkClick={handleMarkdownLink}
                   />
                 </div>
+              ) : view === "heart-rate" ? (
+                <div className="app-scroll-pane h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
+                  <MarkdownPage
+                    content={heartRateDocument.body}
+                    relatedChanges={heartRateChanges}
+                    sourcePath={heartRateDocument.sourcePath}
+                    onFileClick={handleMarkdownLink}
+                    onLinkClick={handleMarkdownLink}
+                  />
+                </div>
               ) : view === "plan" ? (
                 <div className="app-scroll-pane h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
                   <MarkdownPage
@@ -681,6 +713,12 @@ function SidebarContent({
           icon={<FileText className="size-4" />}
           label="Plan"
           onClick={() => onNavigate("plan")}
+        />
+        <SidebarNavButton
+          active={view === "heart-rate"}
+          icon={<HeartPulse className="size-4" />}
+          label="Heart Rate"
+          onClick={() => onNavigate("heart-rate")}
         />
         <SidebarNavButton
           active={view === "calendar"}
@@ -2274,6 +2312,10 @@ function getRouteFromPath(pathname: string): AppRoute {
     return { view: "goals", noteSlug: null };
   }
 
+  if (normalizedPath === "/heart-rate") {
+    return { view: "heart-rate", noteSlug: null };
+  }
+
   if (normalizedPath === "/plan") {
     return { view: "plan", noteSlug: null };
   }
@@ -2292,6 +2334,10 @@ function getPathFromRoute(route: AppRoute) {
 
   if (route.view === "goals") {
     return "/goals";
+  }
+
+  if (route.view === "heart-rate") {
+    return "/heart-rate";
   }
 
   if (route.view === "plan") {
@@ -2320,6 +2366,10 @@ function formatViewLabel(view: View) {
 
   if (view === "plan") {
     return "Plan";
+  }
+
+  if (view === "heart-rate") {
+    return "Heart Rate";
   }
 
   if (view === "calendar") {
@@ -2697,6 +2747,10 @@ function formatAffectedFileLabel(sourcePath: string) {
 
   if (sourcePath === "GOALS.md") {
     return "GOALS.md";
+  }
+
+  if (sourcePath === "HEART_RATE.md") {
+    return "HEART_RATE.md";
   }
 
   if (sourcePath.startsWith("goals/")) {

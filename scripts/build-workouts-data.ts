@@ -194,11 +194,13 @@ async function main() {
   const goalNotes: GoalNote[] = [];
   let welcome: PlanDocument | null = null;
   let goals: PlanDocument | null = null;
+  let heartRate: PlanDocument | null = null;
   let plan: PlanDocument | null = null;
 
   progress.step("Reading plan documents");
   welcome = await readDocument(path.join(dataDir, "WELCOME.md"), dataDir);
   goals = await readDocument(path.join(dataDir, "GOALS.md"), dataDir);
+  heartRate = await readDocument(path.join(dataDir, "HEART_RATE.md"), dataDir);
   plan = await readDocument(path.join(dataDir, "PLAN.md"), dataDir);
 
   progress.step("Building workout payload");
@@ -235,6 +237,10 @@ async function main() {
     throw new Error(`Missing GOALS.md in workouts source directory: ${dataDir}`);
   }
 
+  if (!heartRate) {
+    throw new Error(`Missing HEART_RATE.md in workouts source directory: ${dataDir}`);
+  }
+
   workouts.sort((left, right) =>
     left.date === right.date ? left.slug.localeCompare(right.slug) : left.date.localeCompare(right.date),
   );
@@ -244,6 +250,7 @@ async function main() {
     generatedAt,
     welcome,
     goals,
+    heartRate,
     goalNotes,
     plan,
     changelog: changelogEntries,

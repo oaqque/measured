@@ -43,6 +43,7 @@ let workoutSourceDetailsPromise: Promise<Map<string, Partial<Record<WorkoutProvi
 export const generatedAt = rawWorkoutsData.generatedAt;
 export const welcomeDocument = rawWorkoutsData.welcome;
 export const goalsDocument = rawWorkoutsData.goals;
+export const heartRateDocument = rawWorkoutsData.heartRate;
 export const allGoalNotes = goalNotes;
 export const trainingPlan = rawWorkoutsData.plan;
 export const allChangelogEntries = changelog;

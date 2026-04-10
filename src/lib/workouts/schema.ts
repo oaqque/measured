@@ -232,6 +232,7 @@ export interface WorkoutsData {
   generatedAt: string;
   welcome: PlanDocument;
   goals: PlanDocument;
+  heartRate: PlanDocument;
   goalNotes: GoalNote[];
   plan: PlanDocument;
   changelog: ChangelogEntry[];
