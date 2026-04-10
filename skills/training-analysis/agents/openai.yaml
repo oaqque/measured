@@ -1,4 +1,4 @@
 interface:
   display_name: "Training Analysis"
-  short_description: "Sync Strava data and update training notes"
-  default_prompt: "Use $training-analysis to sync Strava data, analyze a run, update workout or changelog markdown in this repo, and commit the result."
+  short_description: "Sync Strava and Apple Health data and update training notes"
+  default_prompt: "Use $training-analysis to fetch the latest Apple Health export from Taildrop, import and link provider data, analyze a run, update workout or changelog markdown in this repo, and commit the result."

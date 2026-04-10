@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "12 km Easy Aerobic Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-07-29",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "12 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 12 km easy aerobic run"
+    }
+  ]
+}

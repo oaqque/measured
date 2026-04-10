@@ -6,6 +6,12 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import cliProgress from "cli-progress";
 import matter from "gray-matter";
+import {
+  getWorkoutNoteBaseName,
+  hasImportedFromStravaSection,
+  parseWorkoutNoteSourceDocument,
+  renderWorkoutNoteSourceDocumentBody,
+} from "../src/lib/workouts/source-note";
 import type {
   AppleHealthMeasurementPoint,
   AppleHealthMeasurementSeries,
@@ -16,6 +22,7 @@ import type {
   WorkoutActivityRefMap,
   WorkoutEventType,
   WorkoutNote,
+  WorkoutNoteSourceDocument,
   WorkoutProvider,
   WorkoutRouteStreams,
   WorkoutSourceDetailsPayload,
@@ -145,20 +152,19 @@ async function main() {
   const changelogDir = path.join(dataDir, changelogDirName);
   await assertNotesDirectory(notesDir);
   await assertGoalNotesDirectory(goalsDir);
-  const fileNames = (await fs.readdir(notesDir))
-    .filter((fileName) => fileName.endsWith(".md"))
-    .sort((left, right) => left.localeCompare(right));
+  const fileNames = listWorkoutNoteFileNames(await fs.readdir(notesDir));
   const goalFileNames = (await fs.readdir(goalsDir))
     .filter((fileName) => fileName.endsWith(".md"))
     .sort((left, right) => left.localeCompare(right));
   const noteInputs = await Promise.all(
     fileNames.map(async (fileName) => {
       const filePath = path.join(notesDir, fileName);
+      const fileContent = await fs.readFile(filePath, "utf8");
       return {
         fileName,
         filePath,
         sourcePath: path.relative(dataDir, filePath).replaceAll("\\", "/"),
-        fileContent: await fs.readFile(filePath, "utf8"),
+        document: parseWorkoutNoteSourceDocument(fileName, fileContent),
       };
     }),
   );
@@ -200,7 +206,7 @@ async function main() {
     workouts.push(
       buildWorkoutNote(
         noteInput.fileName,
-        noteInput.fileContent,
+        noteInput.document,
         noteInput.sourcePath,
         providerCaches,
         existingWorkoutFallbacks.get(noteInput.sourcePath) ?? null,
@@ -437,17 +443,15 @@ async function readProviderCacheSnapshot(
 }
 
 function collectReferencedActivityIds(
-  noteInputs: Array<{ fileName: string; fileContent: string }>,
+  noteInputs: Array<{ fileName: string; document: WorkoutNoteSourceDocument }>,
 ): Record<WorkoutProvider, Set<string>> {
   const references = Object.fromEntries(
     WORKOUT_PROVIDERS.map((provider) => [provider, new Set<string>()]),
   ) as Record<WorkoutProvider, Set<string>>;
 
   for (const noteInput of noteInputs) {
-    const parsed = matter(noteInput.fileContent);
-    const data = parsed.data;
-    const legacyStravaId = normalizeOptionalInteger(data.stravaId, noteInput.fileName, "stravaId");
-    const activityRefs = normalizeActivityRefs(data.activityRefs, noteInput.fileName);
+    const legacyStravaId = normalizeOptionalInteger(noteInput.document.stravaId, noteInput.fileName, "stravaId");
+    const activityRefs = normalizeActivityRefs(noteInput.document.activityRefs, noteInput.fileName);
     if (legacyStravaId !== null) {
       activityRefs.strava ??= String(legacyStravaId);
     }
@@ -771,11 +775,29 @@ async function assertNotesDirectory(notesDir: string) {
     throw new Error(
       [
         `Unable to read workout notes directory: ${notesDir}`,
-        `Expected structure: <data-root>/${notesDirName}/*.md with PLAN.md, WELCOME.md, GOALS.md, AGENTS.md, and goals/*.md in <data-root>`,
+        `Expected structure: <data-root>/${notesDirName}/*.json with PLAN.md, WELCOME.md, GOALS.md, AGENTS.md, and goals/*.md in <data-root>`,
         `Details: ${detail}`,
       ].join("\n"),
     );
   }
+}
+
+function listWorkoutNoteFileNames(fileNames: string[]) {
+  const preferredByBaseName = new Map<string, string>();
+
+  for (const fileName of [...fileNames].sort((left, right) => left.localeCompare(right))) {
+    if (!fileName.endsWith(".json") && !fileName.endsWith(".md")) {
+      continue;
+    }
+
+    const baseName = getWorkoutNoteBaseName(fileName);
+    const existing = preferredByBaseName.get(baseName);
+    if (!existing || fileName.endsWith(".json")) {
+      preferredByBaseName.set(baseName, fileName);
+    }
+  }
+
+  return [...preferredByBaseName.values()].sort((left, right) => left.localeCompare(right));
 }
 
 async function assertGoalNotesDirectory(goalsDir: string) {
@@ -891,15 +913,13 @@ function buildGoalNote(fileName: string, fileContent: string, sourcePath: string
 
 function buildWorkoutNote(
   fileName: string,
-  fileContent: string,
+  document: WorkoutNoteSourceDocument,
   sourcePath: string,
   providerCaches: Record<WorkoutProvider, ProviderCacheSnapshot>,
   existingFallback: GeneratedWorkoutFallback | null,
 ): WorkoutNote {
-  const parsed = matter(fileContent);
-  const data = parsed.data;
-  const legacyStravaId = normalizeOptionalInteger(data.stravaId, fileName, "stravaId");
-  const activityRefs = normalizeActivityRefs(data.activityRefs, fileName);
+  const legacyStravaId = normalizeOptionalInteger(document.stravaId, fileName, "stravaId");
+  const activityRefs = normalizeActivityRefs(document.activityRefs, fileName);
   if (legacyStravaId !== null) {
     const normalizedLegacyStravaId = String(legacyStravaId);
     if (
@@ -914,10 +934,9 @@ function buildWorkoutNote(
   const validFallback =
     existingFallback && activityRefsMatch(existingFallback.activityRefs, activityRefs) ? existingFallback : null;
   const hasDeletedLinkedActivity = linkedActivityWasDeleted(activityRefs, providerCaches);
-  const importedFromStrava =
-    activityRefs.strava !== undefined && /(^|\n)##\s+Imported from Strava\b/u.test(parsed.content);
-  const notedExpectedDistance = normalizeNullableString(data.expectedDistance);
-  const notedActualDistance = normalizeNullableString(data.actualDistance);
+  const importedFromStrava = activityRefs.strava !== undefined && hasImportedFromStravaSection(document);
+  const notedExpectedDistance = normalizeNullableString(document.expectedDistance);
+  const notedActualDistance = normalizeNullableString(document.actualDistance);
   const sources = buildWorkoutSources(activityRefs, providerCaches, existingFallback);
   const displaySource = selectDisplaySourceSummary(sources, activityRefs);
   const expectedDistance =
@@ -935,15 +954,15 @@ function buildWorkoutNote(
     (importedFromStrava ? normalizeDistanceKm(notedExpectedDistance) : null);
 
   return {
-    slug: slugify(fileName.replace(/\.md$/u, "")),
-    title: expectString(data.title, fileName, "title"),
-    date: normalizeDate(data.date, fileName, "date"),
-    eventType: normalizeEventType(data.eventType, fileName),
+    slug: slugify(getWorkoutNoteBaseName(fileName)),
+    title: expectString(document.title, fileName, "title"),
+    date: normalizeDate(document.date, fileName, "date"),
+    eventType: normalizeEventType(document.eventType, fileName),
     expectedDistance,
     expectedDistanceKm,
     actualDistance,
     actualDistanceKm,
-    completed: normalizeCompleted(data.completed, fileName),
+    completed: normalizeCompleted(document.completed, fileName),
     stravaId: activityRefs.strava ? Number(activityRefs.strava) : null,
     dataSource: normalizeLegacyDataSource(displaySource?.provider ?? null),
     actualMovingTimeSeconds: displaySource?.movingTimeSeconds ?? null,
@@ -958,9 +977,10 @@ function buildWorkoutNote(
     hasStravaStreams: Boolean(sources.strava?.hasRouteStreams && sources.strava.routePath),
     activityRefs,
     sources,
-    allDay: expectBoolean(data.allDay, fileName, "allDay"),
-    type: expectString(data.type, fileName, "type"),
-    body: sanitizePublicText(parsed.content.trim()),
+    allDay: expectBoolean(document.allDay, fileName, "allDay"),
+    type: expectString(document.type, fileName, "type"),
+    body: sanitizePublicText(renderWorkoutNoteSourceDocumentBody(document)),
+    sections: document.sections,
     sourcePath,
   };
 }

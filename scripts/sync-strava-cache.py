@@ -870,12 +870,14 @@ def scan_note_links(notes_dir: Path) -> list[tuple[str, str, int, str, str]]:
 
     linked_at = iso_now()
     rows: list[tuple[str, str, int, str, str]] = []
-    for file_path in sorted(notes_dir.glob("*.md")):
-        content = file_path.read_text(encoding="utf-8")
-        frontmatter_match = _FRONTMATTER_PATTERN.search(content)
-        if not frontmatter_match:
+    note_paths = sorted(notes_dir.glob("*.json")) + sorted(notes_dir.glob("*.md"))
+    seen_stems: set[str] = set()
+    for file_path in note_paths:
+        if file_path.stem in seen_stems:
             continue
-        activity_id = extract_frontmatter_strava_id(frontmatter_match.group(1))
+        seen_stems.add(file_path.stem)
+
+        activity_id = extract_note_strava_id(file_path)
         if activity_id is None:
             continue
         rows.append(
@@ -884,10 +886,37 @@ def scan_note_links(notes_dir: Path) -> list[tuple[str, str, int, str, str]]:
                 slugify(file_path.stem),
                 activity_id,
                 linked_at,
-                "frontmatter",
+                "document" if file_path.suffix == ".json" else "frontmatter",
             )
         )
     return rows
+
+
+def extract_note_strava_id(file_path: Path) -> int | None:
+    if file_path.suffix == ".json":
+        payload = json.loads(file_path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            return None
+
+        raw_strava_id = payload.get("stravaId")
+        if isinstance(raw_strava_id, int) and raw_strava_id > 0:
+            return raw_strava_id
+
+        raw_activity_refs = payload.get("activityRefs")
+        if isinstance(raw_activity_refs, dict):
+            strava_ref = raw_activity_refs.get("strava")
+            if isinstance(strava_ref, str) and strava_ref.isdigit():
+                return int(strava_ref)
+            if isinstance(strava_ref, int) and strava_ref > 0:
+                return strava_ref
+
+        return None
+
+    content = file_path.read_text(encoding="utf-8")
+    frontmatter_match = _FRONTMATTER_PATTERN.search(content)
+    if not frontmatter_match:
+        return None
+    return extract_frontmatter_strava_id(frontmatter_match.group(1))
 
 
 def extract_frontmatter_strava_id(frontmatter: str) -> int | None:

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "4 km Easy Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-11",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "4 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 4 km easy run\n- Keep this short and relaxed, just enough to keep frequency alive before Sunday's long run.\n- Do not let basketball later in the day turn this into a progression run or a hidden workout.\n- Finish feeling fresher than when you started.\n- If basketball ends up feeling harder than expected, Sunday's long run should stay patient rather than stretching for extra pace."
+    }
+  ]
+}

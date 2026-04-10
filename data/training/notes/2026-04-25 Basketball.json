@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Basketball",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-25",
+  "completed": false,
+  "eventType": "basketball",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Basketball only"
+    }
+  ]
+}

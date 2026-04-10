@@ -24,7 +24,7 @@ async function main() {
     throw new Error(`Unable to find workout note for ${noteTarget}`);
   }
 
-  const nextData = { ...note.data };
+  const nextData = { ...note.document };
   const nextActivityRefs = { ...note.activityRefs };
 
   if (clear) {

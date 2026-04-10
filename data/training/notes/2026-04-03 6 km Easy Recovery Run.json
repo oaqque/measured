@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "title": "6 km Easy Recovery Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-03",
+  "completed": "2026-04-03T05:30:45.000Z",
+  "eventType": "run",
+  "expectedDistance": "6 km",
+  "stravaId": 17957921745,
+  "activityRefs": {
+    "strava": "17957921745",
+    "appleHealth": "98EFE56C-8DE8-4C28-9356-01DD346BCBCE"
+  },
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 6 km easy recovery run\n- Keep this genuinely light and unambitious.\n- Run by feel, with short relaxed steps and no pressure to turn it into a progression run.\n- If residual fatigue from Wednesday still shows up, the recovery goal matters more than exact pace."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This run matched the planned purpose of the session well enough. You covered `6.10 km` in `37:20` moving time (`37:23` elapsed), which is close to the scheduled `6 km`, and the run stayed almost completely continuous.\n- Average heart rate was `149.8` with a max of `163`, comfortably below Wednesday's threshold session, which supports the read that Friday stayed aerobic even on a route with `90.4 m` of climbing.\n- The stream data shows a mostly controlled recovery run rather than a lazy shuffle or a sneaky progression:\n  - first `3.05 km`: about `18:50` at `6:10 /km`, average HR about `146`, climbing about `46.4 m`\n  - second `3.05 km`: about `18:42` at `6:08 /km`, average HR about `153`, climbing about `52.6 m`\n- Full-kilometre splits ranged from `5:57` to `6:19 /km`. That is still recovery-day territory, but the slightly quicker second half and `7 to 8 bpm` heart-rate rise say the run was controlled rather than totally passive."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate focus is to keep Saturday and Sunday's running smooth and controlled, because the useful outcome from this run is freshness, not proof of fitness.\n- By Friday the week had already reached `36.73 km` across five runs, so there was no need to chase missing volume over the weekend. The planned `4 km` Saturday run was enough if the legs felt normal.\n- The shin-pressure note matters more than the extra `0.10 km`. Because the second half got a little quicker while heart rate rose, the next sessions should prioritize relaxed mechanics, softer effort, and cutting volume immediately if that pressure turns into pain."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- Recovery runs only help the current half-marathon build if they stay easy enough to support the next quality session and the longer Sunday progression. This run still fits that purpose.\n- The caution is form and lower-leg durability. Early shin pressure without pain is not yet an injury, but it is the kind of warning sign that can threaten consistency if easy-day mechanics or cumulative load start to slip.\n- In long-block terms, this note now matters less for its pace and more for its warning signal. A recovery run that stays aerobic but still raises form concerns is exactly the kind of session that should steer future load decisions before it becomes a forced layoff."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- Might need to work on my form. I'm feeling like I may be building some shin splints, although there is no pain yet, just some pressure."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Apple Health recorded `240` during-run heart-rate samples. Average HR was `149.7 bpm`, ranging from `80.0` to `163.0 bpm`.\n- First-half average HR was `145.9 bpm` and second-half average HR was `153.5 bpm` (+7.5 bpm), which shows a modest late rise in aerobic cost."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health cadence averaged `169.5 spm`, with a working range of `120.0` to `196.7 spm`.\n- First-half cadence averaged `169.9 spm` and second-half cadence averaged `169.1 spm` (-0.8 spm), which looks mechanically stable."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `6:07 /km` across `6.105 km` in `37:20` moving time.\n- Estimated first-half moving pace was `6:08 /km` and second-half pace was `6:06 /km` (-1 s/km), so pace stayed broadly even."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava summary HR came in at `149.8 bpm` average and `163 bpm` max.\n- Distance-split HR averaged `146.1 bpm` in the first half and `153.5 bpm` in the second (+7.4 bpm), which shows a modest late rise in aerobic cost."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `37:20` out of `37:23` elapsed (99.9%), which kept stoppage cost negligible.\n- The downsampled moving stream shows `4` stop segments and `0.4%` stationary samples, so the run was mostly continuous with a few interruptions."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged about `99.0 m` of climbing, with altitude moving between roughly `40.2 m` and `61.8 m`.\n- Estimated climbing was `46.2 m` in the first half and `52.8 m` in the second, so the climbing load was split fairly evenly."
+        }
+      ]
+    }
+  ]
+}

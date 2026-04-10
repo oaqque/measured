@@ -11,4 +11,6 @@ Standardize scheduled training events as all-day calendar notes with:
 - `completed: false` by default
 - `eventType` set appropriately: `run`, `basketball`, `strength`, `mobility`, or `race`
 - no `startTime` or `endTime`
-- filenames that match `YYYY-MM-DD Title.md`
+- `schemaVersion: 1`
+- filenames that match `YYYY-MM-DD Title.json`
+- a `sections` array with canonical `program`, `analysis`, `importedFromStrava`, or `markdown` section kinds

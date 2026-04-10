@@ -278,6 +278,7 @@ function normalizeWorkoutNote(workout: RawWorkoutNote): WorkoutNote {
     allDay: workout.allDay,
     type: workout.type,
     body: workout.body,
+    sections: workout.sections,
     sourcePath: workout.sourcePath,
   };
 }

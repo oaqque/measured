@@ -1,8 +1,17 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import matter from "gray-matter";
-import { WORKOUT_PROVIDERS, type WorkoutActivityRefMap, type WorkoutProvider } from "../src/lib/workouts/schema";
+import {
+  getWorkoutNoteBaseName,
+  parseWorkoutNoteSourceDocument,
+  serializeWorkoutNoteSourceDocument,
+} from "../src/lib/workouts/source-note";
+import {
+  WORKOUT_PROVIDERS,
+  type WorkoutActivityRefMap,
+  type WorkoutNoteSourceDocument,
+  type WorkoutProvider,
+} from "../src/lib/workouts/schema";
 
 export const rootDir = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 export const defaultWorkoutsDir = path.resolve(rootDir, "data/training");
@@ -38,8 +47,7 @@ export interface ProviderCacheSnapshot {
 
 export interface WorkoutNoteFile {
   activityRefs: WorkoutActivityRefMap;
-  body: string;
-  data: Record<string, unknown>;
+  document: WorkoutNoteSourceDocument;
   fileName: string;
   filePath: string;
   slug: string;
@@ -258,9 +266,7 @@ export async function readProviderCaches() {
 
 export async function readWorkoutNotes(notesDir?: string): Promise<WorkoutNoteFile[]> {
   const resolvedNotesDir = notesDir ?? (await resolveNotesDir());
-  const fileNames = (await fs.readdir(resolvedNotesDir))
-    .filter((fileName) => fileName.endsWith(".md"))
-    .sort((left, right) => left.localeCompare(right));
+  const fileNames = listWorkoutNoteFileNames(await fs.readdir(resolvedNotesDir));
 
   return Promise.all(
     fileNames.map(async (fileName) => {
@@ -272,17 +278,15 @@ export async function readWorkoutNotes(notesDir?: string): Promise<WorkoutNoteFi
 
 export async function readWorkoutNoteFile(filePath: string, notesDir = path.dirname(filePath)): Promise<WorkoutNoteFile> {
   const fileContent = await fs.readFile(filePath, "utf8");
-  const parsed = matter(fileContent);
-  const data = parsed.data as Record<string, unknown>;
   const fileName = path.basename(filePath);
+  const document = parseWorkoutNoteSourceDocument(fileName, fileContent);
 
   return {
-    activityRefs: normalizeActivityRefs(data, fileName),
-    body: parsed.content,
-    data,
+    activityRefs: normalizeActivityRefs(document, fileName),
+    document,
     fileName,
     filePath,
-    slug: slugify(fileName.replace(/\.md$/u, "")),
+    slug: slugify(getWorkoutNoteBaseName(fileName)),
     sourcePath: path.relative(path.dirname(notesDir), filePath).replaceAll("\\", "/"),
   };
 }
@@ -304,8 +308,11 @@ export async function findWorkoutNote(target: string, notesDir?: string) {
 }
 
 export async function writeWorkoutNote(note: WorkoutNoteFile, nextData: Record<string, unknown>) {
-  const serialized = matter.stringify(normalizeBodyForWrite(note.body), nextData);
-  await fs.writeFile(note.filePath, serialized.endsWith("\n") ? serialized : `${serialized}\n`, "utf8");
+  const nextDocument: WorkoutNoteSourceDocument = {
+    ...note.document,
+    ...nextData,
+  } as WorkoutNoteSourceDocument;
+  await fs.writeFile(note.filePath, serializeWorkoutNoteSourceDocument(nextDocument), "utf8");
 }
 
 export function buildOrderedActivityRefs(activityRefs: WorkoutActivityRefMap) {
@@ -318,7 +325,7 @@ export function buildOrderedActivityRefs(activityRefs: WorkoutActivityRefMap) {
   return ordered;
 }
 
-function normalizeActivityRefs(data: Record<string, unknown>, fileName: string): WorkoutActivityRefMap {
+function normalizeActivityRefs(data: { activityRefs?: unknown; stravaId?: unknown }, fileName: string): WorkoutActivityRefMap {
   const refs: WorkoutActivityRefMap = {};
   const rawActivityRefs = data.activityRefs;
 
@@ -352,6 +359,24 @@ function normalizeActivityRefs(data: Record<string, unknown>, fileName: string):
   }
 
   return refs;
+}
+
+function listWorkoutNoteFileNames(fileNames: string[]) {
+  const preferredByBaseName = new Map<string, string>();
+
+  for (const fileName of [...fileNames].sort((left, right) => left.localeCompare(right))) {
+    if (!fileName.endsWith(".json") && !fileName.endsWith(".md")) {
+      continue;
+    }
+
+    const baseName = getWorkoutNoteBaseName(fileName);
+    const existing = preferredByBaseName.get(baseName);
+    if (!existing || fileName.endsWith(".json")) {
+      preferredByBaseName.set(baseName, fileName);
+    }
+  }
+
+  return [...preferredByBaseName.values()].sort((left, right) => left.localeCompare(right));
 }
 
 function normalizeOptionalActivityId(value: unknown, fileName: string, field: string) {
@@ -402,8 +427,4 @@ function normalizeNullableString(value: unknown) {
   }
 
   return null;
-}
-
-function normalizeBodyForWrite(body: string) {
-  return body.replace(/^\n+/u, "");
 }

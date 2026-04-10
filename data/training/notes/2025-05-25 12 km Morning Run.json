@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "title": "12 km Morning Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2025-05-25T00:00:00.000Z",
+  "completed": "2025-05-25T00:11:11.000Z",
+  "eventType": "run",
+  "expectedDistance": "12 km",
+  "stravaId": 14585387540,
+  "activityRefs": {
+    "strava": "14585387540",
+    "appleHealth": "E183C41B-7990-4479-B171-A7E37C7B738D"
+  },
+  "sections": [
+    {
+      "kind": "importedFromStrava",
+      "markdown": "- Activity: Morning Run\n- Started: 2025-05-25 10:11\n- Distance: 12 km\n- Moving time: 1:08:40\n- Elapsed time: 1:08:40\n- Elevation gain: 99 m\n- Average heart rate: 172.5 bpm\n- Max heart rate: 189 bpm\n- Average watts: 198.9 W\n- Average speed: 10.5 km/h"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Apple Health recorded `5` during-run heart-rate samples. Average HR was `174.2 bpm`, ranging from `146.8` to `186.1 bpm`.\n- First-half average HR was `166.2 bpm` and second-half average HR was `186.1 bpm` (+19.8 bpm), which shows clear late cardiovascular drift."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health cadence averaged `168.0 spm`, with a working range of `162.4` to `173.8 spm` after excluding `1` start-stop outlier below `100 spm`.\n- First-half cadence averaged `165.6 spm` and second-half cadence averaged `170.1 spm` (+4.5 spm), which suggests turnover lifted rather than falling away."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:43 /km` across `12.007 km` in `1:08:40` moving time.\n- Estimated first-half moving pace was `6:00 /km` and second-half pace was `5:26 /km` (-34 s/km), so pace picked up through the second half."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava summary HR came in at `172.5 bpm` average and `189 bpm` max.\n- Distance-split HR averaged `163.1 bpm` in the first half and `184.5 bpm` in the second (+21.4 bpm), which shows clear late cardiovascular drift."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `1:08:40` out of `1:08:40` elapsed (100.0%), which kept stoppage cost negligible.\n- The downsampled moving stream shows `5` stop segments and `0.5%` stationary samples, so the run was mostly continuous with a few interruptions."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged about `127.4 m` of climbing, with altitude moving between roughly `2.8 m` and `15.8 m`.\n- Estimated climbing was `53.0 m` in the first half and `74.4 m` in the second, so most of the climbing landed later."
+        }
+      ]
+    }
+  ]
+}

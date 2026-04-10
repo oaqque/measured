@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { Activity, ArrowLeft, Gauge, HeartPulse, Info, Mountain } from "lucide-react";
 import {
   Area,
   CartesianGrid,
@@ -15,6 +15,7 @@ import { MarkdownContent } from "@/components/MarkdownContent";
 import { RouteMap } from "@/components/RouteMap";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { WorkoutShareButton } from "@/components/WorkoutShareButton";
 import {
   loadAppleHealthWorkoutMeasurements,
@@ -27,11 +28,15 @@ import {
   loadWorkoutSourceDetails,
 } from "@/lib/workouts/load";
 import type {
+  AppleHealthAnalysisMeasurement,
   AppleHealthMeasurementSeries,
   AppleHealthWorkoutMeasurements,
+  StravaAnalysisMeasurement,
   WorkoutDataSource,
   WorkoutEventType,
+  WorkoutNoteAnalysisSection,
   WorkoutNote,
+  WorkoutNoteSourceSection,
   WorkoutProvider,
   WorkoutSourceSummary,
   WorkoutWeather,
@@ -65,6 +70,36 @@ const WORKOUT_SOURCE_BADGE_META: Record<
     badgeSrc: "/source-badges/powered-by-strava.svg",
     className: "h-3.5 w-[2.625rem]",
     label: "Strava",
+  },
+};
+const WORKOUT_PANE_MAX_WIDTH_CLASS = "max-w-[80rem]";
+
+const ANALYSIS_SECTION_HEADINGS: Record<string, string> = {
+  intention: "Intention",
+  shortTermGoal: "Short-Term Goal",
+  longTermGoal: "Long-Term Goal",
+  personalNote: "Personal Note",
+};
+
+const STRAVA_MEASUREMENT_CARD_META: Record<
+  StravaAnalysisMeasurement,
+  { icon: typeof Gauge; title: string }
+> = {
+  pace: {
+    icon: Gauge,
+    title: "Pace",
+  },
+  heartRate: {
+    icon: HeartPulse,
+    title: "Heart Rate",
+  },
+  moving: {
+    icon: Activity,
+    title: "Moving",
+  },
+  elevation: {
+    icon: Mountain,
+    title: "Elevation",
   },
 };
 
@@ -189,7 +224,7 @@ function WorkoutDetailPanel({
   const dataSourceMeta = getWorkoutDataSourceMeta(activeBadge);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className={cn("mx-auto flex h-full w-full flex-col", WORKOUT_PANE_MAX_WIDTH_CLASS)}>
       <div className="flex items-start justify-between gap-4 border-b border-foreground/10 pb-4">
         <div className="min-w-0">
           <p className="eyebrow">Workout Note</p>
@@ -290,6 +325,8 @@ function WorkoutNarrativePanel({
   onLinkClick: (href: string) => boolean;
 }) {
   const displaySource = getNoteDisplaySource(workout, loadedSources);
+  const narrativeContent = buildWorkoutNarrativeMarkdown(workout);
+  const stravaAnalysisSections = getStravaMeasurementAnalysisSections(workout);
   const routeActivityId =
     displaySource?.provider === "strava"
       ? normalizeNumericActivityId(displaySource.activityId)
@@ -339,15 +376,21 @@ function WorkoutNarrativePanel({
         ) : null}
 
         <div className="markdown-prose mt-5 flex-1">
-          <MarkdownContent content={workout.body} onLinkClick={onLinkClick} />
+          <MarkdownContent content={narrativeContent} onLinkClick={onLinkClick} />
         </div>
+        {stravaAnalysisSections.length > 0 ? (
+          <StravaAnalysisSectionGrid className="mt-5" sections={stravaAnalysisSections} onLinkClick={onLinkClick} />
+        ) : null}
       </div>
 
       <div className="hidden lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8">
         <div className="min-w-0">
           <div className="markdown-prose">
-            <MarkdownContent content={workout.body} onLinkClick={onLinkClick} />
+            <MarkdownContent content={narrativeContent} onLinkClick={onLinkClick} />
           </div>
+          {stravaAnalysisSections.length > 0 ? (
+            <StravaAnalysisSectionGrid className="mt-6" sections={stravaAnalysisSections} onLinkClick={onLinkClick} />
+          ) : null}
         </div>
 
         <aside className="space-y-5 pt-6">
@@ -457,6 +500,7 @@ function WorkoutSourcePanel({
               measurements={measurements}
               measurementsLoaded={measurementsLoaded}
               section={measurementSection ?? "duringWorkout"}
+              workout={workout}
             />
           </div>
         ) : null}
@@ -482,6 +526,7 @@ function WorkoutSourcePanel({
               measurements={measurements}
               measurementsLoaded={measurementsLoaded}
               section={measurementSection ?? "duringWorkout"}
+              workout={workout}
             />
           ) : null}
         </div>
@@ -584,12 +629,15 @@ function AppleHealthMeasurementsSection({
   measurements,
   measurementsLoaded,
   section,
+  workout,
 }: {
   measurements: AppleHealthWorkoutMeasurements | null;
   measurementsLoaded: boolean;
   section: AppleHealthMeasurementSeries["section"];
+  workout: WorkoutNote;
 }) {
   const visibleSeries = measurements?.series.filter((item) => item.section === section) ?? [];
+  const analysisByMeasurement = getAppleHealthMeasurementAnalysisMap(workout);
 
   if (!measurementsLoaded) {
     return (
@@ -619,7 +667,11 @@ function AppleHealthMeasurementsSection({
       <div className="mt-4 space-y-6">
         <div className="space-y-5">
           {visibleSeries.map((series) => (
-            <AppleHealthMeasurementChart key={series.key} series={series} />
+            <AppleHealthMeasurementChart
+              key={series.key}
+              analysisMarkdown={getAppleHealthMeasurementAnalysis(series, analysisByMeasurement)}
+              series={series}
+            />
           ))}
         </div>
       </div>
@@ -627,7 +679,13 @@ function AppleHealthMeasurementsSection({
   );
 }
 
-function AppleHealthMeasurementChart({ series }: { series: AppleHealthMeasurementSeries }) {
+function AppleHealthMeasurementChart({
+  analysisMarkdown,
+  series,
+}: {
+  analysisMarkdown: string | null;
+  series: AppleHealthMeasurementSeries;
+}) {
   const minValue = series.minValue ?? Math.min(...series.points.map((point) => point.value));
   const maxValue = series.maxValue ?? Math.max(...series.points.map((point) => point.value));
   const offsetRangeLabel = formatMeasurementOffsetRange(series.points);
@@ -642,9 +700,36 @@ function AppleHealthMeasurementChart({ series }: { series: AppleHealthMeasuremen
           <h4 className="text-sm font-semibold text-foreground">{series.label}</h4>
           <p className="mt-1 text-xs text-muted-foreground">{getMeasurementSummary(series)}</p>
         </div>
-        <p className="text-right text-[11px] text-muted-foreground">
-          {series.sampleCount} samples
-        </p>
+        <div className="flex items-start gap-2">
+          {analysisMarkdown ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  aria-label={`Open ${series.label} analysis`}
+                  className="shrink-0 rounded-full px-3"
+                  size="sm"
+                  type="button"
+                  variant="secondary"
+                >
+                  <Info className="size-3.5" />
+                  Analysis
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-[min(24rem,calc(100vw-2rem))] p-0">
+                <div className="border-b border-foreground/10 px-4 py-3">
+                  <p className="eyebrow">Measurement analysis</p>
+                  <h5 className="mt-1 text-sm font-semibold text-foreground">{series.label}</h5>
+                </div>
+                <div className="max-h-[min(28rem,60vh)] overflow-y-auto px-4 py-3">
+                  <div className="markdown-prose text-sm">
+                    <MarkdownContent content={analysisMarkdown} />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          ) : null}
+          <p className="text-right text-[11px] text-muted-foreground">{series.sampleCount} samples</p>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-[0.85rem] border border-foreground/10 bg-background/70 p-3">
@@ -754,6 +839,44 @@ function MetadataRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function StravaAnalysisSectionGrid({
+  className,
+  sections,
+  onLinkClick,
+}: {
+  className?: string;
+  sections: Array<{ measurement: StravaAnalysisMeasurement; markdown: string }>;
+  onLinkClick: (href: string) => boolean;
+}) {
+  return (
+    <section className={className}>
+      <p className="eyebrow">Strava Analysis</p>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        {sections.map((section) => {
+          const meta = STRAVA_MEASUREMENT_CARD_META[section.measurement];
+          const Icon = meta.icon;
+          return (
+            <article
+              key={section.measurement}
+              className="relative overflow-hidden rounded-[1rem] border border-foreground/10 bg-surface-panel-alt/70 p-4"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <h4 className="text-sm font-semibold text-foreground">{meta.title}</h4>
+                <div className="rounded-full border border-foreground/10 bg-background/80 p-2 text-muted-foreground">
+                  <Icon className="size-4" />
+                </div>
+              </div>
+              <div className="markdown-prose mt-3 text-sm">
+                <MarkdownContent content={section.markdown} onLinkClick={onLinkClick} />
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function getWorkoutDataSourceMeta(dataSource: WorkoutDataSource | null) {
   if (!dataSource) {
     return null;
@@ -783,6 +906,131 @@ function getNoteDisplaySource(
     loadedSources?.appleHealth ??
     null
   );
+}
+
+function buildWorkoutNarrativeMarkdown(workout: WorkoutNote) {
+  if (!workout.sections || workout.sections.length === 0) {
+    return workout.body;
+  }
+
+  const renderedSections = workout.sections
+    .map((section) => renderNarrativeSection(section))
+    .filter((section): section is string => section !== null && section.trim().length > 0);
+
+  return renderedSections.join("\n\n");
+}
+
+function renderNarrativeSection(section: WorkoutNoteSourceSection) {
+  if (section.kind === "program") {
+    return renderMarkdownSection("Program", section.markdown, 2);
+  }
+
+  if (section.kind === "importedFromStrava") {
+    return renderMarkdownSection("Imported from Strava", section.markdown, 2);
+  }
+
+  if (section.kind === "markdown") {
+    return renderMarkdownSection(section.heading, section.markdown, 2);
+  }
+
+  if (section.kind !== "analysis") {
+    return null;
+  }
+
+  const parts: string[] = [];
+  if (section.summaryMarkdown) {
+    parts.push(section.summaryMarkdown.trim());
+  }
+
+  for (const analysisSection of section.sections) {
+    const renderedSection = renderNarrativeAnalysisSection(analysisSection);
+    if (renderedSection) {
+      parts.push(renderedSection);
+    }
+  }
+
+  if (parts.length === 0) {
+    return null;
+  }
+
+  return renderMarkdownSection("Analysis", parts.join("\n\n"), 2);
+}
+
+function renderNarrativeAnalysisSection(section: WorkoutNoteAnalysisSection) {
+  if (section.kind === "appleHealthMeasurement" || section.kind === "stravaMeasurement") {
+    return null;
+  }
+
+  if (section.kind === "markdown") {
+    return renderMarkdownSection(section.heading, section.markdown, 3);
+  }
+
+  return renderMarkdownSection(ANALYSIS_SECTION_HEADINGS[section.kind] ?? "Analysis", section.markdown, 3);
+}
+
+function renderMarkdownSection(heading: string, markdown: string, level: 2 | 3) {
+  const normalizedMarkdown = markdown.trim();
+  if (normalizedMarkdown.length === 0) {
+    return `${"#".repeat(level)} ${heading}`;
+  }
+
+  return `${"#".repeat(level)} ${heading}\n\n${normalizedMarkdown}`;
+}
+
+function getAppleHealthMeasurementAnalysisMap(workout: WorkoutNote) {
+  const sections = workout.sections ?? [];
+  const analyses = new Map<AppleHealthAnalysisMeasurement, string>();
+
+  for (const section of sections) {
+    if (section.kind !== "analysis") {
+      continue;
+    }
+
+    for (const analysisSection of section.sections) {
+      if (analysisSection.kind !== "appleHealthMeasurement") {
+        continue;
+      }
+
+      analyses.set(analysisSection.measurement, analysisSection.markdown);
+    }
+  }
+
+  return analyses;
+}
+
+function getAppleHealthMeasurementAnalysis(
+  series: AppleHealthMeasurementSeries,
+  analysisByMeasurement: Map<AppleHealthAnalysisMeasurement, string>,
+) {
+  if (series.key === "heartRate" || series.key === "cadence") {
+    return analysisByMeasurement.get(series.key) ?? null;
+  }
+
+  return null;
+}
+
+function getStravaMeasurementAnalysisSections(workout: WorkoutNote) {
+  const sections = workout.sections ?? [];
+  const measurements: Array<{ measurement: StravaAnalysisMeasurement; markdown: string }> = [];
+
+  for (const section of sections) {
+    if (section.kind !== "analysis") {
+      continue;
+    }
+
+    for (const analysisSection of section.sections) {
+      if (analysisSection.kind !== "stravaMeasurement") {
+        continue;
+      }
+
+      measurements.push({
+        measurement: analysisSection.measurement,
+        markdown: analysisSection.markdown,
+      });
+    }
+  }
+
+  return measurements;
 }
 
 function WorkoutSourcePanelSkeleton({ providerLabel }: { providerLabel: string }) {

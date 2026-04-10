@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "10 km Easy Aerobic Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-06-10",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "10 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 10 km easy aerobic run"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "title": "12 km Easy Long Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-03-29T00:00:00.000Z",
+  "completed": "2026-03-29T20:56:09.844Z",
+  "eventType": "run",
+  "expectedDistance": "12 km",
+  "stravaId": 17896779074,
+  "activityRefs": {
+    "strava": "17896779074",
+    "appleHealth": "7FED99A9-143C-47B0-BC9D-151EFE051BBD"
+  },
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 12 km easy long run\n- Keep the effort controlled throughout\n- Use this as the bridge into the formal Monday March 30 block"
+    },
+    {
+      "kind": "analysis",
+      "summaryMarkdown": "- Actual run: `14.06 km` in `1:20:10`, which was about `2 km` longer than planned.\n- The distance is a positive signal for long-run durability and shows that the move into the formal `2026-03-30` block is more realistic than it looked before this run was logged.\n- With the full `2026-03-23 to 2026-03-29` week included, total running volume reached `47.41 km` across 6 runs, so the jump into the planned `54 km` week is now moderate rather than sharp.\n- The main caution is effort control. This was scheduled as an easy long run, but average heart rate was `163.7` and drifted higher late in the run while pace stayed steady, so the aerobic base is still catching up.\n- Good run overall, but the right takeaway is not to push longer again immediately. The next week should still be judged by how well the easy days stay easy and how well Tuesday, Thursday, and Sunday are absorbed.",
+      "sections": [
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Apple Health recorded `242` during-run heart-rate samples. Average HR was `164.3 bpm`, ranging from `139.0` to `174.8 bpm`.\n- First-half average HR was `160.4 bpm` and second-half average HR was `168.0 bpm` (+7.6 bpm), which shows a modest late rise in aerobic cost."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health cadence averaged `173.9 spm`, with a working range of `145.0` to `191.4 spm` after excluding `1` start-stop outlier below `100 spm`.\n- First-half cadence averaged `173.4 spm` and second-half cadence averaged `174.4 spm` (+1.0 spm), which looks mechanically stable."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:42 /km` across `14.065 km` in `1:20:10` moving time.\n- Estimated first-half moving pace was `5:42 /km` and second-half pace was `5:42 /km` (0 s/km), so pace stayed broadly even."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava summary HR came in at `163.7 bpm` average and `175 bpm` max.\n- Distance-split HR averaged `159.4 bpm` in the first half and `167.9 bpm` in the second (+8.5 bpm), which shows clear late cardiovascular drift."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `1:20:10` out of `1:20:15` elapsed (99.9%), which kept stoppage cost negligible.\n- The downsampled moving stream shows `4` stop segments and `0.4%` stationary samples, so the run was mostly continuous with a few interruptions."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged about `98.4 m` of climbing, with altitude moving between roughly `3.2 m` and `18.2 m`.\n- Estimated climbing was `60.6 m` in the first half and `37.8 m` in the second, so most of the climbing landed earlier."
+        }
+      ]
+    }
+  ]
+}

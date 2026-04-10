@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "14 km Medium-Long Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-05-21",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "14 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 14 km medium-long run with a marathon-pace finish"
+    }
+  ]
+}

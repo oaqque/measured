@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "title": "2.9 km Morning Run (10:53)",
+  "allDay": true,
+  "type": "single",
+  "date": "2025-08-03T00:00:00.000Z",
+  "completed": "2025-08-03T00:53:24.000Z",
+  "eventType": "run",
+  "expectedDistance": "2.9 km",
+  "stravaId": 15325074339,
+  "activityRefs": {
+    "strava": "15325074339",
+    "appleHealth": "C0C10300-6237-4E23-B06D-4AB4081BFDD7"
+  },
+  "sections": [
+    {
+      "kind": "importedFromStrava",
+      "markdown": "- Activity: Morning Run\n- Started: 2025-08-03 10:53\n- Distance: 2.9 km\n- Moving time: 20:10\n- Elapsed time: 20:13\n- Elevation gain: 154.8 m\n- Average heart rate: 165.5 bpm\n- Max heart rate: 174 bpm\n- Average watts: 211.4 W\n- Average speed: 8.6 km/h"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Apple Health recorded `2` during-run heart-rate samples. Average HR was `164.9 bpm`, ranging from `164.3` to `165.5 bpm`."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health cadence averaged `160.5 spm`, with a working range of `140.0` to `173.2 spm`.\n- First-half cadence averaged `166.3 spm` and second-half cadence averaged `156.6 spm` (-9.8 spm), which suggests some late turnover fade."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `7:00 /km` across `2.884 km` in `20:10` moving time.\n- Estimated first-half moving pace was `6:51 /km` and second-half pace was `7:09 /km` (+18 s/km), so pace faded meaningfully in the back half."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava summary HR came in at `165.5 bpm` average and `174 bpm` max.\n- Distance-split HR averaged `166.0 bpm` in the first half and `164.6 bpm` in the second (-1.5 bpm), which reads as broadly stable across the run."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `20:10` out of `20:13` elapsed (99.8%), which kept stoppage cost negligible.\n- The downsampled moving stream shows `19` stop segments and `2.5%` stationary samples, so the run was mostly continuous with a few interruptions."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged about `158.6 m` of climbing, with altitude moving between roughly `0.0 m` and `68.0 m`.\n- Estimated climbing was `55.8 m` in the first half and `102.8 m` in the second, so most of the climbing landed later."
+        }
+      ]
+    }
+  ]
+}

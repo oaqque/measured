@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "title": "Lighter Support Gym",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-02",
+  "completed": false,
+  "eventType": "strength",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Lighter support gym session"
+    },
+    {
+      "kind": "markdown",
+      "heading": "Session Structure",
+      "markdown": "- Keep this supportive rather than additive. The main session of the block was the delayed threshold run on Wednesday.\n- Focus on single-leg stability, hips, groin, calves, trunk control, and upper-body maintenance.\n- Skip any heavy lower-body work, hard eccentrics, or anything that leaves soreness heading into the weekend."
+    },
+    {
+      "kind": "markdown",
+      "heading": "Targets",
+      "markdown": "- Leave the gym feeling more mobile and switched on, not drained.\n- If the legs feel flat from the threshold session, make this a mobility-and-stability session only."
+    }
+  ]
+}

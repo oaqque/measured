@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "6 km Easy Recovery Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-08-21",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "6 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 6 km easy recovery run"
+    }
+  ]
+}

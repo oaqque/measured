@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "8 km Easy Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-08-03",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "8 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 8 km easy run"
+    }
+  ]
+}

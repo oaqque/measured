@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "5 km Easy Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-06-19",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "5 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 5 km easy run"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "12 km Threshold Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-05-26",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "12 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 12 km run including 25 minutes threshold work"
+    }
+  ]
+}

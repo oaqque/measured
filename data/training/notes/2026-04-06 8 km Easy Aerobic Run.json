@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "title": "8 km Easy Aerobic Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-06",
+  "completed": "2026-04-06T08:09:45.000Z",
+  "eventType": "run",
+  "expectedDistance": "8 km",
+  "stravaId": 17995463437,
+  "activityRefs": {
+    "strava": "17995463437",
+    "appleHealth": "E807472C-882E-4F42-AA90-CA2D06D8FB9C"
+  },
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 8 km easy aerobic run\n- Start the first 2 km patiently after Sunday's long run, then settle into relaxed conversational running.\n- Basketball is off today because of the public holiday, but this is still not a replacement hard session.\n- The purpose is to use the freed load for gentle aerobic volume so Tuesday's threshold work still has good legs underneath it.\n- If any shin pressure returns, cut the run back to `6 km` and keep the stride short and easy."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This stayed on the planned Monday date, but it did not stay in the planned aerobic-support role. The run was recorded as two Strava activities separated by only `2:32`, and together they covered `12.194 km` in `65:47` moving time across `68:39` door-to-door, which is `4.194 km` over the planned `8 km`.\n- The first `2.00 km` were patient enough at about `5:27 /km` with average HR about `155`, but the planned `8.00 km` was already averaging about `5:19 /km` with average HR about `163`. That is materially harder than the note's conversational intent after Sunday's `15.029 km` long run.\n- The main `10.016 km` leg averaged about `5:11 /km` with average HR `164.9`, and its final `2.016 km` accelerated to about `4:41 /km` with average HR about `173`. The follow-on `2.178 km` return leg eased to about `5:55 /km`, but average HR still sat at `164.6`, so the session never really came back down into clear recovery-day territory.\n- The export did not include Strava's summary elevation field for these activities, so the climbing read comes from the route stream. That stream still shows about `56 m` of total uphill across the split session, which is enough to matter but not enough to explain away the pace and heart-rate drift."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate job is to protect Tuesday's threshold session from becoming quality on tired legs. Last week already finished at `57.691 km`, and this new week opened with `12.194 km` instead of the planned `8 km`, so the block is carrying more load into Tuesday than the schedule expected.\n- If the warm-up on Tuesday does not feel smooth and controlled, the right move is to reduce the workout rather than force all five threshold reps. The useful near-term win is keeping the week's main quality day productive, not proving toughness after an overlong Monday.\n- The shin-pressure warning from Friday still matters because easy-day drift is part of how lower-leg irritation becomes a real problem. Monday's support run only helps if the next day responds to the actual cost of the session rather than the original prescription."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- There is still a positive durability signal here. Backing up Sunday's `15.029 km` long run with a mostly continuous `12.194 km` Monday shows that basic endurance is improving, and that matters for both the half-marathon build and the later marathon block.\n- The caution is repeatability, not toughness. March totaled `116.89 km`, last week landed at `57.691 km`, and the current week was supposed to reach `63 km` by keeping support days controlled. Turning an `8 km` aerobic run into a split `12.194 km` session at average HR `164.6` compresses the gap between support running and quality running in a way that can blunt the bigger progression.\n- The marathon goal will be helped more by clear separation between easy, steady, and threshold days than by squeezing extra distance out of one Monday. This run shows that fitness is coming up, but it also shows that load discipline is still one of the main skills the block needs."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Apple Health recorded `242` during-run heart-rate samples. Average HR was `164.9 bpm`, ranging from `139.0` to `176.0 bpm`.\n- First-half average HR was `160.2 bpm` and second-half average HR was `169.5 bpm` (+9.2 bpm), which shows clear late cardiovascular drift."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health cadence averaged `179.3 spm`, with a working range of `153.3` to `210.0 spm` after excluding `2` start-stop outliers below `100 spm`.\n- First-half cadence averaged `178.0 spm` and second-half cadence averaged `180.8 spm` (+2.8 spm), which looks mechanically stable."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:16 /km` across `10.016 km` in `52:46` moving time.\n- Estimated first-half moving pace was `5:06 /km` and second-half pace was `5:27 /km` (+21 s/km), so pace faded meaningfully in the back half."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava summary HR came in at `164.6 bpm` average and `176 bpm` max.\n- Distance-split HR averaged `159.9 bpm` in the first half and `169.9 bpm` in the second (+10.0 bpm), which shows clear late cardiovascular drift."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `52:46` out of `52:58` elapsed (99.6%), which kept stoppage cost negligible.\n- The downsampled moving stream shows `6` stop segments and `0.7%` stationary samples, so the run was mostly continuous with a few interruptions."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged about `28.6 m` of climbing, with altitude moving between roughly `-0.2 m` and `14.0 m`.\n- Estimated climbing was `20.2 m` in the first half and `8.4 m` in the second, so most of the climbing landed earlier."
+        }
+      ]
+    }
+  ]
+}

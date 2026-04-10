@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Primary Strength Gym",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-14",
+  "completed": false,
+  "eventType": "strength",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Primary strength gym session"
+    }
+  ]
+}

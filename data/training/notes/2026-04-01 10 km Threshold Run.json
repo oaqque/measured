@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "title": "10 km Threshold Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-01",
+  "completed": "2026-04-01T00:04:07.000Z",
+  "eventType": "run",
+  "expectedDistance": "10 km",
+  "stravaId": 17932415058,
+  "activityRefs": {
+    "strava": "17932415058",
+    "appleHealth": "37F40A94-0162-4DC5-8D46-CF8A5B0AE275"
+  },
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 2 km easy warm-up\n- 3 x 8 minutes at threshold effort with 2 minutes easy jog between reps\n- Cool down easy to 10 km total"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This session was completed a day later than planned. It was the Tuesday threshold workout, but it actually happened on Wednesday, `2026-04-01`.\n- The run landed at `10.19 km` in `61:03` moving time (`61:27` elapsed) with `110.8 m` of climbing, `168.4` average heart rate, and `181` max heart rate, so the total session volume stayed very close to the planned `10 km`.\n- The stream data also preserved the planned structure rather than just showing a generally hard run:\n  - warm-up: `2.08 km` in `13:02` at about `6:16 /km`, average HR about `152`\n  - rep 1: `1.56 km` in `7:59` at about `5:11 /km`, average HR about `171`\n  - recovery 1: `0.29 km` in `1:59` at about `6:43 /km`, average HR about `170`\n  - rep 2: `1.48 km` in `8:02` at about `5:25 /km`, average HR about `176`\n  - recovery 2: `0.45 km` in `2:59` at about `6:40 /km`, average HR about `163`\n  - rep 3: `1.40 km` in `8:01` at about `5:44 /km`, average HR about `176`\n  - cool-down: `2.93 km` in `19:25` at about `6:38 /km`\n- That means the session did bank real threshold stimulus for the week rather than turning into a compromised substitute. There are three distinct work blocks, and the recoveries are the right shape."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate job after this workout was absorption, not stacking another hard day on top of it.\n- The useful coaching point was pacing control. Rep 1 was controlled and strong, but reps 2 and 3 slowed materially while heart rate stayed high, which suggests the session drifted from clean threshold work toward grinding under fatigue rather than staying evenly steady.\n- The route was not flat, and each work rep still carried about `8 to 10 m` of climbing, so some slowdown was terrain rather than pure fade. But the recovery pattern still matters: recovery 1 barely let heart rate come down, while recovery 2 dropped it more clearly, which is a sign that the first rep likely went a touch too close to the edge."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- This supports the current threshold build because the week still got its primary quality session despite the delay.\n- The caution for the broader half-marathon and marathon progression is execution quality. The long-term win is not only completing sessions, but completing them with steadier control so the training remains repeatable across bigger weeks.\n- The main lesson for the next threshold day is to start the first rep a touch calmer so the third rep can stay closer to the first instead of drifting by more than roughly `30 sec/km`."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Apple Health recorded `242` during-run heart-rate samples. Average HR was `168.2 bpm`, ranging from `116.0` to `180.5 bpm`.\n- First-half average HR was `164.3 bpm` and second-half average HR was `172.0 bpm` (+7.8 bpm), which shows a modest late rise in aerobic cost."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health cadence averaged `173.1 spm`, with a working range of `116.7` to `205.0 spm`.\n- First-half cadence averaged `173.7 spm` and second-half cadence averaged `172.5 spm` (-1.2 spm), which looks mechanically stable."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:59 /km` across `10.194 km` in `1:01:03` moving time.\n- Estimated first-half moving pace was `5:40 /km` and second-half pace was `6:19 /km` (+40 s/km), so pace faded meaningfully in the back half."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava summary HR came in at `168.4 bpm` average and `181 bpm` max.\n- Distance-split HR averaged `164.5 bpm` in the first half and `172.5 bpm` in the second (+8.1 bpm), which shows clear late cardiovascular drift."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `1:01:03` out of `1:01:27` elapsed (99.3%), which kept stoppage cost negligible.\n- The downsampled moving stream shows `11` stop segments and `1.2%` stationary samples, so the run was mostly continuous with a few interruptions."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged about `120.8 m` of climbing, with altitude moving between roughly `42.8 m` and `65.2 m`.\n- Estimated climbing was `55.4 m` in the first half and `65.4 m` in the second, so the climbing load was split fairly evenly."
+        }
+      ]
+    }
+  ]
+}

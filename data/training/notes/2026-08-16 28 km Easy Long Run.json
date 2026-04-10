@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "28 km Easy Long Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-08-16",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "28 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 28 km easy long run"
+    }
+  ]
+}

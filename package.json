@@ -7,9 +7,11 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "prepare": "node scripts/install-git-hooks.mjs",
+    "backfill:workout-measurement-analysis": "tsx scripts/backfill-workout-measurement-analysis.ts",
     "build:data": "NODE_OPTIONS=--max-old-space-size=8192 tsx scripts/build-workouts-data.ts",
     "diagnose:workout-sources": "tsx scripts/diagnose-workout-sources.ts",
     "import:apple-health": "tsx scripts/import-apple-health-export.ts",
+    "migrate:workout-notes:json": "tsx scripts/migrate-workout-notes-to-json.ts",
     "check:pre-commit": "pnpm exec tsc -p tsconfig.app.json --noEmit && pnpm exec tsc -p tsconfig.node.json --noEmit",
     "hooks:install": "node scripts/install-git-hooks.mjs",
     "link:workout-source": "tsx scripts/link-workout-source.ts",

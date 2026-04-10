@@ -1,10 +1,16 @@
 export const WORKOUT_EVENT_TYPES = ["run", "basketball", "strength", "mobility", "race"] as const;
 export const WORKOUT_DATA_SOURCES = ["strava", "apple-health"] as const;
 export const WORKOUT_PROVIDERS = ["strava", "appleHealth"] as const;
+export const APPLE_HEALTH_ANALYSIS_MEASUREMENTS = ["heartRate", "cadence"] as const;
+export const STRAVA_ANALYSIS_MEASUREMENTS = ["pace", "heartRate", "moving", "elevation"] as const;
+export const WORKOUT_NOTE_SOURCE_SCHEMA_VERSION = 1 as const;
 
 export type WorkoutEventType = (typeof WORKOUT_EVENT_TYPES)[number];
 export type WorkoutDataSource = (typeof WORKOUT_DATA_SOURCES)[number];
 export type WorkoutProvider = (typeof WORKOUT_PROVIDERS)[number];
+export type AppleHealthAnalysisMeasurement = (typeof APPLE_HEALTH_ANALYSIS_MEASUREMENTS)[number];
+export type StravaAnalysisMeasurement = (typeof STRAVA_ANALYSIS_MEASUREMENTS)[number];
+export type WorkoutMarkdown = string;
 
 export interface WorkoutRouteStreams {
   latlng: Array<[number, number]> | null;
@@ -33,6 +39,72 @@ export interface WorkoutWeather {
 export interface WorkoutActivityRefMap {
   strava?: string;
   appleHealth?: string;
+}
+
+export interface WorkoutNoteMarkdownSection {
+  kind: "markdown";
+  heading: string;
+  markdown: WorkoutMarkdown;
+}
+
+export interface WorkoutNoteProgramSection {
+  kind: "program";
+  markdown: WorkoutMarkdown;
+}
+
+export interface WorkoutNoteImportedFromStravaSection {
+  kind: "importedFromStrava";
+  markdown: WorkoutMarkdown;
+}
+
+export interface WorkoutNoteAnalysisNarrativeSection {
+  kind: "intention" | "shortTermGoal" | "longTermGoal" | "personalNote";
+  markdown: WorkoutMarkdown;
+}
+
+export interface WorkoutNoteAnalysisAppleHealthMeasurementSection {
+  kind: "appleHealthMeasurement";
+  measurement: AppleHealthAnalysisMeasurement;
+  markdown: WorkoutMarkdown;
+}
+
+export interface WorkoutNoteAnalysisStravaMeasurementSection {
+  kind: "stravaMeasurement";
+  measurement: StravaAnalysisMeasurement;
+  markdown: WorkoutMarkdown;
+}
+
+export type WorkoutNoteAnalysisSection =
+  | WorkoutNoteAnalysisNarrativeSection
+  | WorkoutNoteAnalysisAppleHealthMeasurementSection
+  | WorkoutNoteAnalysisStravaMeasurementSection
+  | WorkoutNoteMarkdownSection;
+
+export interface WorkoutNoteAnalysisSectionContainer {
+  kind: "analysis";
+  summaryMarkdown?: WorkoutMarkdown | null;
+  sections: WorkoutNoteAnalysisSection[];
+}
+
+export type WorkoutNoteSourceSection =
+  | WorkoutNoteProgramSection
+  | WorkoutNoteImportedFromStravaSection
+  | WorkoutNoteAnalysisSectionContainer
+  | WorkoutNoteMarkdownSection;
+
+export interface WorkoutNoteSourceDocument {
+  schemaVersion: typeof WORKOUT_NOTE_SOURCE_SCHEMA_VERSION;
+  title: string;
+  allDay: boolean;
+  type: string;
+  date: string;
+  completed: false | string;
+  eventType: WorkoutEventType;
+  expectedDistance?: string;
+  actualDistance?: string;
+  stravaId?: number;
+  activityRefs?: WorkoutActivityRefMap;
+  sections: WorkoutNoteSourceSection[];
 }
 
 export interface WorkoutSourceMetadata {
@@ -124,6 +196,7 @@ export interface WorkoutNote {
   allDay: boolean;
   type: string;
   body: string;
+  sections?: WorkoutNoteSourceSection[];
   sourcePath: string;
   activityRefs?: WorkoutActivityRefMap;
   sources?: Partial<Record<WorkoutProvider, WorkoutSourceSummary>>;

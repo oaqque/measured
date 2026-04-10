@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "22 km Easy Long Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-06-14",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "22 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 22 km easy long run"
+    }
+  ]
+}

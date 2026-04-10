@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "title": "6 km Easy Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-03-30",
+  "completed": "2026-03-30T09:33:42.000Z",
+  "eventType": "run",
+  "expectedDistance": "6 km",
+  "stravaId": 17909794797,
+  "activityRefs": {
+    "strava": "17909794797",
+    "appleHealth": "86650646-3060-456D-BDE6-ABF850072F1D"
+  },
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 6 km easy run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This run still did the intended job of opening the week with easy aerobic volume, even though the distance drifted up to `8.17 km` in `51:06` instead of the planned `6 km`.\n- Average heart rate was `153.8`, which supports the read that the effort stayed controlled enough to count as an easy run rather than a disguised workout."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The useful takeaway for the rest of the week is not to keep stretching easy days, but to let Monday's extra volume sit there and protect the quality of Tuesday and Sunday.\n- Because basketball also sat on Monday, the immediate goal after this run was disciplined recovery rather than trying to turn the start of the week into a fitness test."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- This helps the current build because it adds aerobic volume without obvious excess intensity.\n- The caution is load creep. If easy days keep growing beyond plan while basketball remains in the week, the longer-term progression toward the half marathon and marathon targets becomes less durable."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Apple Health recorded `242` during-run heart-rate samples. Average HR was `154.1 bpm`, ranging from `139.0` to `162.5 bpm`.\n- First-half average HR was `154.2 bpm` and second-half average HR was `154.1 bpm` (-0.1 bpm), which reads as broadly stable across the run."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health cadence averaged `171.2 spm`, with a working range of `143.3` to `188.0 spm` after excluding `1` start-stop outlier below `100 spm`.\n- First-half cadence averaged `171.0 spm` and second-half cadence averaged `171.4 spm` (+0.5 spm), which looks mechanically stable."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `6:15 /km` across `8.174 km` in `51:06` moving time.\n- Estimated first-half moving pace was `6:16 /km` and second-half pace was `6:14 /km` (-2 s/km), so pace stayed broadly even."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava summary HR came in at `153.8 bpm` average and `163 bpm` max.\n- Distance-split HR averaged `153.6 bpm` in the first half and `154.0 bpm` in the second (+0.4 bpm), which reads as broadly stable across the run."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `51:06` out of `51:10` elapsed (99.9%), which kept stoppage cost negligible.\n- The downsampled moving stream shows `7` stop segments and `0.7%` stationary samples, so the run was mostly continuous with a few interruptions."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged about `44.2 m` of climbing, with altitude moving between roughly `3.0 m` and `11.6 m`.\n- Estimated climbing was `21.0 m` in the first half and `23.2 m` in the second, so the climbing load was split fairly evenly."
+        }
+      ]
+    }
+  ]
+}

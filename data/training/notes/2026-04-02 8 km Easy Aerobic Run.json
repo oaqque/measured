@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "title": "8 km Easy Aerobic Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-02",
+  "completed": "2026-04-02T08:56:56.000Z",
+  "eventType": "run",
+  "expectedDistance": "8 km",
+  "stravaId": 17947501959,
+  "activityRefs": {
+    "strava": "17947501959",
+    "appleHealth": "50BD9C1F-F3C0-4048-95B9-DF65930A3731"
+  },
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 8 km easy aerobic run\n- Keep the whole run conversational and smooth. This is not a second quality day.\n- Start the first 10 minutes very controlled, then settle into relaxed aerobic running.\n- If the legs still feel loaded from the delayed threshold session on `2026-04-01`, shorten slightly rather than forcing the full distance at the wrong effort."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This run matched the reshaped purpose of the day well. After the threshold session slipped to Wednesday, Thursday's job was to become an aerobic support run rather than a second quality session.\n- The actual run was `8.53 km` in `53:55` moving time (`54:19` elapsed) with `146.6 m` of climbing, so the distance landed only slightly above plan and the run stayed continuous rather than broken up by stops.\n- Average heart rate was `156.3` with a max of `166`, higher than Monday's easy run but clearly below Wednesday's threshold session, which supports the intended reading that this stayed supportive rather than turning into another workout.\n- The stream data backs that up. Full-kilometre splits stayed in a narrow `6:11` to `6:27 /km` band across a hilly route, and the two halves were almost identical:\n  - first `4.27 km`: about `27:08` at `6:22 /km`, average HR about `154`, climbing about `71.3 m`\n  - second `4.26 km`: about `27:21` at `6:25 /km`, average HR about `158`, climbing about `81.5 m`\n- That is the profile of a controlled support run: mild heart-rate drift, no meaningful late surge, and no disguised threshold segment hiding inside the day."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate focus after this run was to keep Friday and Saturday light enough that Sunday's long run could still be useful.\n- By Thursday the week had already reached `30.63 km` across four runs. With only the planned `6 km`, `4 km`, and `12 km` still ahead, there was no reason to force more volume onto the easy days just because Wednesday quality moved back a day.\n- The near-term cue from the data is restraint, not ambition. A roughly `3.4 bpm` heart-rate rise from first half to second half without any pace increase is normal residual cost from the threshold session, and the right response is to protect recovery rather than chase a smoother number."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- This kind of adjustment supports the current block because it protects the weekly structure when one quality day moves.\n- The longer-term risk would be treating every schedule slip as permission to keep all the original workload anyway. This note shows the better approach: preserve frequency, but remove the extra hard cost.\n- There is also a quieter load-management point here: Monday drifted up to `8.17 km` against a planned `6 km`, and Thursday drifted to `8.53 km` against a planned `8 km`. Neither day is a problem on its own, but if support days keep stretching beyond plan, the block starts borrowing from recovery instead of building durable volume."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Apple Health recorded `242` during-run heart-rate samples. Average HR was `156.0 bpm`, ranging from `107.0` to `165.7 bpm`.\n- First-half average HR was `154.3 bpm` and second-half average HR was `157.8 bpm` (+3.5 bpm), which shows a modest late rise in aerobic cost."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health cadence averaged `166.3 spm`, with a working range of `130.0` to `184.0 spm`.\n- First-half cadence averaged `166.2 spm` and second-half cadence averaged `166.4 spm` (+0.2 spm), which looks mechanically stable."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `6:19 /km` across `8.530 km` in `53:55` moving time.\n- Estimated first-half moving pace was `6:17 /km` and second-half pace was `6:22 /km` (+5 s/km), so pace stayed broadly even."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava summary HR came in at `156.3 bpm` average and `166 bpm` max.\n- Distance-split HR averaged `154.7 bpm` in the first half and `157.8 bpm` in the second (+3.1 bpm), which shows a modest late rise in aerobic cost."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `53:55` out of `54:19` elapsed (99.3%), which kept stoppage cost negligible.\n- The downsampled moving stream shows `10` stop segments and `1.1%` stationary samples, so the run was mostly continuous with a few interruptions."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged about `152.8 m` of climbing, with altitude moving between roughly `36.4 m` and `64.0 m`.\n- Estimated climbing was `71.4 m` in the first half and `81.4 m` in the second, so the climbing load was split fairly evenly."
+        }
+      ]
+    }
+  ]
+}
