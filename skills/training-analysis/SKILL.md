@@ -1,11 +1,11 @@
 ---
 name: training-analysis
-description: Analyze training data and maintain the repo's training source files. Use when Codex needs to fetch or sync Strava or Apple Health data, backfill or update workout notes in data/training/notes, revise the training plan in data/training/PLAN.md, create changelog entries in data/training/changelog, explain the relationship between planned sessions and completed runs, or package that work into a required git commit at the end.
+description: Analyze training data and maintain the repo's training source files. Use when Codex needs to sync Strava data, verify receiver-backed Apple Health data in `vault/`, backfill or update workout notes in data/training/notes, revise the training plan in data/training/PLAN.md, create changelog entries in data/training/changelog, explain the relationship between planned sessions and completed runs, or package that work into a required git commit at the end.
 ---
 
 # Training Analysis
 
-Use this skill to keep the training data in this repo coherent across Strava sync, Apple Health sync, workout-note authorship, plan updates, and changelog history.
+Use this skill to keep the training data in this repo coherent across Strava sync, receiver-backed Apple Health cache checks, workout-note authorship, plan updates, and changelog history.
 
 ## Workflow Choice
 
@@ -20,25 +20,22 @@ Read [`references/data-shapes.md`](references/data-shapes.md) before creating or
 ## Sync and Refresh
 
 1. Fetch the current local date and time first using Linux CLI utilities such as `date`. Do this at the start of every training-analysis run so any references to "today", "yesterday", or "this week" are grounded in the machine's current time.
-2. Fetch the latest Apple Health export from the Taildrop inbox before analysis that depends on current device data. Do not assume the file is already present in `~/Downloads`, and do not assume `tailscale file get ~/Downloads` will overwrite stale files with the same names.
-   - If `~/Downloads/cache-export.json` or `~/Downloads/export-manifest.json` already exist, move or delete them first so the refresh can replace them cleanly.
-   - A safe pattern is:
-     ```bash
-     mv ~/Downloads/cache-export.json ~/Downloads/cache-export.previous.json 2>/dev/null || true
-     mv ~/Downloads/export-manifest.json ~/Downloads/export-manifest.previous.json 2>/dev/null || true
-     tailscale file get ~/Downloads
-     ```
-3. Import the latest Apple Health cache export with `pnpm run import:apple-health -- --from /home/willye/Downloads/cache-export.json`.
+2. Do not use the old Taildrop export or `pnpm run import:apple-health` workflow. Apple Health now comes only from the direct receiver sync under `vault/`.
+3. Check the receiver-backed Apple Health state before any analysis that depends on current device data.
+   - Inspect `vault/apple-health-sync-server/receiver.sqlite3` read-only and compare the latest committed snapshot metadata in `v3_snapshots` against the current local date and the sessions being analyzed.
+   - Treat `vault/apple-health/cache-export.json` as a materialized projection of the receiver state, not the source of truth.
+   - If the latest receiver snapshot is not current enough for the requested analysis, alert the user that Apple Health data is stale, tell them to run the direct sync themselves, and stop. Do not continue with partial Apple Health assumptions, and do not fall back to the old Taildrop path.
+   - A stale example is when the receiver snapshot `generated_at` predates the workout date the user asked about, or otherwise clearly misses the period under analysis.
 4. Run `pnpm run sync:strava` from the repo root. This repo defaults that command to sync with streams.
 5. If the user asked for new analysis, identify the relevant Strava and Apple Health activities from the refreshed caches and the corresponding note by `activityRefs`, `stravaId`, date, or schedule context.
 6. If the target note does not yet link the Apple Health workout, assign it before analysis by updating `activityRefs.appleHealth` directly or by using `pnpm run link:workout-source -- --note <note-slug> --provider appleHealth --activity-id <apple-health-id>`.
-7. Run `pnpm run build:data` after provider imports or note or plan changes so the app reflects them.
+7. Run `pnpm run build:data` after note or plan changes so the app reflects them.
 8. Run `pnpm run typecheck` after UI or data-model changes. For note-only edits, `pnpm run build:data` is usually enough.
 
 ## Analyze and Update a Workout Note
 
 1. Fetch the current local date and time first using Linux CLI utilities such as `date` if you have not already done so in this run.
-2. Make sure `Sync and Refresh` has been completed in this run first. New analysis should use freshly imported Apple Health data and freshly synced Strava data.
+2. Make sure `Sync and Refresh` has been completed in this run first. New analysis should use a current receiver-backed Apple Health snapshot and freshly synced Strava data.
 3. Read the plan first in `data/training/PLAN.md` before writing analysis for a run. Treat the scheduled intent as the baseline.
 4. Open the target note in `data/training/notes/`.
 5. If no note exists for the run, create one using the workout note shape in `references/data-shapes.md`.
@@ -70,7 +67,7 @@ When producing run analysis, use the fused view of the workout rather than a sin
 
 - planned intent from `data/training/PLAN.md`
 - the target note in `data/training/notes/`
-- Apple Health summary and linked provider data in `vault/apple-health/cache-export.json`
+- Apple Health summary and linked provider data in the receiver-backed cache under `vault/apple-health/`, with `vault/apple-health-sync-server/receiver.sqlite3` treated as the freshness source of truth
 - Strava summary data in `vault/strava/cache-export.json`
 - route stream data in `public/generated/workout-routes/<stravaId>.json` when `stravaId` exists and streams are available
 - surrounding week context from adjacent notes and any relevant entries in `data/training/changelog/`
@@ -237,7 +234,7 @@ When creating an entry:
 ## Quality Bar
 
 - Keep note titles, dates, provider linkage, and JSON section order consistent.
-- Before new analysis, fetch the latest Apple Health export from Taildrop, import it, and link the relevant Apple Health workout to the note when available.
+- Before new analysis, verify that the direct Apple Health receiver sync under `vault/` is current enough for the requested sessions, and stop with a user alert if it is stale.
 - Never blur planned versus actual distance.
 - Unfinished workout notes should read like a clean prescription, not a pre-written analysis.
 - Completed run notes should read like coaching analysis tied to intention, short-term goals, and long-term goals.

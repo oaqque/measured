@@ -1,5 +1,21 @@
 # Repo Agent Notes
 
+## Public/private boundary
+
+- Treat `vault/**` as the repo's private local cache boundary.
+- In particular, `vault/apple-health/` and `vault/strava/` may contain more
+  provider data than the public app should expose.
+- Treat `data/training/**` as the authored repo source of truth for publishable
+  training content.
+- Treat generated publishable projections under `src/generated/**` and
+  `public/generated/**` as public-facing build artifacts, even when they are
+  gitignored and regenerated locally.
+- Do not reshape private caches to match the current public site. Publication is
+  a later projection step performed by repo build/import scripts.
+- When unsure whether data belongs on the public side, keep it in `vault/**`
+  until an explicit projection step narrows it to the fields needed for
+  publication.
+
 ## Apple Health Bridge
 
 When working in `apps/apple-health-bridge`, prefer command-line builds only after

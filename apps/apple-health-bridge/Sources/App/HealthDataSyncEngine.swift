@@ -4,170 +4,603 @@ import HealthKit
 @MainActor
 final class HealthDataSyncEngine: ObservableObject {
     @Published private(set) var collections: [String: BridgeHealthCollection] = [:]
+    @Published private(set) var isRestoringCache = true
     @Published private(set) var isSyncing = false
+    @Published private(set) var restoreProgress = BridgeProgress(
+        title: "Loading cached health data…",
+        detail: "Restoring collections from the bridge cache.",
+        completedUnitCount: 0,
+        totalUnitCount: max(HealthKitTypeRegistry.collectionDescriptors.count + 1, 1)
+    )
+    @Published private(set) var syncProgress = BridgeProgress(
+        title: "Syncing health data…",
+        detail: "Preparing collection sync.",
+        completedUnitCount: 0,
+        totalUnitCount: max(HealthKitTypeRegistry.collectionDescriptors.count, 1)
+    )
     @Published private(set) var lastError: String?
     @Published private(set) var lastSyncSummary: String?
+
+    private let legacyCollectionStore = BridgeFileStore<[String: BridgeHealthCollection]>(filename: "collections.json")
+    private let userDefaults: UserDefaults
+    private let collectionCacheVersionKey = "health-data-collection-cache-version"
+    private let collectionCacheVersion = 2
 
     var totalSampleCount: Int {
         collections.values.reduce(0) { $0 + $1.samples.count }
     }
 
     static var readTypes: Set<HKObjectType> {
-        var output = Set<HKObjectType>()
-        output.formUnion(quantityDescriptors.compactMap { HKObjectType.quantityType(forIdentifier: $0.identifier) })
-        output.formUnion(categoryDescriptors.compactMap { HKObjectType.categoryType(forIdentifier: $0.identifier) })
-        return output
+        HealthKitTypeRegistry.readTypes
+    }
+
+    init(userDefaults: UserDefaults = .standard) {
+        self.userDefaults = userDefaults
+        restorePersistedState()
     }
 
     func syncSamples(using healthStore: HKHealthStore) async {
         isSyncing = true
+        let descriptors = HealthKitTypeRegistry.collectionDescriptors
+        let totalDescriptors = max(descriptors.count, 1)
+        var completedDescriptors = 0
+        syncProgress = BridgeProgress(
+            title: "Syncing health data…",
+            detail: descriptors.isEmpty
+                ? "No HealthKit collections are registered for sync."
+                : "Preparing collection sync.",
+            completedUnitCount: descriptors.isEmpty ? 1 : 0,
+            totalUnitCount: totalDescriptors
+        )
         defer { isSyncing = false }
 
-        var nextCollections: [String: BridgeHealthCollection] = [:]
+        let preferredUnits = await preferredQuantityUnits(for: descriptors, using: healthStore)
+        var nextCollections = collections
         var failureMessages: [String] = []
+        var skippedCollectionCount = 0
 
-        for descriptor in Self.quantityDescriptors {
-            guard let quantityType = HKObjectType.quantityType(forIdentifier: descriptor.identifier) else {
+        for descriptor in descriptors {
+            syncProgress = BridgeProgress(
+                title: "Syncing health data…",
+                detail: "Syncing \(descriptor.displayName).",
+                completedUnitCount: completedDescriptors,
+                totalUnitCount: totalDescriptors
+            )
+            defer {
+                completedDescriptors += 1
+                syncProgress = BridgeProgress(
+                    title: "Syncing health data…",
+                    detail: "Synced \(descriptor.displayName).",
+                    completedUnitCount: completedDescriptors,
+                    totalUnitCount: totalDescriptors
+                )
+            }
+            let objectType = descriptor.objectType
+            let existingCollection = nextCollections[descriptor.key] ?? emptyCollection(for: descriptor, objectType: objectType)
+            nextCollections[descriptor.key] = existingCollection
+
+            guard let objectType else {
+                failureMessages.append("\(descriptor.displayName): unavailable on this device or SDK build")
+                continue
+            }
+
+            if descriptor.requiresPerObjectAuthorization {
+                nextCollections[descriptor.key] = emptyCollection(for: descriptor, objectType: objectType)
+                skippedCollectionCount += 1
+                continue
+            }
+
+            guard HealthKitTypeRegistry.shouldAttemptSync(for: descriptor) else {
+                nextCollections[descriptor.key] = emptyCollection(for: descriptor, objectType: objectType)
+                skippedCollectionCount += 1
                 continue
             }
 
             do {
-                let samples = try await healthStore.quantitySamples(of: quantityType)
-                nextCollections[descriptor.key] = BridgeHealthCollection(
-                    key: descriptor.key,
-                    kind: "quantity",
-                    displayName: descriptor.displayName,
-                    unit: descriptor.unit.unitString,
-                    samples: samples.map { sample in
-                        BridgeHealthSample(
-                            sampleId: sample.uuid.uuidString,
-                            startDate: sample.startDate,
-                            endDate: sample.endDate,
-                            numericValue: sample.quantity.doubleValue(for: descriptor.unit),
-                            categoryValue: nil,
-                            source: sample.exportSource,
-                            metadata: sample.normalizedMetadata
-                        )
+                let collection: BridgeHealthCollection
+                let newAnchor: HKQueryAnchor?
+                let didChange: Bool
+                switch descriptor.queryStrategy {
+                case .activitySummary:
+                    collection = try await activitySummaryCollection(for: descriptor, using: healthStore)
+                    newAnchor = nil
+                    didChange = collection != existingCollection
+                case .category:
+                    guard let categoryType = objectType as? HKCategoryType else {
+                        continue
                     }
-                )
-            } catch {
-                failureMessages.append("\(descriptor.displayName): \(error.localizedDescription)")
-            }
-        }
-
-        for descriptor in Self.categoryDescriptors {
-            guard let categoryType = HKObjectType.categoryType(forIdentifier: descriptor.identifier) else {
-                continue
-            }
-
-            do {
-                let samples = try await healthStore.categorySamples(of: categoryType)
-                nextCollections[descriptor.key] = BridgeHealthCollection(
-                    key: descriptor.key,
-                    kind: "category",
-                    displayName: descriptor.displayName,
-                    unit: nil,
-                    samples: samples.map { sample in
-                        BridgeHealthSample(
-                            sampleId: sample.uuid.uuidString,
-                            startDate: sample.startDate,
-                            endDate: sample.endDate,
-                            numericValue: nil,
-                            categoryValue: sample.value,
-                            source: sample.exportSource,
-                            metadata: sample.normalizedMetadata
-                        )
+                    let result = try await categoryCollection(
+                        for: descriptor,
+                        type: categoryType,
+                        existingCollection: existingCollection,
+                        using: healthStore
+                    )
+                    collection = result.collection
+                    newAnchor = result.newAnchor
+                    didChange = result.didChange
+                case .characteristic:
+                    collection = try characteristicCollection(for: descriptor, using: healthStore)
+                    newAnchor = nil
+                    didChange = collection != existingCollection
+                case .quantity:
+                    guard let quantityType = objectType as? HKQuantityType else {
+                        continue
                     }
-                )
+                    let result = try await incrementalQuantityCollection(
+                        for: descriptor,
+                        type: quantityType,
+                        existingCollection: existingCollection,
+                        preferredUnits: preferredUnits,
+                        using: healthStore
+                    )
+                    collection = result.collection
+                    newAnchor = result.newAnchor
+                    didChange = result.didChange
+                case .sample:
+                    guard let sampleType = objectType as? HKSampleType else {
+                        continue
+                    }
+                    let result = try await incrementalSampleCollection(
+                        for: descriptor,
+                        type: sampleType,
+                        existingCollection: existingCollection,
+                        using: healthStore
+                    )
+                    collection = result.collection
+                    newAnchor = result.newAnchor
+                    didChange = result.didChange
+                }
+
+                nextCollections[descriptor.key] = collection
+                if didChange {
+                    try collectionStore(for: descriptor).saveValue(collection)
+                }
+                if descriptor.queryStrategy.usesAnchoredQueries {
+                    try anchorStore(for: descriptor).saveAnchor(newAnchor)
+                }
             } catch {
+                nextCollections[descriptor.key] = existingCollection
                 failureMessages.append("\(descriptor.displayName): \(error.localizedDescription)")
             }
         }
 
         collections = nextCollections
         let nonEmptyCollectionCount = nextCollections.values.filter { !$0.samples.isEmpty }.count
-        lastSyncSummary = "Loaded \(totalSampleCount) samples across \(nonEmptyCollectionCount) health collections."
+        syncProgress = BridgeProgress(
+            title: "Syncing health data…",
+            detail: "Collection sync finished.",
+            completedUnitCount: totalDescriptors,
+            totalUnitCount: totalDescriptors
+        )
+        lastSyncSummary = "Loaded \(totalSampleCount) samples across \(nonEmptyCollectionCount) non-empty collections. Skipped \(skippedCollectionCount) collections that require unsupported or explicit authorization. Registry covers \(descriptors.count) HealthKit collections."
         lastError = failureMessages.isEmpty ? nil : failureMessages.joined(separator: "\n")
     }
 
-    private static let quantityDescriptors: [QuantityDescriptor] = [
-        .init(identifier: .stepCount, key: "stepCount", displayName: "Step Count", unit: .count()),
-        .init(identifier: .distanceWalkingRunning, key: "distanceWalkingRunning", displayName: "Walking and Running Distance", unit: .meter()),
-        .init(identifier: .distanceCycling, key: "distanceCycling", displayName: "Cycling Distance", unit: .meter()),
-        .init(identifier: .activeEnergyBurned, key: "activeEnergyBurned", displayName: "Active Energy Burned", unit: .kilocalorie()),
-        .init(identifier: .basalEnergyBurned, key: "basalEnergyBurned", displayName: "Basal Energy Burned", unit: .kilocalorie()),
-        .init(identifier: .heartRate, key: "heartRate", displayName: "Heart Rate", unit: .count().unitDivided(by: .minute())),
-        .init(identifier: .restingHeartRate, key: "restingHeartRate", displayName: "Resting Heart Rate", unit: .count().unitDivided(by: .minute())),
-        .init(identifier: .walkingHeartRateAverage, key: "walkingHeartRateAverage", displayName: "Walking Heart Rate Average", unit: .count().unitDivided(by: .minute())),
-        .init(identifier: .heartRateVariabilitySDNN, key: "heartRateVariabilitySDNN", displayName: "Heart Rate Variability", unit: .secondUnit(with: .milli)),
-        .init(identifier: .respiratoryRate, key: "respiratoryRate", displayName: "Respiratory Rate", unit: .count().unitDivided(by: .minute())),
-        .init(identifier: .oxygenSaturation, key: "oxygenSaturation", displayName: "Blood Oxygen Saturation", unit: .percent()),
-        .init(identifier: .vo2Max, key: "vo2Max", displayName: "VO2 Max", unit: HKUnit(from: "ml/(kg*min)")),
-        .init(identifier: .bodyMass, key: "bodyMass", displayName: "Body Mass", unit: .gramUnit(with: .kilo)),
-        .init(identifier: .bodyFatPercentage, key: "bodyFatPercentage", displayName: "Body Fat Percentage", unit: .percent()),
-        .init(identifier: .leanBodyMass, key: "leanBodyMass", displayName: "Lean Body Mass", unit: .gramUnit(with: .kilo)),
-        .init(identifier: .bodyMassIndex, key: "bodyMassIndex", displayName: "Body Mass Index", unit: .count()),
-        .init(identifier: .height, key: "height", displayName: "Height", unit: .meter()),
-        .init(identifier: .flightsClimbed, key: "flightsClimbed", displayName: "Flights Climbed", unit: .count()),
-        .init(identifier: .appleExerciseTime, key: "appleExerciseTime", displayName: "Apple Exercise Time", unit: .minute()),
-        .init(identifier: .appleStandTime, key: "appleStandTime", displayName: "Apple Stand Time", unit: .minute()),
-    ]
+    private func emptyCollection(
+        for descriptor: HealthKitCollectionDescriptor,
+        objectType: HKObjectType?
+    ) -> BridgeHealthCollection {
+        BridgeHealthCollection(
+            key: descriptor.key,
+            kind: descriptor.kind,
+            displayName: descriptor.displayName,
+            unit: nil,
+            objectTypeIdentifier: objectType?.identifier,
+            queryStrategy: descriptor.queryStrategy.exportValue,
+            requiresPerObjectAuthorization: descriptor.requiresPerObjectAuthorization,
+            samples: []
+        )
+    }
 
-    private static let categoryDescriptors: [CategoryDescriptor] = [
-        .init(identifier: .sleepAnalysis, key: "sleepAnalysis", displayName: "Sleep Analysis"),
-        .init(identifier: .mindfulSession, key: "mindfulSession", displayName: "Mindful Session"),
-        .init(identifier: .appleStandHour, key: "appleStandHour", displayName: "Apple Stand Hour"),
-    ]
-}
+    private func incrementalQuantityCollection(
+        for descriptor: HealthKitCollectionDescriptor,
+        type: HKQuantityType,
+        existingCollection: BridgeHealthCollection,
+        preferredUnits: [HKQuantityType: HKUnit],
+        using healthStore: HKHealthStore
+    ) async throws -> AnchoredCollectionSyncResult {
+        let unit = descriptor.quantityIdentifier.flatMap(HealthKitTypeRegistry.fixedUnit(for:)) ?? preferredUnits[type]
+        let store = collectionStore(for: descriptor)
+        let storedAnchor = try collectionAnchor(for: descriptor)
+        let result = try await healthStore.anchoredSamples(of: type, anchor: storedAnchor)
 
-private struct QuantityDescriptor {
-    let identifier: HKQuantityTypeIdentifier
-    let key: String
-    let displayName: String
-    let unit: HKUnit
-}
+        if result.samples.isEmpty, result.deletedObjects.isEmpty, store.exists {
+            return AnchoredCollectionSyncResult(
+                collection: existingCollection,
+                newAnchor: result.newAnchor,
+                didChange: false
+            )
+        }
 
-private struct CategoryDescriptor {
-    let identifier: HKCategoryTypeIdentifier
-    let key: String
-    let displayName: String
+        var samplesById = Dictionary(uniqueKeysWithValues: existingCollection.samples.map { ($0.sampleId, $0) })
+
+        for deletedObject in result.deletedObjects {
+            samplesById.removeValue(forKey: deletedObject.uuid.uuidString)
+        }
+
+        for sample in result.samples.compactMap({ $0 as? HKQuantitySample }) {
+            samplesById[sample.uuid.uuidString] = quantityBridgeSample(for: sample, unit: unit)
+        }
+
+        return AnchoredCollectionSyncResult(
+            collection: BridgeHealthCollection(
+                key: descriptor.key,
+                kind: descriptor.kind,
+                displayName: descriptor.displayName,
+                unit: unit?.unitString,
+                objectTypeIdentifier: type.identifier,
+                queryStrategy: descriptor.queryStrategy.exportValue,
+                requiresPerObjectAuthorization: type.requiresPerObjectAuthorization(),
+                samples: sortBridgeSamples(samplesById.values)
+            ),
+            newAnchor: result.newAnchor,
+            didChange: true
+        )
+    }
+
+    private func categoryCollection(
+        for descriptor: HealthKitCollectionDescriptor,
+        type: HKCategoryType,
+        existingCollection: BridgeHealthCollection,
+        using healthStore: HKHealthStore
+    ) async throws -> AnchoredCollectionSyncResult {
+        let store = collectionStore(for: descriptor)
+        let storedAnchor = try collectionAnchor(for: descriptor)
+        let result = try await healthStore.anchoredSamples(of: type, anchor: storedAnchor)
+
+        if result.samples.isEmpty, result.deletedObjects.isEmpty, store.exists {
+            return AnchoredCollectionSyncResult(
+                collection: existingCollection,
+                newAnchor: result.newAnchor,
+                didChange: false
+            )
+        }
+
+        var samplesById = Dictionary(uniqueKeysWithValues: existingCollection.samples.map { ($0.sampleId, $0) })
+
+        for deletedObject in result.deletedObjects {
+            samplesById.removeValue(forKey: deletedObject.uuid.uuidString)
+        }
+
+        for sample in result.samples.compactMap({ $0 as? HKCategorySample }) {
+            samplesById[sample.uuid.uuidString] = categoryBridgeSample(for: sample)
+        }
+
+        return AnchoredCollectionSyncResult(
+            collection: BridgeHealthCollection(
+                key: descriptor.key,
+                kind: descriptor.kind,
+                displayName: descriptor.displayName,
+                unit: nil,
+                objectTypeIdentifier: type.identifier,
+                queryStrategy: descriptor.queryStrategy.exportValue,
+                requiresPerObjectAuthorization: type.requiresPerObjectAuthorization(),
+                samples: sortBridgeSamples(samplesById.values)
+            ),
+            newAnchor: result.newAnchor,
+            didChange: true
+        )
+    }
+
+    private func incrementalSampleCollection(
+        for descriptor: HealthKitCollectionDescriptor,
+        type: HKSampleType,
+        existingCollection: BridgeHealthCollection,
+        using healthStore: HKHealthStore
+    ) async throws -> AnchoredCollectionSyncResult {
+        let store = collectionStore(for: descriptor)
+        let storedAnchor = try collectionAnchor(for: descriptor)
+        let result = try await healthStore.anchoredSamples(of: type, anchor: storedAnchor)
+
+        if result.samples.isEmpty, result.deletedObjects.isEmpty, store.exists {
+            return AnchoredCollectionSyncResult(
+                collection: existingCollection,
+                newAnchor: result.newAnchor,
+                didChange: false
+            )
+        }
+
+        var samplesById = Dictionary(uniqueKeysWithValues: existingCollection.samples.map { ($0.sampleId, $0) })
+
+        for deletedObject in result.deletedObjects {
+            samplesById.removeValue(forKey: deletedObject.uuid.uuidString)
+        }
+
+        for sample in result.samples {
+            samplesById[sample.uuid.uuidString] = genericBridgeSample(for: sample)
+        }
+
+        return AnchoredCollectionSyncResult(
+            collection: BridgeHealthCollection(
+                key: descriptor.key,
+                kind: descriptor.kind,
+                displayName: descriptor.displayName,
+                unit: nil,
+                objectTypeIdentifier: type.identifier,
+                queryStrategy: descriptor.queryStrategy.exportValue,
+                requiresPerObjectAuthorization: type.requiresPerObjectAuthorization(),
+                samples: sortBridgeSamples(samplesById.values)
+            ),
+            newAnchor: result.newAnchor,
+            didChange: true
+        )
+    }
+
+    private func characteristicCollection(
+        for descriptor: HealthKitCollectionDescriptor,
+        using healthStore: HKHealthStore
+    ) throws -> BridgeHealthCollection {
+        let textValue = try characteristicValue(for: descriptor.key, using: healthStore)
+        let objectType = descriptor.objectType
+
+        return BridgeHealthCollection(
+            key: descriptor.key,
+            kind: descriptor.kind,
+            displayName: descriptor.displayName,
+            unit: nil,
+            objectTypeIdentifier: objectType?.identifier,
+            queryStrategy: descriptor.queryStrategy.exportValue,
+            requiresPerObjectAuthorization: objectType?.requiresPerObjectAuthorization(),
+            samples: textValue.map { value in
+                [
+                    BridgeHealthSample(
+                        sampleId: descriptor.key,
+                        startDate: nil,
+                        endDate: nil,
+                        numericValue: nil,
+                        categoryValue: nil,
+                        textValue: value,
+                        payload: nil,
+                        source: nil,
+                        metadata: nil
+                    ),
+                ]
+            } ?? []
+        )
+    }
+
+    private func activitySummaryCollection(
+        for descriptor: HealthKitCollectionDescriptor,
+        using healthStore: HKHealthStore
+    ) async throws -> BridgeHealthCollection {
+        let summaries = try await healthStore.activitySummaries()
+        let calendar = Calendar(identifier: .gregorian)
+
+        return BridgeHealthCollection(
+            key: descriptor.key,
+            kind: descriptor.kind,
+            displayName: descriptor.displayName,
+            unit: nil,
+            objectTypeIdentifier: descriptor.objectType?.identifier,
+            queryStrategy: descriptor.queryStrategy.exportValue,
+            requiresPerObjectAuthorization: descriptor.objectType?.requiresPerObjectAuthorization(),
+            samples: summaries.map { summary in
+                let dateComponents = summary.dateComponents(for: calendar)
+                let summaryDate = calendar.date(from: dateComponents)
+                return BridgeHealthSample(
+                    sampleId: [
+                        dateComponents.year,
+                        dateComponents.month,
+                        dateComponents.day,
+                    ]
+                    .compactMap { $0.map(String.init) }
+                    .joined(separator: "-"),
+                    startDate: summaryDate,
+                    endDate: summaryDate,
+                    numericValue: nil,
+                    categoryValue: nil,
+                    textValue: nil,
+                    payload: [
+                        "activeEnergyBurned": stringifyQuantity(summary.activeEnergyBurned),
+                        "activeEnergyBurnedGoal": stringifyQuantity(summary.activeEnergyBurnedGoal),
+                        "appleExerciseTime": stringifyQuantity(summary.appleExerciseTime),
+                        "appleExerciseTimeGoal": stringifyQuantity(summary.appleExerciseTimeGoal),
+                        "appleStandHours": stringifyQuantity(summary.appleStandHours),
+                        "appleStandHoursGoal": stringifyQuantity(summary.appleStandHoursGoal),
+                    ],
+                    source: nil,
+                    metadata: nil
+                )
+            }
+        )
+    }
+
+    private func characteristicValue(for key: String, using healthStore: HKHealthStore) throws -> String? {
+        switch key {
+        case "activityMoveMode":
+            return String(describing: try healthStore.activityMoveMode().activityMoveMode)
+        case "biologicalSex":
+            return String(describing: try healthStore.biologicalSex().biologicalSex)
+        case "bloodType":
+            return String(describing: try healthStore.bloodType().bloodType)
+        case "dateOfBirth":
+            let components = try healthStore.dateOfBirthComponents()
+            return [
+                components.year,
+                components.month,
+                components.day,
+            ]
+            .compactMap { $0.map(String.init) }
+            .joined(separator: "-")
+        case "fitzpatrickSkinType":
+            return String(describing: try healthStore.fitzpatrickSkinType().skinType)
+        case "wheelchairUse":
+            return String(describing: try healthStore.wheelchairUse().wheelchairUse)
+        default:
+            return nil
+        }
+    }
+
+    private func anchorStore(for descriptor: HealthKitCollectionDescriptor) -> PersistentHealthKitAnchorStore {
+        PersistentHealthKitAnchorStore(anchorKey: "collection-anchor-\(descriptor.key)")
+    }
+
+    private func collectionStore(for descriptor: HealthKitCollectionDescriptor) -> BridgeFileStore<BridgeHealthCollection> {
+        BridgeFileStore(filename: "collections/\(descriptor.key).json")
+    }
+
+    private func collectionAnchor(for descriptor: HealthKitCollectionDescriptor) throws -> HKQueryAnchor? {
+        let store = collectionStore(for: descriptor)
+        guard store.exists else {
+            return nil
+        }
+
+        return try anchorStore(for: descriptor).loadAnchor()
+    }
+
+    private func migrateCollectionPersistenceIfNeeded() {
+        guard userDefaults.integer(forKey: collectionCacheVersionKey) < collectionCacheVersion else {
+            return
+        }
+
+        try? legacyCollectionStore.saveValue(nil)
+
+        for descriptor in HealthKitTypeRegistry.collectionDescriptors {
+            try? collectionStore(for: descriptor).saveValue(nil)
+            try? anchorStore(for: descriptor).saveAnchor(nil)
+        }
+
+        userDefaults.set(collectionCacheVersion, forKey: collectionCacheVersionKey)
+    }
+
+    private func restorePersistedState() {
+        let userDefaults = self.userDefaults
+        let totalUnits = max(HealthKitTypeRegistry.collectionDescriptors.count + 1, 1)
+
+        Task.detached(priority: .userInitiated) {
+            Self.migrateCollectionPersistenceIfNeeded(userDefaults: userDefaults)
+            await MainActor.run {
+                self.restoreProgress = BridgeProgress(
+                    title: "Loading cached health data…",
+                    detail: "Preparing collection cache restore.",
+                    completedUnitCount: 1,
+                    totalUnitCount: totalUnits
+                )
+            }
+            let restoredCollections = await Self.loadPersistedCollections { progress in
+                await MainActor.run {
+                    self.restoreProgress = progress
+                }
+            }
+
+            await MainActor.run {
+                self.collections = restoredCollections
+                self.restoreProgress = BridgeProgress(
+                    title: "Loading cached health data…",
+                    detail: "Collection cache restored.",
+                    completedUnitCount: totalUnits,
+                    totalUnitCount: totalUnits
+                )
+                self.isRestoringCache = false
+            }
+        }
+    }
+
+    nonisolated private static func loadPersistedCollections(
+        progress: @Sendable (BridgeProgress) async -> Void
+    ) async -> [String: BridgeHealthCollection] {
+        let descriptors = HealthKitTypeRegistry.collectionDescriptors
+        let totalUnits = max(descriptors.count + 1, 1)
+        var completedUnits = 1
+        var restoredCollections: [String: BridgeHealthCollection] = [:]
+
+        for descriptor in descriptors {
+            if let collection = try? BridgeFileStore<BridgeHealthCollection>(
+                filename: "collections/\(descriptor.key).json"
+            ).loadValue() {
+                restoredCollections[descriptor.key] = collection
+            }
+
+            completedUnits += 1
+            await progress(
+                BridgeProgress(
+                    title: "Loading cached health data…",
+                    detail: "Restoring \(descriptor.displayName).",
+                    completedUnitCount: completedUnits,
+                    totalUnitCount: totalUnits
+                )
+            )
+        }
+
+        return restoredCollections
+    }
+
+    nonisolated private static func migrateCollectionPersistenceIfNeeded(userDefaults: UserDefaults) {
+        let collectionCacheVersionKey = "health-data-collection-cache-version"
+        let collectionCacheVersion = 2
+
+        guard userDefaults.integer(forKey: collectionCacheVersionKey) < collectionCacheVersion else {
+            return
+        }
+
+        try? BridgeFileStore<[String: BridgeHealthCollection]>(filename: "collections.json").saveValue(nil)
+
+        for descriptor in HealthKitTypeRegistry.collectionDescriptors {
+            try? BridgeFileStore<BridgeHealthCollection>(filename: "collections/\(descriptor.key).json").saveValue(nil)
+            try? PersistentHealthKitAnchorStore(anchorKey: "collection-anchor-\(descriptor.key)", userDefaults: userDefaults)
+                .saveAnchor(nil)
+        }
+
+        userDefaults.set(collectionCacheVersion, forKey: collectionCacheVersionKey)
+    }
 }
 
 private extension HKHealthStore {
-    func quantitySamples(of type: HKQuantityType) async throws -> [HKQuantitySample] {
+    func anchoredSamples(
+        of type: HKSampleType,
+        anchor: HKQueryAnchor?
+    ) async throws -> (samples: [HKSample], deletedObjects: [HKDeletedObject], newAnchor: HKQueryAnchor?) {
         try await withCheckedThrowingContinuation { continuation in
-            let query = HKSampleQuery(
-                sampleType: type,
+            let query = HKAnchoredObjectQuery(
+                type: type,
                 predicate: nil,
+                anchor: anchor,
                 limit: HKObjectQueryNoLimit,
-                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]
-            ) { _, samples, error in
+            ) { _, samples, deletedObjects, newAnchor, error in
                 if let error {
                     continuation.resume(throwing: error)
                     return
                 }
 
-                continuation.resume(returning: (samples ?? []).compactMap { $0 as? HKQuantitySample })
+                continuation.resume(
+                    returning: (
+                        samples: samples ?? [],
+                        deletedObjects: deletedObjects ?? [],
+                        newAnchor: newAnchor
+                    )
+                )
             }
 
             execute(query)
         }
     }
 
-    func categorySamples(of type: HKCategoryType) async throws -> [HKCategorySample] {
-        try await withCheckedThrowingContinuation { continuation in
-            let query = HKSampleQuery(
-                sampleType: type,
-                predicate: nil,
-                limit: HKObjectQueryNoLimit,
-                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]
-            ) { _, samples, error in
+    func preferredUnits(for quantityTypes: Set<HKQuantityType>) async throws -> [HKQuantityType: HKUnit] {
+        guard !quantityTypes.isEmpty else {
+            return [:]
+        }
+
+        return try await withCheckedThrowingContinuation { continuation in
+            preferredUnits(for: quantityTypes) { units, error in
                 if let error {
                     continuation.resume(throwing: error)
                     return
                 }
 
-                continuation.resume(returning: (samples ?? []).compactMap { $0 as? HKCategorySample })
+                continuation.resume(returning: units)
+            }
+        }
+    }
+
+    func activitySummaries() async throws -> [HKActivitySummary] {
+        try await withCheckedThrowingContinuation { continuation in
+            let query = HKActivitySummaryQuery(predicate: nil) { _, summaries, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+
+                continuation.resume(returning: summaries ?? [])
             }
 
             execute(query)
@@ -198,6 +631,125 @@ private extension HKSample {
     }
 }
 
+private extension HealthKitCollectionQueryStrategy {
+    var exportValue: String {
+        switch self {
+        case .activitySummary:
+            return "activitySummary"
+        case .category:
+            return "category"
+        case .characteristic:
+            return "characteristic"
+        case .quantity:
+            return "quantity"
+        case .sample:
+            return "sample"
+        }
+    }
+
+    var usesAnchoredQueries: Bool {
+        switch self {
+        case .category, .quantity, .sample:
+            return true
+        case .activitySummary, .characteristic:
+            return false
+        }
+    }
+}
+
+private struct AnchoredCollectionSyncResult {
+    let collection: BridgeHealthCollection
+    let newAnchor: HKQueryAnchor?
+    let didChange: Bool
+}
+
+private func preferredQuantityUnits(
+    for descriptors: [HealthKitCollectionDescriptor],
+    using healthStore: HKHealthStore
+) async -> [HKQuantityType: HKUnit] {
+    let preferredQuantityTypes = Set(
+        descriptors.compactMap { descriptor -> HKQuantityType? in
+            guard descriptor.queryStrategy == .quantity else {
+                return nil
+            }
+
+            guard let quantityIdentifier = descriptor.quantityIdentifier else {
+                return nil
+            }
+
+            guard HealthKitTypeRegistry.fixedUnit(for: quantityIdentifier) == nil else {
+                return nil
+            }
+
+            return descriptor.objectType as? HKQuantityType
+        }
+    )
+
+    return (try? await healthStore.preferredUnits(for: preferredQuantityTypes)) ?? [:]
+}
+
+private func quantityBridgeSample(for sample: HKQuantitySample, unit: HKUnit?) -> BridgeHealthSample {
+    BridgeHealthSample(
+        sampleId: sample.uuid.uuidString,
+        startDate: sample.startDate,
+        endDate: sample.endDate,
+        numericValue: unit.map { sample.quantity.doubleValue(for: $0) },
+        categoryValue: nil,
+        textValue: unit == nil ? sample.quantity.description : nil,
+        payload: nil,
+        source: sample.exportSource,
+        metadata: sample.normalizedMetadata
+    )
+}
+
+private func categoryBridgeSample(for sample: HKCategorySample) -> BridgeHealthSample {
+    BridgeHealthSample(
+        sampleId: sample.uuid.uuidString,
+        startDate: sample.startDate,
+        endDate: sample.endDate,
+        numericValue: nil,
+        categoryValue: sample.value,
+        textValue: nil,
+        payload: nil,
+        source: sample.exportSource,
+        metadata: sample.normalizedMetadata
+    )
+}
+
+private func genericBridgeSample(for sample: HKSample) -> BridgeHealthSample {
+    BridgeHealthSample(
+        sampleId: sample.uuid.uuidString,
+        startDate: sample.startDate,
+        endDate: sample.endDate,
+        numericValue: nil,
+        categoryValue: nil,
+        textValue: nil,
+        payload: genericPayload(for: sample),
+        source: sample.exportSource,
+        metadata: sample.normalizedMetadata
+    )
+}
+
+private func sortBridgeSamples<S: Sequence>(_ samples: S) -> [BridgeHealthSample] where S.Element == BridgeHealthSample {
+    Array(samples).sorted {
+        (($0.startDate ?? .distantPast), $0.sampleId) > (($1.startDate ?? .distantPast), $1.sampleId)
+    }
+}
+
+private func genericPayload(for sample: HKSample) -> [String: String]? {
+    var payload = ["sampleClass": String(describing: type(of: sample))]
+
+    if let correlation = sample as? HKCorrelation {
+        payload["memberCount"] = String(correlation.objects.count)
+        let memberTypes = Set(correlation.objects.map { $0.sampleType.identifier }).sorted()
+        if !memberTypes.isEmpty {
+            payload["memberTypes"] = memberTypes.joined(separator: ",")
+        }
+    }
+
+    return payload.isEmpty ? nil : payload
+}
+
 private func stringifyMetadataValue(_ value: Any) -> String {
     if let string = value as? String {
         return string
@@ -210,4 +762,8 @@ private func stringifyMetadataValue(_ value: Any) -> String {
     }
 
     return String(describing: value)
+}
+
+private func stringifyQuantity(_ quantity: HKQuantity?) -> String {
+    quantity?.description ?? ""
 }

@@ -1,5 +1,33 @@
 import Foundation
 
+struct BridgeProgress: Sendable, Equatable {
+    let title: String
+    let detail: String
+    let completedUnitCount: Int
+    let totalUnitCount: Int
+
+    init(
+        title: String,
+        detail: String,
+        completedUnitCount: Int,
+        totalUnitCount: Int
+    ) {
+        let normalizedTotal = max(totalUnitCount, 1)
+        self.title = title
+        self.detail = detail
+        self.completedUnitCount = min(max(completedUnitCount, 0), normalizedTotal)
+        self.totalUnitCount = normalizedTotal
+    }
+
+    var fractionCompleted: Double {
+        Double(completedUnitCount) / Double(totalUnitCount)
+    }
+
+    var countsLabel: String {
+        "\(completedUnitCount) of \(totalUnitCount)"
+    }
+}
+
 struct BridgeExportBundle: Identifiable, Sendable {
     let directoryURL: URL
     let snapshotURL: URL
@@ -11,6 +39,7 @@ struct BridgeExportBundle: Identifiable, Sendable {
 struct AppleHealthExportSnapshot: Codable, Sendable {
     let generatedAt: String
     let provider: String
+    let registryGeneratedAt: String?
     let activities: [String: AppleHealthExportActivity]
     let collections: [String: AppleHealthExportCollection]
     let deletedActivityIds: [String]
@@ -50,7 +79,7 @@ struct AppleHealthExportRouteStreams: Codable, Sendable {
     let moving: [Bool]?
 }
 
-struct AppleHealthExportSource: Codable, Sendable {
+struct AppleHealthExportSource: Codable, Sendable, Equatable {
     let bundleIdentifier: String?
     let name: String?
     let deviceName: String?
@@ -62,6 +91,9 @@ struct AppleHealthExportCollection: Codable, Sendable {
     let kind: String
     let displayName: String
     let unit: String?
+    let objectTypeIdentifier: String?
+    let queryStrategy: String?
+    let requiresPerObjectAuthorization: Bool?
     let samples: [AppleHealthExportSample]
 }
 
@@ -71,11 +103,13 @@ struct AppleHealthExportSample: Codable, Sendable {
     let endDate: String?
     let numericValue: Double?
     let categoryValue: Int?
+    let textValue: String?
+    let payload: [String: String]?
     let source: AppleHealthExportSource?
     let metadata: [String: String]?
 }
 
-struct BridgeWorkout: Identifiable, Sendable {
+struct BridgeWorkout: Identifiable, Codable, Sendable, Equatable {
     let id: String
     let sportType: String?
     let startDate: Date?
@@ -89,7 +123,7 @@ struct BridgeWorkout: Identifiable, Sendable {
     let deviceModel: String?
 }
 
-struct BridgeRoute: Sendable {
+struct BridgeRoute: Codable, Sendable, Equatable {
     let activityId: String
     let coordinates: [CLLocationCoordinate]
     let altitude: [Double]?
@@ -97,25 +131,30 @@ struct BridgeRoute: Sendable {
     let velocitySmooth: [Double]?
 }
 
-struct BridgeHealthCollection: Sendable {
+struct BridgeHealthCollection: Codable, Sendable, Equatable {
     let key: String
     let kind: String
     let displayName: String
     let unit: String?
+    let objectTypeIdentifier: String?
+    let queryStrategy: String?
+    let requiresPerObjectAuthorization: Bool?
     let samples: [BridgeHealthSample]
 }
 
-struct BridgeHealthSample: Sendable {
+struct BridgeHealthSample: Codable, Sendable, Equatable {
     let sampleId: String
     let startDate: Date?
     let endDate: Date?
     let numericValue: Double?
     let categoryValue: Int?
+    let textValue: String?
+    let payload: [String: String]?
     let source: AppleHealthExportSource?
     let metadata: [String: String]?
 }
 
-struct CLLocationCoordinate: Sendable {
+struct CLLocationCoordinate: Codable, Sendable, Equatable {
     let latitude: Double
     let longitude: Double
 }

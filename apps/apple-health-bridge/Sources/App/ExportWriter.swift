@@ -3,6 +3,12 @@ import Foundation
 @MainActor
 final class ExportWriter: ObservableObject {
     @Published private(set) var isExporting = false
+    @Published private(set) var exportProgress = BridgeProgress(
+        title: "Exporting health data…",
+        detail: "Preparing export.",
+        completedUnitCount: 0,
+        totalUnitCount: 4
+    )
     @Published private(set) var lastExportBundle: BridgeExportBundle?
     @Published private(set) var lastError: String?
 
@@ -17,19 +23,37 @@ final class ExportWriter: ObservableObject {
         }
 
         isExporting = true
+        exportProgress = BridgeProgress(
+            title: "Exporting health data…",
+            detail: "Preparing export bundle.",
+            completedUnitCount: 0,
+            totalUnitCount: 4
+        )
         lastError = nil
         defer { isExporting = false }
 
         do {
+            let updateProgress: @Sendable (BridgeProgress) async -> Void = { progress in
+                await MainActor.run {
+                    self.exportProgress = progress
+                }
+            }
             let exportBundle = try await Task.detached(priority: .userInitiated) {
-                try SnapshotExportFileWriter.writeSnapshot(
+                try await SnapshotExportFileWriter.writeSnapshot(
                     workouts: workouts,
                     routes: routes,
                     collections: collections,
-                    deletedActivityIds: deletedActivityIds
+                    deletedActivityIds: deletedActivityIds,
+                    progress: updateProgress
                 )
             }.value
             lastExportBundle = exportBundle
+            exportProgress = BridgeProgress(
+                title: "Exporting health data…",
+                detail: "Export bundle ready.",
+                completedUnitCount: 4,
+                totalUnitCount: 4
+            )
             return exportBundle
         } catch {
             lastExportBundle = nil
@@ -44,9 +68,32 @@ private enum SnapshotExportFileWriter {
         workouts: [BridgeWorkout],
         routes: [String: BridgeRoute],
         collections: [String: BridgeHealthCollection],
-        deletedActivityIds: [String]
-    ) throws -> BridgeExportBundle {
-        let generatedAt = Date().ISO8601Format()
+        deletedActivityIds: [String],
+        progress: @Sendable (BridgeProgress) async -> Void
+    ) async throws -> BridgeExportBundle {
+        await progress(
+            BridgeProgress(
+                title: "Exporting health data…",
+                detail: "Building export snapshot.",
+                completedUnitCount: 0,
+                totalUnitCount: 4
+            )
+        )
+        let snapshot = SnapshotExportBuilder.snapshot(
+            workouts: workouts,
+            routes: routes,
+            collections: collections,
+            deletedActivityIds: deletedActivityIds
+        )
+        await progress(
+            BridgeProgress(
+                title: "Exporting health data…",
+                detail: "Building export manifest.",
+                completedUnitCount: 1,
+                totalUnitCount: 4
+            )
+        )
+        let manifest = SnapshotExportBuilder.manifest(for: snapshot)
         let exportDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(
             "apple-health-export-\(UUID().uuidString)",
             isDirectory: true
@@ -56,23 +103,32 @@ private enum SnapshotExportFileWriter {
         let snapshotURL = exportDirectory.appendingPathComponent("cache-export.json")
         let manifestURL = exportDirectory.appendingPathComponent("export-manifest.json")
 
-        try writeSnapshotFile(
-            to: snapshotURL,
-            generatedAt: generatedAt,
-            workouts: workouts,
-            routes: routes,
-            collections: collections,
-            deletedActivityIds: deletedActivityIds
+        await progress(
+            BridgeProgress(
+                title: "Exporting health data…",
+                detail: "Writing cache-export.json.",
+                completedUnitCount: 2,
+                totalUnitCount: 4
+            )
         )
-
-        let manifest = AppleHealthExportManifest(
-            exportedAt: generatedAt,
-            workoutCount: workouts.count,
-            routeCount: routes.values.filter { !$0.coordinates.isEmpty }.count,
-            collectionCount: collections.count,
-            sampleCount: collections.values.reduce(0) { $0 + $1.samples.count }
+        try writeSnapshotFile(snapshot, to: snapshotURL)
+        await progress(
+            BridgeProgress(
+                title: "Exporting health data…",
+                detail: "Writing export-manifest.json.",
+                completedUnitCount: 3,
+                totalUnitCount: 4
+            )
         )
         try writeManifestFile(manifest, to: manifestURL)
+        await progress(
+            BridgeProgress(
+                title: "Exporting health data…",
+                detail: "Export bundle ready.",
+                completedUnitCount: 4,
+                totalUnitCount: 4
+            )
+        )
 
         return BridgeExportBundle(
             directoryURL: exportDirectory,
@@ -82,108 +138,13 @@ private enum SnapshotExportFileWriter {
     }
 
     private static func writeSnapshotFile(
-        to url: URL,
-        generatedAt: String,
-        workouts: [BridgeWorkout],
-        routes: [String: BridgeRoute],
-        collections: [String: BridgeHealthCollection],
-        deletedActivityIds: [String]
+        _ snapshot: AppleHealthExportSnapshot,
+        to url: URL
     ) throws {
-        FileManager.default.createFile(atPath: url.path(), contents: nil)
-        let handle = try FileHandle(forWritingTo: url)
-        defer {
-            try? handle.close()
-        }
-
-        try handle.write(contentsOf: Data("{".utf8))
-        try writeObjectField("generatedAt", value: generatedAt, to: handle, trailingComma: true)
-        try writeObjectField("provider", value: "appleHealth", to: handle, trailingComma: true)
-
-        try handle.write(contentsOf: Data("\"activities\":{".utf8))
-        let sortedWorkouts = workouts.sorted {
-            (($0.startDate ?? .distantPast), $0.id) > (($1.startDate ?? .distantPast), $1.id)
-        }
-        for (index, workout) in sortedWorkouts.enumerated() {
-            let route = routes[workout.id]
-            let routeCoordinates = route?.coordinates.map { [$0.latitude, $0.longitude] }
-            let activity = AppleHealthExportActivity(
-                activityId: workout.id,
-                sportType: workout.sportType,
-                startDate: workout.startDate?.ISO8601Format(),
-                distanceMeters: workout.distanceMeters,
-                distanceKm: workout.distanceMeters.map { $0 / 1000 },
-                movingTimeSeconds: workout.elapsedTimeSeconds,
-                elapsedTimeSeconds: workout.elapsedTimeSeconds,
-                averageHeartrate: workout.averageHeartrate,
-                maxHeartrate: workout.maxHeartrate,
-                summaryPolyline: route.map { encodePolyline($0.coordinates) },
-                detailFetchedAt: generatedAt,
-                hasStreams: routeCoordinates?.isEmpty == false,
-                routeStreams: routeCoordinates?.isEmpty == false ? AppleHealthExportRouteStreams(
-                    latlng: routeCoordinates,
-                    altitude: route?.altitude,
-                    distance: route?.distance,
-                    heartrate: nil,
-                    velocitySmooth: route?.velocitySmooth,
-                    moving: nil
-                ) : nil,
-                source: AppleHealthExportSource(
-                    bundleIdentifier: workout.bundleIdentifier,
-                    name: workout.sourceName,
-                    deviceName: workout.deviceName,
-                    deviceModel: workout.deviceModel
-                )
-            )
-            try writeDictionaryEntry(
-                key: workout.id,
-                value: activity,
-                to: handle,
-                isLast: index == sortedWorkouts.count - 1
-            )
-        }
-        try handle.write(contentsOf: Data("},".utf8))
-
-        try handle.write(contentsOf: Data("\"collections\":{".utf8))
-        let sortedCollections = collections.keys.sorted()
-        for (collectionIndex, key) in sortedCollections.enumerated() {
-            guard let collection = collections[key] else {
-                continue
-            }
-
-            try writeJSONString(key, to: handle)
-            try handle.write(contentsOf: Data(":".utf8))
-            try handle.write(contentsOf: Data("{".utf8))
-            try writeObjectField("key", value: collection.key, to: handle, trailingComma: true)
-            try writeObjectField("kind", value: collection.kind, to: handle, trailingComma: true)
-            try writeObjectField("displayName", value: collection.displayName, to: handle, trailingComma: true)
-            try writeObjectField("unit", value: collection.unit, to: handle, trailingComma: true)
-            try handle.write(contentsOf: Data("\"samples\":[".utf8))
-
-            for (sampleIndex, sample) in collection.samples.enumerated() {
-                let exportSample = AppleHealthExportSample(
-                    sampleId: sample.sampleId,
-                    startDate: sample.startDate?.ISO8601Format(),
-                    endDate: sample.endDate?.ISO8601Format(),
-                    numericValue: sample.numericValue,
-                    categoryValue: sample.categoryValue,
-                    source: sample.source,
-                    metadata: sample.metadata
-                )
-                try handle.write(contentsOf: encodeJSONFragment(exportSample))
-                if sampleIndex < collection.samples.count - 1 {
-                    try handle.write(contentsOf: Data(",".utf8))
-                }
-            }
-
-            try handle.write(contentsOf: Data("]}".utf8))
-            if collectionIndex < sortedCollections.count - 1 {
-                try handle.write(contentsOf: Data(",".utf8))
-            }
-        }
-        try handle.write(contentsOf: Data("},".utf8))
-
-        try writeObjectField("deletedActivityIds", value: deletedActivityIds, to: handle, trailingComma: false)
-        try handle.write(contentsOf: Data("}".utf8))
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let snapshotData = try encoder.encode(snapshot)
+        try snapshotData.write(to: url)
     }
 
     private static func writeManifestFile(_ manifest: AppleHealthExportManifest, to url: URL) throws {
@@ -192,42 +153,113 @@ private enum SnapshotExportFileWriter {
         let manifestData = try encoder.encode(manifest)
         try manifestData.write(to: url)
     }
+}
 
-    private static func writeObjectField<T: Encodable>(
-        _ key: String,
-        value: T,
-        to handle: FileHandle,
-        trailingComma: Bool
-    ) throws {
-        try writeJSONString(key, to: handle)
-        try handle.write(contentsOf: Data(":".utf8))
-        try handle.write(contentsOf: encodeJSONFragment(value))
-        if trailingComma {
-            try handle.write(contentsOf: Data(",".utf8))
-        }
+enum SnapshotExportBuilder {
+    static func snapshot(
+        workouts: [BridgeWorkout],
+        routes: [String: BridgeRoute],
+        collections: [String: BridgeHealthCollection],
+        deletedActivityIds: [String]
+    ) -> AppleHealthExportSnapshot {
+        let generatedAt = Date().ISO8601Format()
+
+        return AppleHealthExportSnapshot(
+            generatedAt: generatedAt,
+            provider: "appleHealth",
+            registryGeneratedAt: GeneratedHealthKitCatalog.generatedAt,
+            activities: exportedActivities(workouts: workouts, routes: routes, generatedAt: generatedAt),
+            collections: exportedCollections(collections),
+            deletedActivityIds: deletedActivityIds.sorted()
+        )
     }
 
-    private static func writeDictionaryEntry<T: Encodable>(
-        key: String,
-        value: T,
-        to handle: FileHandle,
-        isLast: Bool
-    ) throws {
-        try writeJSONString(key, to: handle)
-        try handle.write(contentsOf: Data(":".utf8))
-        try handle.write(contentsOf: encodeJSONFragment(value))
-        if !isLast {
-            try handle.write(contentsOf: Data(",".utf8))
-        }
+    static func manifest(for snapshot: AppleHealthExportSnapshot) -> AppleHealthExportManifest {
+        AppleHealthExportManifest(
+            exportedAt: snapshot.generatedAt,
+            workoutCount: snapshot.activities.count,
+            routeCount: snapshot.activities.values.filter { $0.hasStreams }.count,
+            collectionCount: snapshot.collections.count,
+            sampleCount: snapshot.collections.values.reduce(0) { $0 + $1.samples.count }
+        )
     }
 
-    private static func writeJSONString(_ string: String, to handle: FileHandle) throws {
-        try handle.write(contentsOf: encodeJSONFragment(string))
+    private static func exportedActivities(
+        workouts: [BridgeWorkout],
+        routes: [String: BridgeRoute],
+        generatedAt: String
+    ) -> [String: AppleHealthExportActivity] {
+        Dictionary(
+            uniqueKeysWithValues: workouts.map { workout in
+                let route = routes[workout.id]
+                let routeCoordinates = route?.coordinates.map { [$0.latitude, $0.longitude] }
+                return (
+                    workout.id,
+                    AppleHealthExportActivity(
+                        activityId: workout.id,
+                        sportType: workout.sportType,
+                        startDate: workout.startDate?.ISO8601Format(),
+                        distanceMeters: workout.distanceMeters,
+                        distanceKm: workout.distanceMeters.map { $0 / 1000 },
+                        movingTimeSeconds: workout.elapsedTimeSeconds,
+                        elapsedTimeSeconds: workout.elapsedTimeSeconds,
+                        averageHeartrate: workout.averageHeartrate,
+                        maxHeartrate: workout.maxHeartrate,
+                        summaryPolyline: route.map { encodePolyline($0.coordinates) },
+                        detailFetchedAt: generatedAt,
+                        hasStreams: routeCoordinates?.isEmpty == false,
+                        routeStreams: routeCoordinates?.isEmpty == false ? AppleHealthExportRouteStreams(
+                            latlng: routeCoordinates,
+                            altitude: route?.altitude,
+                            distance: route?.distance,
+                            heartrate: nil,
+                            velocitySmooth: route?.velocitySmooth,
+                            moving: nil
+                        ) : nil,
+                        source: AppleHealthExportSource(
+                            bundleIdentifier: workout.bundleIdentifier,
+                            name: workout.sourceName,
+                            deviceName: workout.deviceName,
+                            deviceModel: workout.deviceModel
+                        )
+                    )
+                )
+            }
+        )
     }
 
-    private static func encodeJSONFragment<T: Encodable>(_ value: T) throws -> Data {
-        let encoder = JSONEncoder()
-        return try encoder.encode(value)
+    private static func exportedCollections(
+        _ collections: [String: BridgeHealthCollection]
+    ) -> [String: AppleHealthExportCollection] {
+        Dictionary(
+            uniqueKeysWithValues: collections.map { key, collection in
+                (
+                    key,
+                    AppleHealthExportCollection(
+                        key: collection.key,
+                        kind: collection.kind,
+                        displayName: collection.displayName,
+                        unit: collection.unit,
+                        objectTypeIdentifier: collection.objectTypeIdentifier,
+                        queryStrategy: collection.queryStrategy,
+                        requiresPerObjectAuthorization: collection.requiresPerObjectAuthorization,
+                        samples: collection.samples.map { sample in
+                            AppleHealthExportSample(
+                                sampleId: sample.sampleId,
+                                startDate: sample.startDate?.ISO8601Format(),
+                                endDate: sample.endDate?.ISO8601Format(),
+                                numericValue: sample.numericValue,
+                                categoryValue: sample.categoryValue,
+                                textValue: sample.textValue,
+                                payload: sample.payload,
+                                source: sample.source,
+                                metadata: sample.metadata
+                            )
+                        }
+                    )
+                )
+            }
+        )
     }
 }
 

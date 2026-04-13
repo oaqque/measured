@@ -4,13 +4,59 @@
   "allDay": true,
   "type": "single",
   "date": "2026-04-11",
-  "completed": false,
+  "completed": "2026-04-11T05:09:26.000Z",
   "eventType": "run",
   "expectedDistance": "4 km",
+  "stravaId": 18061279395,
+  "activityRefs": {
+    "strava": "18061279395",
+    "appleHealth": "FB2A7D2D-024C-4B33-A1C5-F3667FA0591D"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- 4 km easy run\n- Keep this short and relaxed, just enough to keep frequency alive before Sunday's long run.\n- Do not let basketball later in the day turn this into a progression run or a hidden workout.\n- Finish feeling fresher than when you started.\n- If basketball ends up feeling harder than expected, Sunday's long run should stay patient rather than stretching for extra pace."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This stayed on the planned Saturday, `2026-04-11`, and it kept the effort in the intended easy range, but it did not stay as short as prescribed. The run covered `6.625 km` in `45:31` moving time with only `22.2 m` of climbing, average HR `147.2`, and max HR `158`, so it finished `2.625 km` over the planned `4 km`.\n- The source data still reads as an aerobic support run rather than a hidden workout. Strava pace averaged `6:52 /km`, the distance-split HR only moved from `145.6 bpm` to `148.7 bpm`, and moving time matched elapsed time exactly, so there was no late progression or interruption pattern that would make this look like disguised quality.\n- The bigger coaching read sits around the whole day, not the run alone. Saturday also included the receiver-backed Apple Health basketball activity `780C6CF0-00AA-4A1E-B6F3-9E997B533324`, which logged `84:28` of movement with average HR `143.9` and max HR `176`, so the day stopped being a light pre-long-run bridge even though the run itself stayed controlled."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate job after this was to keep Sunday's long run patient instead of trying to \"cash in\" the extra Saturday distance. Counting Monday's split `12.194 km` session along with Tuesday, Wednesday, Friday, and this run, weekly running volume had already reached `50.262 km` across five runs, and basketball later the same day added another hard-load block on top.\n- That means the useful short-term win was not squeezing more work out of Saturday, but arriving at Sunday with enough restraint that the `15 km` long run could stay aerobic. If the legs felt flat after basketball, protecting Sunday's effort mattered more than defending the extra `2.625 km` from this run."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- This helps the block because frequency held and the run itself stayed genuinely easy enough to support the weekend rather than sabotage it. Being able to carry a short aerobic run plus basketball into Sunday is useful durability if recovery remains good.\n- The caution is the same one already showing up elsewhere in the block: easy days keep drifting longer than planned. For the half-marathon and marathon build to stay durable, the plan cannot rely on overshooting recovery-style sessions and then hoping the next key workout absorbs the cost. The long-term goal is not just accumulating kilometres, but accumulating them with cleaner separation between easy support days, hard load, and the long run."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `6:52 /km` across `6.625 km` in `45:31` moving time.\n- Estimated first-half moving pace was `6:42 /km` and second-half pace was `7:02 /km` (+20 s/km), so pace faded meaningfully in the back half."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava summary HR came in at `147.2 bpm` average and `158 bpm` max.\n- Distance-split HR averaged `145.6 bpm` in the first half and `148.7 bpm` in the second (+3.1 bpm), which shows a modest late rise in aerobic cost."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `45:31` out of `45:31` elapsed (100.0%), which kept stoppage cost negligible.\n- The downsampled moving stream shows `2` stop segments and `0.2%` stationary samples, so the run stayed very continuous."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged about `42.4 m` of climbing, with altitude moving between roughly `4.2 m` and `13.8 m`.\n- Estimated climbing was `21.0 m` in the first half and `21.4 m` in the second, so the climbing load was split fairly evenly."
+        }
+      ]
     }
   ]
 }

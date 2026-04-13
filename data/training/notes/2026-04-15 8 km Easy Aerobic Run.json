@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "8 km Easy Aerobic Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-15",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "8 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 8 km easy aerobic run\n- Keep this fully conversational after Tuesday's hill session.\n- Flatten the effort on climbs and do not let the back half drift toward steady running.\n- The job here is absorption and support, not reclaiming any quality volume trimmed from Tuesday.\n- If Tuesday costs more than expected, shorten to `6 to 7 km`."
+    }
+  ]
+}

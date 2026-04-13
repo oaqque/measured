@@ -25,6 +25,7 @@ targets:
         SWIFT_VERSION: 5.10
         DEVELOPMENT_TEAM: ""
         CODE_SIGN_ENTITLEMENTS: Sources/App/AppleHealthBridge.entitlements
+        SWIFT_OBJC_BRIDGING_HEADER: Sources/App/AppleHealthBridge-Bridging-Header.h
     info:
       path: Sources/App/Info.plist
       properties:
@@ -33,5 +34,32 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         NSHealthShareUsageDescription: Apple Health workout data is read locally to export a repo-friendly training snapshot.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
+  AppleHealthBridgeTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Tests
+    dependencies:
+      - target: AppleHealthBridge
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: au.oaqque.measured.apple-health-bridgeTests
+        PRODUCT_NAME: AppleHealthBridgeTests
+        SWIFT_VERSION: 5.10
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/AppleHealthBridge.app/AppleHealthBridge"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+schemes:
+  AppleHealthBridge:
+    build:
+      targets:
+        AppleHealthBridge: all
+        AppleHealthBridgeTests: [test]
+    test:
+      targets:
+        - AppleHealthBridgeTests

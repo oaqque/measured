@@ -7,6 +7,11 @@ struct AppleHealthBridgeApp: App {
     @StateObject private var routeSyncEngine = RouteSyncEngine()
     @StateObject private var healthDataSyncEngine = HealthDataSyncEngine()
     @StateObject private var exportWriter = ExportWriter()
+    @StateObject private var remoteSyncManager = RemoteSyncManager()
+
+    init() {
+        AutomationDiagnosticsRecorder.recordAppLaunch()
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -16,6 +21,7 @@ struct AppleHealthBridgeApp: App {
                 .environmentObject(routeSyncEngine)
                 .environmentObject(healthDataSyncEngine)
                 .environmentObject(exportWriter)
+                .environmentObject(remoteSyncManager)
         }
     }
 }

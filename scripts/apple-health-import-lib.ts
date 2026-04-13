@@ -38,6 +38,8 @@ export interface AppleHealthCollectionSampleExport {
   endDate: string | null;
   numericValue: number | null;
   categoryValue: number | null;
+  textValue: string | null;
+  payload: Record<string, string> | null;
   source: {
     bundleIdentifier: string | null;
     name: string | null;
@@ -52,12 +54,16 @@ export interface AppleHealthCollectionExport {
   kind: string;
   displayName: string;
   unit: string | null;
+  objectTypeIdentifier: string | null;
+  queryStrategy: string | null;
+  requiresPerObjectAuthorization: boolean | null;
   samples: AppleHealthCollectionSampleExport[];
 }
 
 export interface AppleHealthCacheExport {
   generatedAt: string;
   provider: "appleHealth";
+  registryGeneratedAt?: string | null;
   activities: Record<string, AppleHealthActivityExport>;
   collections: Record<string, AppleHealthCollectionExport>;
   deletedActivityIds: string[];
@@ -373,6 +379,7 @@ function normalizeBridgeSnapshot(raw: Record<string, unknown>): AppleHealthCache
   return {
     generatedAt: normalizeIsoDateTime(raw.generatedAt) ?? new Date().toISOString(),
     provider: "appleHealth",
+    registryGeneratedAt: normalizeIsoDateTime(raw.registryGeneratedAt),
     activities,
     collections: normalizeBridgeCollections(raw.collections),
     deletedActivityIds: Array.isArray(raw.deletedActivityIds)
@@ -408,6 +415,9 @@ function normalizeBridgeCollection(
     kind: normalizeString(raw.kind) ?? "unknown",
     displayName: normalizeString(raw.displayName) ?? collectionKey,
     unit: normalizeString(raw.unit),
+    objectTypeIdentifier: normalizeString(raw.objectTypeIdentifier),
+    queryStrategy: normalizeString(raw.queryStrategy),
+    requiresPerObjectAuthorization: normalizeBoolean(raw.requiresPerObjectAuthorization),
     samples: Array.isArray(raw.samples)
       ? raw.samples.flatMap((sample) => {
           if (!sample || typeof sample !== "object" || Array.isArray(sample)) {
@@ -427,6 +437,8 @@ function normalizeBridgeCollectionSample(raw: Record<string, unknown>): AppleHea
     endDate: normalizeIsoDateTime(raw.endDate) ?? normalizeAppleDate(raw.endDate),
     numericValue: normalizeNumber(raw.numericValue),
     categoryValue: normalizeInteger(raw.categoryValue),
+    textValue: normalizeString(raw.textValue),
+    payload: normalizeStringRecord(raw.payload),
     source: normalizeSourceMetadata(raw.source as Record<string, unknown> | null | undefined),
     metadata: normalizeStringRecord(raw.metadata),
   };
@@ -636,6 +648,10 @@ function normalizeStringRecord(value: unknown) {
     .filter((entry): entry is [string, string] => entry[1] !== null);
 
   return entries.length > 0 ? Object.fromEntries(entries) : null;
+}
+
+function normalizeBoolean(value: unknown) {
+  return typeof value === "boolean" ? value : null;
 }
 
 function normalizeDevice(value: string | null) {

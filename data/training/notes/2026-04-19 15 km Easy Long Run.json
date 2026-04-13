@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "15 km Easy Long Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-19",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "15 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 15 km easy long run\n- Keep the first `5 km` very patient and let the whole run stay aerobic rather than progressive.\n- Hold form on climbs without forcing the pace.\n- The goal is to consolidate last week's long-run distance without stacking another aggressive weekend.\n- If Saturday basketball ends up harder than planned or the legs feel flat, cap the run at `13 to 14 km` instead of forcing `15 km`."
+    }
+  ]
+}
