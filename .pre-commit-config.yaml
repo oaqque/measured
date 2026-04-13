@@ -10,6 +10,12 @@ repos:
 
   - repo: local
     hooks:
+      - id: eslint
+        name: ESLint
+        entry: pnpm run lint
+        language: system
+        pass_filenames: false
+
       - id: typescript-check
         name: TypeScript check
         entry: pnpm run check:pre-commit

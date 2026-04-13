@@ -24,8 +24,9 @@ export function MobileDetailSheet({
   } | null>(null);
 
   useEffect(() => {
+    const element = contentRef.current;
     if (open) {
-      resetSheetStyles(contentRef.current);
+      resetSheetStyles(element);
       return;
     }
 
@@ -33,16 +34,17 @@ export function MobileDetailSheet({
     dragCleanupRef.current = null;
     cleanupDragState(dragStateRef.current);
     dragStateRef.current = null;
-    resetSheetStyles(contentRef.current);
+    resetSheetStyles(element);
   }, [open]);
 
   useEffect(() => {
+    const element = contentRef.current;
     return () => {
       dragCleanupRef.current?.();
       dragCleanupRef.current = null;
       cleanupDragState(dragStateRef.current);
       dragStateRef.current = null;
-      resetSheetStyles(contentRef.current);
+      resetSheetStyles(element);
     };
   }, []);
 

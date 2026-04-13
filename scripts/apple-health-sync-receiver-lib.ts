@@ -90,7 +90,7 @@ interface ReceiverV3ControlBlobRow {
   itemCount: number
 }
 
-interface ReceiverV3SampleChunkRow extends AppleHealthSyncV3SampleChunkReference {}
+type ReceiverV3SampleChunkRow = AppleHealthSyncV3SampleChunkReference
 
 type SQLiteDatabase = import("better-sqlite3").Database
 

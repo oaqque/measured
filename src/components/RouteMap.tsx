@@ -77,12 +77,13 @@ export function RouteMap({
   routePath?: string | null;
   title: string;
 }) {
+  const canLoadRouteStreams =
+    hasRouteStreams && ((routePath !== null && routePath !== undefined && routePath.length > 0) || activityId !== null);
   const [routeStreams, setRouteStreams] = useState<WorkoutRouteStreams | null>(null);
-  const [routeStreamsLoaded, setRouteStreamsLoaded] = useState(false);
+  const [routeStreamsLoaded, setRouteStreamsLoaded] = useState(() => !canLoadRouteStreams);
   const [mapInstance, setMapInstance] = useState<LeafletMap | null>(null);
   const [hmrEpoch, setHmrEpoch] = useState(0);
-  const [animationNonce, setAnimationNonce] = useState(0);
-  const [drawProgress, setDrawProgress] = useState(1);
+  const [replaySeed, setReplaySeed] = useState(0);
 
   useEffect(() => {
     if (!import.meta.hot) {
@@ -91,6 +92,8 @@ export function RouteMap({
 
     const handleAfterUpdate = () => {
       clearRouteStreamsCache();
+      setRouteStreams(null);
+      setRouteStreamsLoaded(false);
       setHmrEpoch((current) => current + 1);
     };
 
@@ -101,17 +104,11 @@ export function RouteMap({
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-
-    if (!hasRouteStreams || (routePath === null || routePath === undefined) && activityId === null) {
-      setRouteStreams(null);
-      setRouteStreamsLoaded(false);
-      return () => {
-        cancelled = true;
-      };
+    if (!canLoadRouteStreams) {
+      return;
     }
 
-    setRouteStreamsLoaded(false);
+    let cancelled = false;
     const routeStreamsRequest =
       routePath && routePath.length > 0
         ? loadRouteStreamsForPath(routePath, `${generatedAt}:${hmrEpoch}`)
@@ -135,9 +132,9 @@ export function RouteMap({
     return () => {
       cancelled = true;
     };
-  }, [activityId, generatedAt, hasRouteStreams, hmrEpoch, routePath]);
+  }, [activityId, canLoadRouteStreams, generatedAt, hmrEpoch, routePath]);
 
-  const [mode, setMode] = useState<RouteColorMode>("route");
+  const [preferredMode, setPreferredMode] = useState<RouteColorMode>("route");
   const streamedCoordinates = routeStreams?.latlng ?? null;
   const summaryCoordinates = useMemo<RouteCoordinate[]>(() => decodePolyline(polyline), [polyline]);
   const baseCoordinates = streamedCoordinates && streamedCoordinates.length > 1 ? streamedCoordinates : summaryCoordinates;
@@ -148,62 +145,17 @@ export function RouteMap({
 
     return latLngBounds(baseCoordinates);
   }, [baseCoordinates]);
+  const availableModes = useMemo(() => getAvailableModes(routeStreams), [routeStreams]);
+  const mode = availableModes.includes(preferredMode) ? preferredMode : "route";
   const segments = useMemo(
     () => buildRouteSegments(baseCoordinates, routeStreams, mode),
-    [baseCoordinates, routeStreams, mode],
+    [baseCoordinates, mode, routeStreams],
   );
-  const visibleSegments = useMemo(
-    () => trimRouteSegments(segments, drawProgress),
-    [drawProgress, segments],
-  );
-  const availableModes = useMemo(() => getAvailableModes(routeStreams), [routeStreams]);
   const legendItems = useMemo(() => getLegendItems(mode, routeStreams), [mode, routeStreams]);
-
-  useEffect(() => {
-    if (availableModes.includes(mode)) {
-      return;
-    }
-
-    setMode("route");
-  }, [availableModes, mode]);
-
-  useEffect(() => {
-    setAnimationNonce((current) => current + 1);
-  }, [activityId, generatedAt, routePath]);
-
-  useEffect(() => {
-    if (segments.length === 0) {
-      setDrawProgress(1);
-      return;
-    }
-
-    let animationFrame = 0;
-    let startTime = 0;
-    const durationMs = 5000;
-    setDrawProgress(0);
-
-    const tick = (timestamp: number) => {
-      if (startTime === 0) {
-        startTime = timestamp;
-      }
-
-      const progress = Math.min(1, (timestamp - startTime) / durationMs);
-      const easedProgress = 1 - (1 - progress) ** 2;
-      setDrawProgress(easedProgress);
-
-      if (progress < 1) {
-        animationFrame = window.requestAnimationFrame(tick);
-      }
-    };
-
-    animationFrame = window.requestAnimationFrame(tick);
-    return () => {
-      window.cancelAnimationFrame(animationFrame);
-    };
-  }, [animationNonce, segments]);
+  const animationKey = `${activityId ?? "none"}:${routePath ?? "no-path"}:${generatedAt}:${mode}:${routeStreams?.latlng?.length ?? 0}:${replaySeed}`;
 
   if (baseCoordinates.length === 0 || !bounds) {
-    if (hasRouteStreams && !routeStreamsLoaded) {
+    if (canLoadRouteStreams && !routeStreamsLoaded) {
       return (
         <div
           className={cn(
@@ -297,7 +249,7 @@ export function RouteMap({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel>Route mode</DropdownMenuLabel>
-              <DropdownMenuRadioGroup value={mode} onValueChange={(value) => setMode(value as RouteColorMode)}>
+              <DropdownMenuRadioGroup value={mode} onValueChange={(value) => setPreferredMode(value as RouteColorMode)}>
                 {ROUTE_MODES.map((item) => (
                   <DropdownMenuRadioItem
                     disabled={!availableModes.includes(item.id)}
@@ -358,12 +310,12 @@ export function RouteMap({
           <Button
             aria-label="Replay route animation"
             className="size-9 border border-foreground/10 bg-background/95 p-0 shadow-sm"
-            type="button"
-            variant="secondary"
-            onClick={() => setAnimationNonce((current) => current + 1)}
-          >
-            <Play className="size-4" />
-            <span className="sr-only">Replay route animation</span>
+              type="button"
+              variant="secondary"
+              onClick={() => setReplaySeed((current) => current + 1)}
+            >
+              <Play className="size-4" />
+              <span className="sr-only">Replay route animation</span>
           </Button>
         </div>
         <MapContainer
@@ -380,19 +332,7 @@ export function RouteMap({
             subdomains={["a", "b", "c", "d"]}
             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           />
-          {visibleSegments.map((segment) => (
-            <Polyline
-              key={segment.key}
-              pathOptions={{
-                color: segment.color,
-                lineCap: "round",
-                lineJoin: "round",
-                opacity: segment.opacity,
-                weight: segment.weight,
-              }}
-              positions={segment.positions}
-            />
-          ))}
+          <AnimatedRoutePolylines key={animationKey} segments={segments} />
           <CircleMarker
             center={start}
             pathOptions={{
@@ -411,6 +351,61 @@ export function RouteMap({
         </MapContainer>
       </div>
     </div>
+  );
+}
+
+function AnimatedRoutePolylines({ segments }: { segments: RouteSegment[] }) {
+  const [drawProgress, setDrawProgress] = useState(() => (segments.length === 0 ? 1 : 0));
+  const visibleSegments = useMemo(
+    () => trimRouteSegments(segments, drawProgress),
+    [drawProgress, segments],
+  );
+
+  useEffect(() => {
+    if (segments.length === 0) {
+      return;
+    }
+
+    let animationFrame = 0;
+    let startTime = 0;
+    const durationMs = 5000;
+
+    const tick = (timestamp: number) => {
+      if (startTime === 0) {
+        startTime = timestamp;
+      }
+
+      const progress = Math.min(1, (timestamp - startTime) / durationMs);
+      const easedProgress = 1 - (1 - progress) ** 2;
+      setDrawProgress(easedProgress);
+
+      if (progress < 1) {
+        animationFrame = window.requestAnimationFrame(tick);
+      }
+    };
+
+    animationFrame = window.requestAnimationFrame(tick);
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+    };
+  }, [segments]);
+
+  return (
+    <>
+      {visibleSegments.map((segment) => (
+        <Polyline
+          key={segment.key}
+          pathOptions={{
+            color: segment.color,
+            lineCap: "round",
+            lineJoin: "round",
+            opacity: segment.opacity,
+            weight: segment.weight,
+          }}
+          positions={segment.positions}
+        />
+      ))}
+    </>
   );
 }
 

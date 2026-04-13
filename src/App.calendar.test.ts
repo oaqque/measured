@@ -1,5 +1,5 @@
 import type { WorkoutNote } from "@/lib/workouts/schema";
-import { calendarTestUtils } from "@/App";
+import { calendarTestUtils } from "@/lib/calendar";
 
 function createWorkout(overrides: Partial<WorkoutNote> = {}): WorkoutNote {
   return {

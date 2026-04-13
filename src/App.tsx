@@ -1,6 +1,7 @@
 import {
   Suspense,
   lazy,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -55,6 +56,25 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  buildCalendarCells,
+  buildCalendarWindow,
+  chunkCalendarWeeks,
+  DESKTOP_CALENDAR_ROW_HEIGHT,
+  formatDateKey,
+  formatDayLabel,
+  formatDayWeekday,
+  formatMonthLabel,
+  freezeViewportScroll,
+  getCalendarWindowShiftScrollOffset,
+  getTodayDateKey,
+  parseDateKey,
+  MOBILE_CALENDAR_CARD_HEIGHT,
+  resolveDefaultFocusDate,
+  shiftCalendarWindow,
+  shouldReleaseCalendarEdgeLock,
+  type CalendarCell,
+} from "@/lib/calendar";
+import {
   allChangelogEntries,
   allGoalNotes,
   allWorkouts,
@@ -87,25 +107,12 @@ type AppRoute = {
   view: View;
   noteSlug: string | null;
 };
-type CalendarCell = {
-  date: string;
-  isToday: boolean;
-  isOutsideRange: boolean;
-  key: string;
-  workouts: WorkoutNote[];
-};
 
 const LEFT_SIDEBAR_MIN_WIDTH = 240;
 const LEFT_SIDEBAR_MAX_WIDTH = 420;
 const RIGHT_SIDEBAR_MIN_WIDTH = 320;
 const RIGHT_SIDEBAR_MAX_WIDTH = 960;
 const RIGHT_SIDEBAR_DEFAULT_WIDTH = 520;
-const DESKTOP_CALENDAR_ROW_HEIGHT = 176;
-const MOBILE_CALENDAR_CARD_HEIGHT = 224;
-const MOBILE_CALENDAR_CARD_GAP = 12;
-const DESKTOP_CALENDAR_WINDOW_WEEKS = 9;
-const MOBILE_CALENDAR_WINDOW_WEEKS = 6;
-const CALENDAR_WINDOW_SHIFT_WEEKS = 4;
 type WorkoutEventTypeIcon = ComponentType<{ className?: string }>;
 const LazyWorkoutNotePane = lazy(() => import("@/components/WorkoutNotePane"));
 
@@ -142,14 +149,13 @@ export default function App() {
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
-  const [calendarFocusDate, setCalendarFocusDate] = useState("");
+  const [calendarFocusDateState, setCalendarFocusDate] = useState("");
   const [calendarViewportRequest, setCalendarViewportRequest] = useState(0);
-  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(Boolean(selectedWorkoutSlug));
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(296);
   const [rightSidebarWidth, setRightSidebarWidth] = useState(RIGHT_SIDEBAR_DEFAULT_WIDTH);
   const [eventType, setEventType] = useState<WorkoutFilters["eventType"]>(DEFAULT_EVENT_TYPES);
   const [status, setStatus] = useState<WorkoutStatus>("all");
-  const previousSelectedWorkoutSlugRef = useRef<string | null>(selectedWorkoutSlug);
   const previousSelectedWorkoutDateRef = useRef<string | null>(null);
   const previousViewRef = useRef<View | null>(null);
   const calendarScrollViewportRef = useRef<HTMLDivElement | null>(null);
@@ -211,49 +217,54 @@ export default function App() {
     }
 
     return null;
-  }, [
-    goalsDocument.sourcePath,
-    heartRateDocument.sourcePath,
-    selectedWorkout,
-    trainingPlan.sourcePath,
-    view,
-    welcomeDocument.sourcePath,
-  ]);
+  }, [selectedWorkout, view]);
   const stravaRunCount = useMemo(
     () => allWorkouts.filter((workout) => workout.stravaId !== null).length,
     [],
   );
+  const calendarFocusDate = useMemo(() => {
+    if (filteredWorkouts.length === 0) {
+      return "";
+    }
+
+    if (calendarFocusDateState) {
+      return calendarFocusDateState;
+    }
+
+    return selectedWorkout?.date ?? resolveDefaultFocusDate(filteredWorkouts);
+  }, [calendarFocusDateState, filteredWorkouts, selectedWorkout]);
   const showSelectedWorkoutPane = selectedWorkout !== null && (isDesktop || rightSidebarOpen);
+
+  function requestCalendarViewportFocus(options?: { defer?: boolean; resetScrollTop?: boolean }) {
+    const run = () => {
+      if (options?.resetScrollTop && calendarScrollViewportRef.current) {
+        calendarScrollViewportRef.current.scrollTop = 0;
+      }
+      setCalendarViewportRequest((current) => current + 1);
+    };
+
+    if (!options?.defer) {
+      run();
+      return;
+    }
+
+    if (calendarViewportFocusFrameRef.current !== null) {
+      window.cancelAnimationFrame(calendarViewportFocusFrameRef.current);
+    }
+
+    calendarViewportFocusFrameRef.current = window.requestAnimationFrame(() => {
+      calendarViewportFocusFrameRef.current = window.requestAnimationFrame(() => {
+        calendarViewportFocusFrameRef.current = null;
+        run();
+      });
+    });
+  }
 
   useEffect(() => {
     if (selectedWorkoutSlug && !selectedWorkout) {
       navigateRoute({ view: "calendar", noteSlug: null }, { replace: true });
     }
   }, [navigateRoute, selectedWorkout, selectedWorkoutSlug]);
-
-  useEffect(() => {
-    if (filteredWorkouts.length === 0) {
-      setCalendarFocusDate("");
-      return;
-    }
-
-    if (!calendarFocusDate) {
-      setCalendarFocusDate(resolveDefaultFocusDate(filteredWorkouts));
-    }
-  }, [calendarFocusDate, filteredWorkouts]);
-
-  useEffect(() => {
-    if (!selectedWorkout) {
-      return;
-    }
-
-    setEventType(DEFAULT_EVENT_TYPES);
-    setStatus("all");
-    setCalendarFocusDate((current) => (current === selectedWorkout.date ? current : selectedWorkout.date));
-    if (!isDesktop) {
-      setRightSidebarOpen(true);
-    }
-  }, [isDesktop, selectedWorkout]);
 
   useEffect(() => {
     if (selectedWorkout?.date) {
@@ -268,29 +279,8 @@ export default function App() {
   }, [view]);
 
   useEffect(() => {
-    if (previousSelectedWorkoutSlugRef.current && !selectedWorkoutSlug) {
-      setRightSidebarOpen(false);
-      if (view === "calendar") {
-        const previousSelectedWorkoutDate = previousSelectedWorkoutDateRef.current;
-        if (previousSelectedWorkoutDate) {
-          setCalendarFocusDate((current) =>
-            current === previousSelectedWorkoutDate ? current : previousSelectedWorkoutDate,
-          );
-        }
-        requestCalendarViewportFocus({ defer: true });
-      }
-    }
-
-    previousSelectedWorkoutSlugRef.current = selectedWorkoutSlug;
-  }, [selectedWorkoutSlug, view]);
-
-  useEffect(() => {
     if (view === "calendar" && previousViewRef.current !== "calendar") {
       requestCalendarViewportFocus({ defer: true });
-    }
-
-    if (view !== "calendar") {
-      setRightSidebarOpen(false);
     }
 
     previousViewRef.current = view;
@@ -361,30 +351,6 @@ export default function App() {
   const focusCalendarDate = (value: string) => {
     setCalendarFocusDate(value);
   };
-  const requestCalendarViewportFocus = (options?: { defer?: boolean; resetScrollTop?: boolean }) => {
-    const run = () => {
-      if (options?.resetScrollTop && calendarScrollViewportRef.current) {
-        calendarScrollViewportRef.current.scrollTop = 0;
-      }
-      setCalendarViewportRequest((current) => current + 1);
-    };
-
-    if (!options?.defer) {
-      run();
-      return;
-    }
-
-    if (calendarViewportFocusFrameRef.current !== null) {
-      window.cancelAnimationFrame(calendarViewportFocusFrameRef.current);
-    }
-
-    calendarViewportFocusFrameRef.current = window.requestAnimationFrame(() => {
-      calendarViewportFocusFrameRef.current = window.requestAnimationFrame(() => {
-        calendarViewportFocusFrameRef.current = null;
-        run();
-      });
-    });
-  };
 
   const openWorkout = (slug: string, syncCalendarDate = true) => {
     const workout = getWorkoutBySlug(slug);
@@ -402,6 +368,7 @@ export default function App() {
       if (!isDesktop) {
         setRightSidebarOpen(false);
       }
+      setCalendarFocusDate(previousSelectedWorkoutDateRef.current ?? workout.date);
       navigateRoute({ view: "calendar", noteSlug: null });
       return;
     }
@@ -419,6 +386,7 @@ export default function App() {
   const handleDetailPanelOpenChange = (open: boolean) => {
     if (!open && selectedWorkoutSlug) {
       setRightSidebarOpen(false);
+      setCalendarFocusDate(previousSelectedWorkoutDateRef.current ?? calendarFocusDate);
       navigateRoute({ view: "calendar", noteSlug: null });
       return;
     }
@@ -612,6 +580,7 @@ export default function App() {
                       {selectedWorkout ? (
                         <Suspense fallback={<WorkoutNotePaneSkeleton />}>
                           <LazyWorkoutNotePane
+                            key={selectedWorkout.slug}
                             workout={selectedWorkout}
                             onBack={() => handleDetailPanelOpenChange(false)}
                             onLinkClick={handleMarkdownLink}
@@ -1207,18 +1176,21 @@ function MonthPicker({
 }) {
   const [open, setOpen] = useState(false);
   const selectedDate = selectedDateKey ? parseDateKey(selectedDateKey) : undefined;
-  const [pickerMonth, setPickerMonth] = useState<Date>(() => selectedDate ?? new Date());
+  const [pickerMonthOverride, setPickerMonthOverride] = useState<Date | null>(null);
   const isMobileViewport = useMediaQuery("(max-width: 1023px)");
   const selectedMonthLabel = selectedDate ? formatMonthLabel(selectedDateKey) : "Pick month";
-
-  useEffect(() => {
-    if (selectedDateKey) {
-      setPickerMonth(parseDateKey(selectedDateKey));
-    }
-  }, [selectedDateKey]);
+  const pickerMonth = pickerMonthOverride ?? selectedDate ?? new Date();
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (nextOpen) {
+          setPickerMonthOverride(selectedDate ?? new Date());
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           className={cn(
@@ -1245,7 +1217,7 @@ function MonthPicker({
           mode="single"
           month={pickerMonth}
           selected={selectedDate}
-          onMonthChange={setPickerMonth}
+          onMonthChange={setPickerMonthOverride}
           onSelect={(date) => {
             if (!date) {
               return;
@@ -1408,7 +1380,7 @@ function CalendarMonthGrid({
   const weeks = useMemo(() => chunkCalendarWeeks(cells), [cells]);
   const maxWeekStart = Math.max(weeks.length - 3, 0);
 
-  const cancelPendingWindowShift = () => {
+  const cancelPendingWindowShift = useCallback(() => {
     if (shiftFrameRef.current !== null) {
       window.cancelAnimationFrame(shiftFrameRef.current);
       shiftFrameRef.current = null;
@@ -1424,9 +1396,9 @@ function CalendarMonthGrid({
     restoreViewportScrollRef.current = null;
     setWindowShiftDirection(null);
     setShiftIndicatorDirection(null);
-  };
+  }, []);
 
-  const resetViewportForFocus = () => {
+  const resetViewportForFocus = useCallback(() => {
     const viewport = isMobileViewport ? scrollViewportRef.current : desktopWeeksViewportRef.current;
     if (!viewport) {
       previousViewportScrollTopRef.current = null;
@@ -1435,7 +1407,39 @@ function CalendarMonthGrid({
 
     viewport.scrollTop = 0;
     previousViewportScrollTopRef.current = 0;
-  };
+  }, [isMobileViewport, scrollViewportRef]);
+
+  const scheduleCalendarWindowShift = useCallback((direction: "backward" | "forward") => {
+    const viewport = isMobileViewport ? scrollViewportRef.current : desktopWeeksViewportRef.current;
+    if (!viewport || windowShiftDirection) {
+      return;
+    }
+
+    if (shiftFrameRef.current !== null) {
+      window.cancelAnimationFrame(shiftFrameRef.current);
+    }
+    if (shiftIndicatorTimeoutRef.current !== null) {
+      window.clearTimeout(shiftIndicatorTimeoutRef.current);
+      shiftIndicatorTimeoutRef.current = null;
+    }
+
+    pendingShiftAdjustmentRef.current = {
+      direction,
+      scrollTop: viewport.scrollTop,
+    };
+    if (!isMobileViewport) {
+      restoreViewportScrollRef.current?.();
+      restoreViewportScrollRef.current = freezeViewportScroll(viewport);
+    }
+    edgeLockRef.current = direction;
+    setWindowShiftDirection(direction);
+    setShiftIndicatorDirection(direction);
+
+    shiftFrameRef.current = window.requestAnimationFrame(() => {
+      shiftFrameRef.current = null;
+      setVisibleRange((current) => shiftCalendarWindow(current, direction));
+    });
+  }, [isMobileViewport, scrollViewportRef, windowShiftDirection]);
 
   useEffect(() => {
     setVisibleRange(buildCalendarWindow(calendarFocusDate, isMobileViewport));
@@ -1585,7 +1589,15 @@ function CalendarMonthGrid({
       scrollShiftUnlockTimeoutRef.current = null;
       windowShiftEnabledRef.current = true;
     }, 350);
-  }, [calendarFocusDate, focusViewportRequest, isMobileViewport, maxWeekStart, weeks]);
+  }, [
+    calendarFocusDate,
+    cancelPendingWindowShift,
+    focusViewportRequest,
+    isMobileViewport,
+    maxWeekStart,
+    resetViewportForFocus,
+    weeks,
+  ]);
 
   useEffect(() => {
     const viewport = isMobileViewport ? scrollViewportRef.current : desktopWeeksViewportRef.current;
@@ -1641,7 +1653,7 @@ function CalendarMonthGrid({
     return () => {
       viewport.removeEventListener("scroll", handleScroll);
     };
-  }, [isMobileViewport, scrollViewportRef, windowShiftDirection]);
+  }, [isMobileViewport, scheduleCalendarWindowShift, scrollViewportRef, windowShiftDirection]);
 
   useEffect(() => {
     if (isMobileViewport) {
@@ -1711,39 +1723,7 @@ function CalendarMonthGrid({
     }
 
     scheduleCalendarWindowShift(queuedWindowShift.direction);
-  }, [isMobileViewport, windowShiftDirection]);
-
-  const scheduleCalendarWindowShift = (direction: "backward" | "forward") => {
-    const viewport = isMobileViewport ? scrollViewportRef.current : desktopWeeksViewportRef.current;
-    if (!viewport || windowShiftDirection) {
-      return;
-    }
-
-    if (shiftFrameRef.current !== null) {
-      window.cancelAnimationFrame(shiftFrameRef.current);
-    }
-    if (shiftIndicatorTimeoutRef.current !== null) {
-      window.clearTimeout(shiftIndicatorTimeoutRef.current);
-      shiftIndicatorTimeoutRef.current = null;
-    }
-
-    pendingShiftAdjustmentRef.current = {
-      direction,
-      scrollTop: viewport.scrollTop,
-    };
-    if (!isMobileViewport) {
-      restoreViewportScrollRef.current?.();
-      restoreViewportScrollRef.current = freezeViewportScroll(viewport);
-    }
-    edgeLockRef.current = direction;
-    setWindowShiftDirection(direction);
-    setShiftIndicatorDirection(direction);
-
-    shiftFrameRef.current = window.requestAnimationFrame(() => {
-      shiftFrameRef.current = null;
-      setVisibleRange((current) => shiftCalendarWindow(current, direction));
-    });
-  };
+  }, [isMobileViewport, scheduleCalendarWindowShift, windowShiftDirection]);
 
   return (
     <div className="relative mt-8">
@@ -2677,19 +2657,6 @@ function formatTimestamp(value: string) {
   }).format(new Date(value));
 }
 
-function formatDayLabel(value: string) {
-  return new Intl.DateTimeFormat("en-AU", {
-    day: "numeric",
-    month: "short",
-  }).format(new Date(`${value}T00:00:00`));
-}
-
-function formatDayWeekday(value: string) {
-  return new Intl.DateTimeFormat("en-AU", {
-    weekday: "long",
-  }).format(new Date(`${value}T00:00:00`));
-}
-
 function formatGoalCountdown(value: string) {
   const today = parseDateKey(getTodayDateKey());
   const goalDate = parseDateKey(value);
@@ -2713,15 +2680,6 @@ function formatGoalCountdown(value: string) {
   }
 
   return `${Math.abs(diffDays)} days ago`;
-}
-
-function getTodayDateKey() {
-  return formatDateKey(new Date());
-}
-
-function resolveDefaultFocusDate(workouts: WorkoutNote[]) {
-  const today = getTodayDateKey();
-  return workouts.find((workout) => workout.date >= today)?.date ?? workouts[workouts.length - 1]?.date ?? today;
 }
 
 function toTitleCase(value: string) {
@@ -2768,150 +2726,6 @@ function formatAffectedFileLabel(sourcePath: string) {
   return sourcePath.replace(/\.md$/u, "");
 }
 
-function chunkCalendarWeeks(cells: CalendarCell[]) {
-  const weeks: CalendarCell[][] = [];
-
-  for (let index = 0; index < cells.length; index += 7) {
-    weeks.push(cells.slice(index, index + 7));
-  }
-
-  return weeks;
-}
-
-function buildCalendarWindow(focusDate: string, isMobileViewport: boolean) {
-  const resolvedFocusDate = focusDate || getTodayDateKey();
-  const focus = parseDateKey(resolvedFocusDate);
-
-  if (isMobileViewport) {
-    const rangeStartDate = startOfWeek(startOfMonth(focus));
-    return {
-      startDate: formatDateKey(rangeStartDate),
-      endDate: formatDateKey(addDaysToDate(rangeStartDate, MOBILE_CALENDAR_WINDOW_WEEKS * 7 - 1)),
-    };
-  }
-
-  const rangeStartDate = addDaysToDate(startOfWeek(focus), -Math.floor(DESKTOP_CALENDAR_WINDOW_WEEKS / 2) * 7);
-
-  return {
-    startDate: formatDateKey(rangeStartDate),
-    endDate: formatDateKey(addDaysToDate(rangeStartDate, DESKTOP_CALENDAR_WINDOW_WEEKS * 7 - 1)),
-  };
-}
-
-function shiftCalendarWindow(
-  range: { startDate: string; endDate: string },
-  direction: "backward" | "forward",
-) {
-  const dayOffset = (direction === "backward" ? -1 : 1) * CALENDAR_WINDOW_SHIFT_WEEKS * 7;
-  return {
-    startDate: formatDateKey(addDaysToDate(parseDateKey(range.startDate), dayOffset)),
-    endDate: formatDateKey(addDaysToDate(parseDateKey(range.endDate), dayOffset)),
-  };
-}
-
-function getCalendarWindowShiftScrollOffset(isMobileViewport: boolean) {
-  if (isMobileViewport) {
-    return CALENDAR_WINDOW_SHIFT_WEEKS * 7 * (MOBILE_CALENDAR_CARD_HEIGHT + MOBILE_CALENDAR_CARD_GAP);
-  }
-
-  return CALENDAR_WINDOW_SHIFT_WEEKS * DESKTOP_CALENDAR_ROW_HEIGHT;
-}
-
-function shouldReleaseCalendarEdgeLock(
-  viewport: HTMLDivElement,
-  direction: "backward" | "forward",
-  isMobileViewport: boolean,
-) {
-  const threshold = isMobileViewport ? MOBILE_CALENDAR_CARD_HEIGHT : DESKTOP_CALENDAR_ROW_HEIGHT;
-  const releaseThreshold = threshold * 2;
-
-  if (direction === "backward") {
-    return viewport.scrollTop > releaseThreshold;
-  }
-
-  const remainingScroll = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
-  return remainingScroll > releaseThreshold;
-}
-
-function freezeViewportScroll(viewport: HTMLDivElement) {
-  const previousOverflowY = viewport.style.overflowY;
-  const previousOverscrollBehavior = viewport.style.overscrollBehavior;
-  const lockedScrollTop = viewport.scrollTop;
-
-  viewport.style.overflowY = "hidden";
-  viewport.style.overscrollBehavior = "none";
-  viewport.scrollTop = lockedScrollTop;
-
-  return () => {
-    viewport.style.overflowY = previousOverflowY;
-    viewport.style.overscrollBehavior = previousOverscrollBehavior;
-    viewport.scrollTop = viewport.scrollTop;
-  };
-}
-
-function buildCalendarCells(
-  startDateKey: string,
-  endDateKey: string,
-  workoutsByDate: Map<string, WorkoutNote[]>,
-) {
-  const startDate = parseDateKey(startDateKey);
-  const endDate = parseDateKey(endDateKey);
-  const todayDateKey = getTodayDateKey();
-  const cells: Array<{
-    date: string;
-    isToday: boolean;
-    isOutsideRange: boolean;
-    key: string;
-    workouts: WorkoutNote[];
-  }> = [];
-
-  for (let currentDate = startDate; currentDate <= endDate; currentDate = addDaysToDate(currentDate, 1)) {
-    const date = formatDateKey(currentDate);
-    cells.push({
-      key: date,
-      date,
-      isToday: date === todayDateKey,
-      isOutsideRange: false,
-      workouts: workoutsByDate.get(date) ?? [],
-    });
-  }
-
-  return cells;
-}
-
-function parseDateKey(value: string) {
-  return new Date(`${value}T00:00:00`);
-}
-
-function formatDateKey(value: Date) {
-  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
-}
-
-function formatMonthLabel(value: string) {
-  return formatMonthFromDate(parseDateKey(value));
-}
-
-function formatMonthFromDate(value: Date) {
-  return new Intl.DateTimeFormat("en-AU", {
-    month: "long",
-    year: "numeric",
-  }).format(value);
-}
-
-function addDaysToDate(value: Date, days: number) {
-  const nextValue = new Date(value);
-  nextValue.setDate(nextValue.getDate() + days);
-  return nextValue;
-}
-
-function startOfWeek(value: Date) {
-  return addDaysToDate(value, -((value.getDay() + 6) % 7));
-}
-
-function startOfMonth(value: Date) {
-  return new Date(value.getFullYear(), value.getMonth(), 1);
-}
-
 function workoutHrefToSlug(href: string) {
   const normalizedHref = href.split("#")[0]?.split("?")[0] ?? "";
   if (normalizedHref.startsWith("/notes/")) {
@@ -2930,24 +2744,3 @@ function workoutHrefToSlug(href: string) {
     .replace(/[^a-z0-9]+/gu, "-")
     .replace(/^-+|-+$/gu, "");
 }
-
-export const calendarTestUtils = {
-  addDaysToDate,
-  buildCalendarCells,
-  buildCalendarWindow,
-  chunkCalendarWeeks,
-  formatDateKey,
-  formatDayLabel,
-  formatDayWeekday,
-  formatMonthFromDate,
-  formatMonthLabel,
-  freezeViewportScroll,
-  getCalendarWindowShiftScrollOffset,
-  getTodayDateKey,
-  parseDateKey,
-  resolveDefaultFocusDate,
-  shiftCalendarWindow,
-  shouldReleaseCalendarEdgeLock,
-  startOfMonth,
-  startOfWeek,
-};

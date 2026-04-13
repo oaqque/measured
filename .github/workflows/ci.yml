@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync local Python tooling
+        run: uv sync
+
+      - name: Build generated data
+        run: pnpm run build:data
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Test
+        run: pnpm exec vitest run
+
+      - name: Typecheck app
+        run: pnpm exec tsc -p tsconfig.app.json --noEmit
+
+      - name: Typecheck node scripts
+        run: pnpm exec tsc -p tsconfig.node.json --noEmit

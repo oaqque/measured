@@ -256,7 +256,8 @@ async function main() {
     changelog: changelogEntries,
     workouts: workouts.map((workout) => {
       const publicWorkout = toPublicWorkoutNote(workout);
-      const { sources: _sources, ...summaryWorkout } = publicWorkout;
+      const { sources, ...summaryWorkout } = publicWorkout;
+      void sources;
       return summaryWorkout;
     }),
   };

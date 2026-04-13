@@ -122,14 +122,11 @@ export default function WorkoutNotePane({
   const closeTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    setIsClosing(false);
-    setActiveTab("note");
-  }, [workout.slug]);
+    if (workout.sources) {
+      return;
+    }
 
-  useEffect(() => {
     let cancelled = false;
-    setLoadedSources(workout.sources ?? null);
-    setSourceDetailsLoaded(Boolean(workout.sources));
 
     loadWorkoutSourceDetails(workout.slug)
       .then((sources) => {
@@ -291,6 +288,7 @@ function WorkoutDetailPanel({
 
       {activeTab === "appleHealth" && appleHealthSource ? (
         <WorkoutSourcePanel
+          key={buildWorkoutSourcePanelKey("appleHealth", "duringWorkout", appleHealthSource.activityId)}
           measurementSection="duringWorkout"
           provider="appleHealth"
           source={appleHealthSource}
@@ -298,6 +296,7 @@ function WorkoutDetailPanel({
         />
       ) : activeTab === "appleHealthRecovery" && appleHealthSource ? (
         <WorkoutSourcePanel
+          key={buildWorkoutSourcePanelKey("appleHealth", "recoveryContext", appleHealthSource.activityId)}
           measurementSection="recoveryContext"
           provider="appleHealth"
           source={appleHealthSource}
@@ -337,6 +336,7 @@ function WorkoutNarrativePanel({
   const hasRouteStreams = displaySource?.hasRouteStreams ?? workout.hasStravaStreams;
   const imageUrl = displaySource?.primaryImageUrl ?? workout.primaryImageUrl;
   const hasRoutePanel = routePolyline !== null || (hasRouteStreams && (routePath !== null || routeActivityId !== null));
+  const routeMapKey = buildRouteMapKey(routeActivityId, routePath, generatedAt);
 
   return (
     <>
@@ -369,6 +369,7 @@ function WorkoutNarrativePanel({
               activityId={routeActivityId}
               generatedAt={generatedAt}
               hasRouteStreams={hasRouteStreams}
+              key={routeMapKey}
               polyline={routePolyline ?? ""}
               routePath={routePath}
               title={workout.title}
@@ -401,6 +402,7 @@ function WorkoutNarrativePanel({
                 activityId={routeActivityId}
                 generatedAt={generatedAt}
                 hasRouteStreams={hasRouteStreams}
+                key={routeMapKey}
                 polyline={routePolyline ?? ""}
                 routePath={routePath}
                 title={workout.title}
@@ -431,22 +433,22 @@ function WorkoutSourcePanel({
 }) {
   const providerLabel = getWorkoutProviderLabel(provider);
   const hasRoutePanel = source.summaryPolyline !== null || (source.hasRouteStreams && source.routePath !== null);
+  const shouldLoadMeasurements = provider === "appleHealth";
   const [measurements, setMeasurements] = useState<AppleHealthWorkoutMeasurements | null>(null);
-  const [measurementsLoaded, setMeasurementsLoaded] = useState(provider !== "appleHealth");
+  const [measurementsLoaded, setMeasurementsLoaded] = useState(!shouldLoadMeasurements);
+  const routeMapKey = buildRouteMapKey(
+    provider === "strava" ? normalizeNumericActivityId(source.activityId) : null,
+    source.routePath,
+    generatedAt,
+  );
 
   useEffect(() => {
-    let cancelled = false;
-
-    if (provider !== "appleHealth") {
-      setMeasurements(null);
-      setMeasurementsLoaded(true);
-      return () => {
-        cancelled = true;
-      };
+    if (!shouldLoadMeasurements) {
+      return;
     }
 
-    setMeasurements(null);
-    setMeasurementsLoaded(false);
+    let cancelled = false;
+
     loadAppleHealthWorkoutMeasurements(source.activityId, generatedAt)
       .then((payload) => {
         if (cancelled) {
@@ -468,7 +470,7 @@ function WorkoutSourcePanel({
     return () => {
       cancelled = true;
     };
-  }, [provider, source.activityId]);
+  }, [shouldLoadMeasurements, source.activityId]);
 
   return (
     <>
@@ -512,6 +514,7 @@ function WorkoutSourcePanel({
               activityId={provider === "strava" ? normalizeNumericActivityId(source.activityId) : null}
               generatedAt={generatedAt}
               hasRouteStreams={source.hasRouteStreams}
+              key={routeMapKey}
               polyline={source.summaryPolyline ?? ""}
               routePath={source.routePath}
               title={`${workout.title} (${providerLabel})`}
@@ -539,6 +542,7 @@ function WorkoutSourcePanel({
                 activityId={provider === "strava" ? normalizeNumericActivityId(source.activityId) : null}
                 generatedAt={generatedAt}
                 hasRouteStreams={source.hasRouteStreams}
+                key={routeMapKey}
                 polyline={source.summaryPolyline ?? ""}
                 routePath={source.routePath}
                 title={`${workout.title} (${providerLabel})`}
@@ -1421,6 +1425,18 @@ function formatDurationLabel(totalSeconds: number) {
   }
 
   return `${minutes}m`;
+}
+
+function buildWorkoutSourcePanelKey(
+  provider: WorkoutProvider,
+  section: AppleHealthMeasurementSeries["section"] | "note",
+  activityId: string | null,
+) {
+  return `${provider}:${section}:${activityId ?? "none"}`;
+}
+
+function buildRouteMapKey(activityId: number | null, routePath: string | null | undefined, versionKey: string) {
+  return `${activityId ?? "none"}:${routePath ?? "no-path"}:${versionKey}`;
 }
 
 function normalizeNumericActivityId(value: string | null) {
