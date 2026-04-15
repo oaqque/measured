@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "10 km Easy Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-19",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "10 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 10 km easy run\n- This is no longer a long-run day. Wednesday's `21.27 km` already covered the week's long aerobic stimulus.\n- Keep the whole run gentle and flat-effort, and cap it at `8 km` if the ankles are still talking.\n- The goal is to finish the week fresher than today, not to prove you can stack another long outing."
+    }
+  ]
+}

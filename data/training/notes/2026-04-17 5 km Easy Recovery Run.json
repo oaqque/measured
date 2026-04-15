@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "5 km Easy Recovery Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-17",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "5 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 5 km easy recovery run\n- Keep this genuinely light and unambitious.\n- Only run if Thursday leaves both ankles feeling better, not just tolerable.\n- If there is still meaningful ankle feedback, replace this with full rest rather than forcing the distance."
+    }
+  ]
+}

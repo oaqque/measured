@@ -4,13 +4,39 @@
   "allDay": true,
   "type": "single",
   "date": "2026-04-15",
-  "completed": false,
+  "completed": "2026-04-14T22:12:33.000Z",
   "eventType": "run",
   "expectedDistance": "8 km",
+  "stravaId": 18112387242,
+  "activityRefs": {
+    "strava": "18112387242",
+    "appleHealth": "9127A084-F32C-4FD2-8FF6-BF4A681193D8"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- 8 km easy aerobic run\n- Keep this fully conversational after Tuesday's hill session.\n- Flatten the effort on climbs and do not let the back half drift toward steady running.\n- The job here is absorption and support, not reclaiming any quality volume trimmed from Tuesday.\n- If Tuesday costs more than expected, shorten to `6 to 7 km`."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This did not stay as the planned Wednesday, `2026-04-15`, `8 km` aerobic-support run. It also functionally replaced the missed Tuesday, `2026-04-14`, `12 km` hill session. The actual run covered `21.27 km` in `2:09:47` moving time (`2:13:44` elapsed) with about `220.2 m` of climbing, average HR `155.1`, and max HR `173`, so it landed `13.27 km` over Wednesday's plan and `1.27 km` over the combined Tuesday-plus-Wednesday planned volume.\n- The stream data supports your read that you kept it controlled rather than raced it. The first `16.00 km` averaged about `6:07 /km` with average HR about `152.9` and about `114.0 m` of climbing, while the final `5.27 km` slowed to about `6:31 /km` as climbing rose to about `106.2 m` and average HR climbed to about `160.3`. That is the profile of a long aerobic run that got costlier late, not a disguised threshold session or an all-out half marathon."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate job is to absorb this as the week's long stimulus rather than stacking more work on top. With Monday's `7.124 km` already banked, the week sits at `28.394 km` after only two runs, and this single session already exceeded the planned Sunday long run by `6.27 km`.\n- The rest of the week now needs to protect the ankles. Thursday drops to a short recovery check, Friday stays very light, Saturday defaults toward rest with basketball effectively off unless the ankles are clearly calm, and Sunday's planned long run becomes only a capped easy run rather than a second long effort."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- This still helps the current half-marathon and marathon build because it shows you can carry continuous `21 km` volume at a controlled average HR instead of turning every big day into a race. Used correctly, it can stand in as a useful durability and aerobic-support stimulus inside a consolidation week.\n- The longer-term risk is not missing one hill session. It is following a controlled half marathon and lingering ankle load with enough extra mileage or court load to turn a useful aerobic day into a tissue-management problem. The durable move is to let this run count, keep the rest of the week cheap, and come back to sharper quality only after the ankles settle."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- Definitely added some load to both my ankles, but I tried to keep the full run as light as possible."
+        }
+      ]
     }
   ]
 }

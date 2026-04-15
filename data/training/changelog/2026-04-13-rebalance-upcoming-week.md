@@ -11,11 +11,11 @@ affectedFiles:
   - PLAN.md
   - notes/2026-04-14 12 km Hill Session.json
   - notes/2026-04-15 8 km Easy Aerobic Run.json
-  - notes/2026-04-16 8 km Aerobic Support Run.json
-  - notes/2026-04-17 6 km Easy Recovery Run.json
+  - notes/2026-04-16 6 km Recovery Run.json
+  - notes/2026-04-17 5 km Easy Recovery Run.json
   - notes/2026-04-18 4 km Easy Run.json
   - notes/2026-04-18 Basketball.json
-  - notes/2026-04-19 15 km Easy Long Run.json
+  - notes/2026-04-19 10 km Easy Run.json
 ---
 
 The active week from `2026-04-13` to `2026-04-19` has been rebalanced after the previous week actually closed at `65.332 km` across six runs once Monday's split session is counted correctly, Monday already opened with a completed `7.124 km` run, and Monday also still carries basketball.

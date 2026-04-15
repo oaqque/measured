@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "6 km Recovery Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-16",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "6 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 6 km recovery run\n- Keep this fully easy after Wednesday's `21.27 km` half-marathon substitute.\n- No uptempo section. The only goal is to check whether both ankles calm down once you start moving.\n- If either ankle still feels loaded after `10 to 15 minutes`, stop early and switch the rest of the day to walking, mobility, and basic stability only.\n- Thursday's gym stays mobility and stability only."
+    }
+  ]
+}
