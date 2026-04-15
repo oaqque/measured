@@ -22,7 +22,9 @@ import type {
   WorkoutActivityRefMap,
   WorkoutEventType,
   WorkoutNote,
+  WorkoutNoteAnalysisSection,
   WorkoutNoteSourceDocument,
+  WorkoutNoteSourceSection,
   WorkoutProvider,
   WorkoutRouteStreams,
   WorkoutSourceDetailsPayload,
@@ -108,6 +110,7 @@ interface AppleHealthCollectionSampleRecord {
   endDate: string | null;
   numericValue: number | null;
   categoryValue?: number | null;
+  metadata?: Record<string, unknown> | null;
   source?: Partial<WorkoutSourceMetadata> | null;
 }
 
@@ -115,10 +118,10 @@ interface AppleHealthActivityWindow {
   activityId: string;
   elapsedTimeSeconds: number;
   endMs: number;
-  publicActivityId: string;
   source: WorkoutSourceMetadata | null;
   startDate: string;
   startMs: number;
+  workoutSlug: string;
 }
 
 interface GeneratedWorkoutFallback {
@@ -254,46 +257,22 @@ async function main() {
     goalNotes,
     plan,
     changelog: changelogEntries,
-    workouts: workouts.map((workout) => {
-      const publicWorkout = toPublicWorkoutNote(workout);
-      const { sources, ...summaryWorkout } = publicWorkout;
-      void sources;
-      return summaryWorkout;
-    }),
+    workouts: workouts.map((workout) => toPublicWorkoutNote(workout)),
   };
-  const sourceDetailsPayload: WorkoutSourceDetailsPayload = {
-    generatedAt,
-    workouts: Object.fromEntries(
-      workouts.flatMap((workout) => {
-        const publicWorkout = toPublicWorkoutNote(workout);
-        if (!publicWorkout.sources || Object.keys(publicWorkout.sources).length === 0) {
-          return [];
-        }
-
-        return [[workout.slug, { sources: publicWorkout.sources }]] as const;
-      }),
-    ),
-  };
-  const routeStreamsPayload = buildRouteStreamsPayload(providerCaches);
 
   progress.step("Writing summary files");
   await fs.mkdir(path.dirname(generatedPath), { recursive: true });
   await fs.writeFile(generatedPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
-  await fs.mkdir(path.dirname(generatedWorkoutSourceDetailsPath), { recursive: true });
-  await fs.writeFile(
-    generatedWorkoutSourceDetailsPath,
-    `${JSON.stringify(sourceDetailsPayload, null, 2)}\n`,
-    "utf8",
-  );
+  await fs.rm(generatedWorkoutSourceDetailsPath, { force: true });
 
   progress.step("Writing generated assets");
-  await writeRouteStreamFiles(providerCaches, routeStreamsPayload);
+  await writeRouteStreamFiles(workouts, providerCaches);
   await writeAppleHealthMeasurementFiles(
     workouts,
     providerCaches.appleHealth,
     providerCaches.appleHealth.appleHealthCollectionSamples,
   );
-  await writeWorkoutImageFiles(providerCaches.strava.activities, providerCaches.strava.cacheAvailable);
+  await writeWorkoutImageFiles(workouts, providerCaches.strava.cacheAvailable);
   progress.finish(`Generated ${workouts.length} workout notes at ${generatedPath}`);
   console.log(`Generated ${workouts.length} workout notes at ${generatedPath}`);
 }
@@ -960,9 +939,12 @@ function buildWorkoutNote(
     displaySource?.actualDistanceKm ??
     (hasDeletedLinkedActivity ? null : validFallback?.actualDistanceKm) ??
     (importedFromStrava ? normalizeDistanceKm(notedExpectedDistance) : null);
+  const slug = slugify(getWorkoutNoteBaseName(fileName));
+  const hasRouteStreams = Boolean(displaySource?.hasRouteStreams && displaySource.routePath);
+  const hasAppleHealthMeasurements = Boolean(activityRefs.appleHealth);
 
   return {
-    slug: slugify(getWorkoutNoteBaseName(fileName)),
+    slug,
     title: expectString(document.title, fileName, "title"),
     date: normalizeDate(document.date, fileName, "date"),
     eventType: normalizeEventType(document.eventType, fileName),
@@ -978,17 +960,22 @@ function buildWorkoutNote(
     averageHeartrate: displaySource?.averageHeartrate ?? null,
     maxHeartrate: displaySource?.maxHeartrate ?? null,
     summaryPolyline: displaySource?.summaryPolyline ?? null,
-    primaryImageUrl: displaySource?.primaryImageUrl ?? null,
+    primaryImageUrl: displaySource?.primaryImageUrl
+      ? buildPublicWorkoutImagePath(slug, displaySource.primaryImageUrl)
+      : null,
     weather:
       selectWorkoutWeather(activityRefs, providerCaches) ??
       (hasDeletedLinkedActivity ? null : validFallback?.weather ?? null),
     hasStravaStreams: Boolean(sources.strava?.hasRouteStreams && sources.strava.routePath),
+    hasRouteStreams,
+    routePath: hasRouteStreams ? buildPublicWorkoutRoutePath(slug) : null,
+    measurementsPath: hasAppleHealthMeasurements ? buildPublicWorkoutMeasurementsPath(slug) : null,
     activityRefs,
     sources,
     allDay: expectBoolean(document.allDay, fileName, "allDay"),
     type: expectString(document.type, fileName, "type"),
     body: sanitizePublicText(renderWorkoutNoteSourceDocumentBody(document)),
-    sections: document.sections,
+    sections: sanitizePublicWorkoutSections(document.sections),
     sourcePath,
   };
 }
@@ -1076,68 +1063,13 @@ function buildGeneratedWorkoutFallback(workout: WorkoutNote): GeneratedWorkoutFa
 }
 
 function toPublicWorkoutNote(workout: WorkoutNote): WorkoutNote {
-  return {
-    ...workout,
-    activityRefs: toPublicActivityRefs(workout.activityRefs),
-    sources: toPublicWorkoutSources(workout.sources),
-  };
-}
-
-function toPublicActivityRefs(activityRefs: WorkoutActivityRefMap | undefined): WorkoutActivityRefMap | undefined {
-  if (!activityRefs) {
-    return activityRefs;
-  }
-
-  const publicRefs: WorkoutActivityRefMap = {};
-
-  for (const provider of WORKOUT_PROVIDERS) {
-    const activityId = activityRefs[provider];
-    if (!activityId) {
-      continue;
-    }
-
-    publicRefs[provider] = toPublicActivityId(provider, activityId);
-  }
-
-  return publicRefs;
-}
-
-function toPublicWorkoutSources(
-  sources: Partial<Record<WorkoutProvider, WorkoutSourceSummary>> | undefined,
-): Partial<Record<WorkoutProvider, WorkoutSourceSummary>> | undefined {
-  if (!sources) {
-    return sources;
-  }
-
-  const publicSources: Partial<Record<WorkoutProvider, WorkoutSourceSummary>> = {};
-
-  for (const provider of WORKOUT_PROVIDERS) {
-    const source = sources[provider];
-    if (!source) {
-      continue;
-    }
-
-    publicSources[provider] = toPublicWorkoutSourceSummary(provider, source);
-  }
-
-  return publicSources;
-}
-
-function toPublicWorkoutSourceSummary(
-  provider: WorkoutProvider,
-  source: WorkoutSourceSummary,
-): WorkoutSourceSummary {
-  const publicActivityId = toPublicActivityId(provider, source.activityId);
-
-  return {
-    ...source,
-    activityId: publicActivityId,
-    routePath:
-      source.hasRouteStreams && source.routePath
-        ? buildPublicRoutePath(provider, source.activityId)
-        : normalizeNullableString(source.routePath),
-    source: provider === "appleHealth" ? null : source.source,
-  };
+  const publicWorkout: WorkoutNote = { ...workout };
+  delete publicWorkout.stravaId;
+  delete publicWorkout.dataSource;
+  delete publicWorkout.hasStravaStreams;
+  delete publicWorkout.activityRefs;
+  delete publicWorkout.sources;
+  return publicWorkout;
 }
 
 function selectWorkoutWeather(
@@ -1565,58 +1497,48 @@ function normalizeRouteStreams(value: unknown): WorkoutRouteStreams | null {
   };
 }
 
-function buildRouteStreamsPayload(
-  providerCaches: Record<WorkoutProvider, ProviderCacheSnapshot>,
-) {
-  const payload: Partial<Record<WorkoutProvider, Record<string, WorkoutRouteStreams>>> = {};
-
-  for (const provider of WORKOUT_PROVIDERS) {
-    const providerRouteStreams = Object.fromEntries(
-      Object.entries(providerCaches[provider].activities)
-        .map(([activityId, activity]) => [activityId, normalizeRouteStreams(activity.routeStreams)] as const)
-        .filter((entry): entry is [string, WorkoutRouteStreams] => entry[1] !== null),
-    );
-
-    if (Object.keys(providerRouteStreams).length > 0) {
-      payload[provider] = providerRouteStreams;
-    }
-  }
-
-  return payload;
-}
-
 async function writeRouteStreamFiles(
+  workouts: WorkoutNote[],
   providerCaches: Record<WorkoutProvider, ProviderCacheSnapshot>,
-  routeStreamsByProvider: Partial<Record<WorkoutProvider, Record<string, WorkoutRouteStreams>>>,
 ) {
+  await fs.rm(legacyGeneratedRouteStreamsPath, { force: true });
+  await fs.rm(generatedRouteStreamsDir, { force: true, recursive: true });
+
   const hasAnyAvailableCache = WORKOUT_PROVIDERS.some((provider) => providerCaches[provider].cacheAvailable);
   if (!hasAnyAvailableCache) {
     return;
   }
 
-  await fs.rm(legacyGeneratedRouteStreamsPath, { force: true });
-
-  for (const provider of WORKOUT_PROVIDERS) {
-    if (!providerCaches[provider].cacheAvailable) {
+  const routeStreamsBySlug = new Map<string, WorkoutRouteStreams>();
+  for (const workout of workouts) {
+    if (!workout.routePath || !workout.sources || !workout.activityRefs) {
       continue;
     }
 
-    const providerOutputDir = path.join(generatedRouteStreamsDir, provider);
-    await fs.rm(providerOutputDir, { force: true, recursive: true });
-    const providerRouteStreams = routeStreamsByProvider[provider];
-    if (!providerRouteStreams || Object.keys(providerRouteStreams).length === 0) {
+    const displaySource = selectDisplaySourceSummary(workout.sources, workout.activityRefs);
+    if (!displaySource || !displaySource.hasRouteStreams) {
       continue;
     }
 
-    await fs.mkdir(providerOutputDir, { recursive: true });
-    await Promise.all(
-      Object.entries(providerRouteStreams).map(async ([activityId, routeStreams]) => {
-        const publicActivityId = toPublicActivityId(provider, activityId);
-        const outputPath = path.join(providerOutputDir, `${publicActivityId}.json`);
-        await fs.writeFile(outputPath, `${JSON.stringify(routeStreams, null, 2)}\n`, "utf8");
-      }),
+    const routeStreams = normalizeRouteStreams(
+      providerCaches[displaySource.provider].activities[displaySource.activityId]?.routeStreams,
     );
+    if (routeStreams) {
+      routeStreamsBySlug.set(workout.slug, routeStreams);
+    }
   }
+
+  if (routeStreamsBySlug.size === 0) {
+    return;
+  }
+
+  await fs.mkdir(generatedRouteStreamsDir, { recursive: true });
+  await Promise.all(
+    [...routeStreamsBySlug.entries()].map(async ([slug, routeStreams]) => {
+      const outputPath = path.join(generatedRouteStreamsDir, `${slug}.json`);
+      await fs.writeFile(outputPath, `${JSON.stringify(routeStreams, null, 2)}\n`, "utf8");
+    }),
+  );
 }
 
 async function writeAppleHealthMeasurementFiles(
@@ -1624,8 +1546,7 @@ async function writeAppleHealthMeasurementFiles(
   appleHealthCache: ProviderCacheSnapshot,
   collectionSamples: Record<AppleHealthMeasurementKey, AppleHealthCollectionSampleRecord[]> | null,
 ) {
-  const providerOutputDir = path.join(generatedWorkoutMeasurementsDir, "appleHealth");
-  await fs.rm(providerOutputDir, { force: true, recursive: true });
+  await fs.rm(generatedWorkoutMeasurementsDir, { force: true, recursive: true });
 
   if (!collectionSamples) {
     return;
@@ -1641,10 +1562,10 @@ async function writeAppleHealthMeasurementFiles(
     return;
   }
 
-  await fs.mkdir(providerOutputDir, { recursive: true });
+  await fs.mkdir(generatedWorkoutMeasurementsDir, { recursive: true });
   await Promise.all(
-    Object.entries(measurementsByActivity).map(async ([activityId, measurements]) => {
-      const outputPath = path.join(providerOutputDir, `${activityId}.json`);
+    Object.entries(measurementsByActivity).map(async ([slug, measurements]) => {
+      const outputPath = path.join(generatedWorkoutMeasurementsDir, `${slug}.json`);
       await fs.writeFile(outputPath, `${JSON.stringify(measurements, null, 2)}\n`, "utf8");
     }),
   );
@@ -1678,10 +1599,10 @@ function buildAppleHealthActivityWindows(
       activityId,
       elapsedTimeSeconds,
       endMs: startMs + elapsedTimeSeconds * 1000,
-      publicActivityId: toPublicActivityId("appleHealth", activityId),
       source: normalizeSourceMetadata(cachedActivity.source),
       startDate,
       startMs,
+      workoutSlug: workout.slug,
     });
   }
 
@@ -1794,8 +1715,8 @@ function buildAppleHealthMeasurementsByActivity(
       continue;
     }
 
-    measurementsByActivity[window.publicActivityId] = {
-      activityId: window.publicActivityId,
+    measurementsByActivity[window.workoutSlug] = {
+      workoutSlug: window.workoutSlug,
       startDate: window.startDate,
       elapsedTimeSeconds: window.elapsedTimeSeconds,
       series,
@@ -1857,6 +1778,10 @@ function appleHealthSampleMatchesSource(
   sample: AppleHealthCollectionSampleRecord,
   activitySource: WorkoutSourceMetadata | null,
 ) {
+  if (isWorkoutHeartRateSample(sample)) {
+    return true;
+  }
+
   if (!activitySource || !sample.source) {
     return true;
   }
@@ -1878,6 +1803,10 @@ function appleHealthSampleMatchesSource(
   }
 
   return !comparedAnyField;
+}
+
+function isWorkoutHeartRateSample(sample: AppleHealthCollectionSampleRecord) {
+  return normalizeNullableString(sample.metadata?.HKMetadataKeyHeartRateMotionContext) === "2";
 }
 
 function buildLineMeasurementSeries(
@@ -2296,34 +2225,37 @@ function roundTo(value: number, decimals: number) {
   return Math.round(value * factor) / factor;
 }
 
-async function writeWorkoutImageFiles(
-  activities: Record<string, ProviderCachedActivity>,
-  cacheAvailable: boolean,
-) {
+async function writeWorkoutImageFiles(workouts: WorkoutNote[], cacheAvailable: boolean) {
+  await fs.rm(generatedWorkoutImagesDir, { force: true, recursive: true });
+
   if (!cacheAvailable) {
     return;
   }
 
-  const imageFileNames = Array.from(
-    new Set(
-      Object.values(activities)
-        .map((activity) =>
-          normalizeNullableString((activity as unknown as Record<string, unknown>).primaryImageFileName as string | null),
-        )
-        .filter((fileName): fileName is string => fileName !== null),
-    ),
-  );
+  const imageCopies = workouts.flatMap((workout) => {
+    if (!workout.primaryImageUrl || !workout.sources || !workout.activityRefs) {
+      return [];
+    }
 
-  await fs.rm(generatedWorkoutImagesDir, { force: true, recursive: true });
-  if (imageFileNames.length === 0) {
+    const displaySource = selectDisplaySourceSummary(workout.sources, workout.activityRefs);
+    const sourceFileName = extractGeneratedFileName(displaySource?.primaryImageUrl ?? null);
+    const outputFileName = extractGeneratedFileName(workout.primaryImageUrl);
+    if (!sourceFileName || !outputFileName) {
+      return [];
+    }
+
+    return [{ outputFileName, sourceFileName }];
+  });
+
+  if (imageCopies.length === 0) {
     return;
   }
 
   await fs.mkdir(generatedWorkoutImagesDir, { recursive: true });
   await Promise.all(
-    imageFileNames.map(async (fileName) => {
-      const sourcePath = path.join(defaultStravaCacheImagesDir, fileName);
-      const outputPath = path.join(generatedWorkoutImagesDir, fileName);
+    imageCopies.map(async ({ outputFileName, sourceFileName }) => {
+      const sourcePath = path.join(defaultStravaCacheImagesDir, sourceFileName);
+      const outputPath = path.join(generatedWorkoutImagesDir, outputFileName);
 
       try {
         await fs.copyFile(sourcePath, outputPath);
@@ -2331,7 +2263,7 @@ async function writeWorkoutImageFiles(
         const nodeError = error as NodeJS.ErrnoException;
         if (nodeError?.code === "ENOENT") {
           throw new Error(
-            `Expected cached Strava image at ${sourcePath} because cache-export.json references ${fileName}`,
+            `Expected cached workout image at ${sourcePath} because cache-export.json references ${sourceFileName}`,
           );
         }
 
@@ -2345,8 +2277,28 @@ function buildRoutePath(provider: WorkoutProvider, activityId: string) {
   return `/generated/workout-routes/${provider}/${activityId}.json`;
 }
 
-function buildPublicRoutePath(provider: WorkoutProvider, activityId: string) {
-  return buildRoutePath(provider, toPublicActivityId(provider, activityId));
+function buildPublicWorkoutRoutePath(slug: string) {
+  return `/generated/workout-routes/${slug}.json`;
+}
+
+function buildPublicWorkoutMeasurementsPath(slug: string) {
+  return `/generated/workout-measurements/${slug}.json`;
+}
+
+function buildPublicWorkoutImagePath(slug: string, sourceImageUrl: string) {
+  const sourceFileName = extractGeneratedFileName(sourceImageUrl);
+  const extension = sourceFileName ? path.extname(sourceFileName) : "";
+  return `/generated/workout-images/${slug}${extension || ".jpg"}`;
+}
+
+function extractGeneratedFileName(value: string | null) {
+  const normalizedValue = normalizeNullableString(value);
+  if (!normalizedValue) {
+    return null;
+  }
+
+  const fileName = normalizedValue.split("/").pop();
+  return fileName ? decodeURIComponent(fileName) : null;
 }
 
 function toPublicActivityId(provider: WorkoutProvider, activityId: string) {
@@ -2370,10 +2322,37 @@ function toPublicActivityId(provider: WorkoutProvider, activityId: string) {
 }
 
 function sanitizePublicText(value: string) {
-  return value.replace(
-    /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/giu,
-    (match) => toPublicActivityId("appleHealth", match),
-  );
+  return value
+    .replace(
+      /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/giu,
+      "[activity id removed]",
+    )
+    .replace(/\bah_[0-9a-f]{24}\b/giu, "[activity id removed]")
+    .replace(/\b\d{10,12}\b/gu, "[activity id removed]");
+}
+
+function sanitizePublicWorkoutSections(sections: WorkoutNoteSourceSection[]): WorkoutNoteSourceSection[] {
+  return sections.map((section) => {
+    if (section.kind === "analysis") {
+      return {
+        ...section,
+        summaryMarkdown: section.summaryMarkdown ? sanitizePublicText(section.summaryMarkdown) : section.summaryMarkdown,
+        sections: section.sections.map((analysisSection) => sanitizePublicWorkoutAnalysisSection(analysisSection)),
+      };
+    }
+
+    return {
+      ...section,
+      markdown: sanitizePublicText(section.markdown),
+    };
+  });
+}
+
+function sanitizePublicWorkoutAnalysisSection(section: WorkoutNoteAnalysisSection): WorkoutNoteAnalysisSection {
+  return {
+    ...section,
+    markdown: sanitizePublicText(section.markdown),
+  };
 }
 
 function normalizeCoordinateSeries(value: unknown): Array<[number, number]> | null {

@@ -7,28 +7,25 @@ export function clearAppleHealthMeasurementsCache() {
 }
 
 export async function loadAppleHealthWorkoutMeasurements(
-  activityId: string,
+  measurementsPath: string,
   versionKey: string,
 ): Promise<AppleHealthWorkoutMeasurements | null> {
-  const cacheKey = `${activityId}:${versionKey}`;
+  const cacheKey = `${measurementsPath}:${versionKey}`;
   const cachedPromise = appleHealthMeasurementsPromises.get(cacheKey);
   if (cachedPromise) {
     return cachedPromise;
   }
 
-  const request = fetch(
-    `/generated/workout-measurements/appleHealth/${encodeURIComponent(activityId)}.json?v=${encodeURIComponent(versionKey)}`,
-    {
-      cache: "no-store",
-    },
-  )
+  const request = fetch(`${measurementsPath}?v=${encodeURIComponent(versionKey)}`, {
+    cache: "no-store",
+  })
     .then(async (response) => {
       if (response.status === 404) {
         return null;
       }
 
       if (!response.ok) {
-        throw new Error(`Unable to load Apple Health workout measurements for ${activityId}: ${response.status}`);
+        throw new Error(`Unable to load workout measurements from ${measurementsPath}: ${response.status}`);
       }
 
       return (await response.json()) as AppleHealthWorkoutMeasurements;

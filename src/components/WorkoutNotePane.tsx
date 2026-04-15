@@ -17,34 +17,28 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { WorkoutShareButton } from "@/components/WorkoutShareButton";
-import {
-  loadAppleHealthWorkoutMeasurements,
-} from "@/lib/workouts/apple-health";
+import { loadAppleHealthWorkoutMeasurements } from "@/lib/workouts/apple-health";
 import { LTHR_HEART_RATE_ZONE_BANDS, getLthrHeartRateZoneColor } from "@/lib/workouts/heart-rate-zones";
 import {
   formatCompletedTimestamp,
   formatDisplayDate,
   formatDistance,
   generatedAt,
-  loadWorkoutSourceDetails,
 } from "@/lib/workouts/load";
 import type {
   AppleHealthAnalysisMeasurement,
   AppleHealthMeasurementSeries,
   AppleHealthWorkoutMeasurements,
   StravaAnalysisMeasurement,
-  WorkoutDataSource,
   WorkoutEventType,
   WorkoutNoteAnalysisSection,
   WorkoutNote,
   WorkoutNoteSourceSection,
-  WorkoutProvider,
-  WorkoutSourceSummary,
   WorkoutWeather,
 } from "@/lib/workouts/schema";
 import { cn } from "@/lib/utils";
 
-type WorkoutDetailTab = "note" | "appleHealth" | "appleHealthRecovery";
+type WorkoutDetailTab = "note" | "measurements" | "recovery";
 
 const WORKOUT_EVENT_TYPE_LABELS: Record<WorkoutEventType, string> = {
   basketball: "Basketball",
@@ -54,25 +48,6 @@ const WORKOUT_EVENT_TYPE_LABELS: Record<WorkoutEventType, string> = {
   strength: "Strength",
 };
 
-const WORKOUT_SOURCE_BADGE_META: Record<
-  WorkoutDataSource,
-  {
-    badgeSrc: string;
-    className: string;
-    label: string;
-  }
-> = {
-  "apple-health": {
-    badgeSrc: "/source-badges/apple-health-app-icon.png",
-    className: "size-4",
-    label: "Apple Health",
-  },
-  strava: {
-    badgeSrc: "/source-badges/powered-by-strava.svg",
-    className: "h-3.5 w-[2.625rem]",
-    label: "Strava",
-  },
-};
 const WORKOUT_PANE_MAX_WIDTH_CLASS = "max-w-[80rem]";
 
 const ANALYSIS_SECTION_HEADINGS: Record<string, string> = {
@@ -115,41 +90,7 @@ export default function WorkoutNotePane({
 }) {
   const [isClosing, setIsClosing] = useState(false);
   const [activeTab, setActiveTab] = useState<WorkoutDetailTab>("note");
-  const [loadedSources, setLoadedSources] = useState<Partial<Record<WorkoutProvider, WorkoutSourceSummary>> | null>(
-    workout.sources ?? null,
-  );
-  const [sourceDetailsLoaded, setSourceDetailsLoaded] = useState(Boolean(workout.sources));
   const closeTimeoutRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (workout.sources) {
-      return;
-    }
-
-    let cancelled = false;
-
-    loadWorkoutSourceDetails(workout.slug)
-      .then((sources) => {
-        if (cancelled) {
-          return;
-        }
-
-        setLoadedSources(sources);
-        setSourceDetailsLoaded(true);
-      })
-      .catch(() => {
-        if (cancelled) {
-          return;
-        }
-
-        setLoadedSources(null);
-        setSourceDetailsLoaded(true);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [workout.slug, workout.sources]);
 
   useEffect(() => {
     return () => {
@@ -189,9 +130,7 @@ export default function WorkoutNotePane({
       <div className="app-scroll-pane min-h-0 flex-1 overflow-y-auto">
         <WorkoutDetailPanel
           activeTab={activeTab}
-          loadedSources={loadedSources}
           setActiveTab={setActiveTab}
-          sourceDetailsLoaded={sourceDetailsLoaded}
           workout={workout}
           onLinkClick={onLinkClick}
         />
@@ -202,24 +141,16 @@ export default function WorkoutNotePane({
 
 function WorkoutDetailPanel({
   activeTab,
-  loadedSources,
   setActiveTab,
-  sourceDetailsLoaded,
   workout,
   onLinkClick,
 }: {
   activeTab: WorkoutDetailTab;
-  loadedSources: Partial<Record<WorkoutProvider, WorkoutSourceSummary>> | null;
   setActiveTab: (tab: WorkoutDetailTab) => void;
-  sourceDetailsLoaded: boolean;
   workout: WorkoutNote;
   onLinkClick: (href: string) => boolean;
 }) {
-  const appleHealthSource = loadedSources?.appleHealth ?? null;
-  const showAppleHealthTab = Boolean(workout.activityRefs?.appleHealth) || appleHealthSource !== null;
-  const activeBadge =
-    activeTab === "appleHealth" || activeTab === "appleHealthRecovery" ? "apple-health" : workout.dataSource;
-  const dataSourceMeta = getWorkoutDataSourceMeta(activeBadge);
+  const showMeasurementTabs = Boolean(workout.measurementsPath);
 
   return (
     <div className={cn("mx-auto flex h-full w-full flex-col", WORKOUT_PANE_MAX_WIDTH_CLASS)}>
@@ -231,24 +162,10 @@ function WorkoutDetailPanel({
         </div>
         <div className="flex shrink-0 items-start gap-2">
           <WorkoutShareButton slug={workout.slug} title={workout.title} />
-          {dataSourceMeta ? (
-            <div
-              aria-label={`Data source: ${dataSourceMeta.label}`}
-              className="flex h-9 items-center"
-              title={dataSourceMeta.label}
-            >
-              <img
-                alt=""
-                aria-hidden="true"
-                className={cn("block h-auto max-w-full object-contain", dataSourceMeta.className)}
-                src={dataSourceMeta.badgeSrc}
-              />
-            </div>
-          ) : null}
         </div>
       </div>
 
-      {showAppleHealthTab ? (
+      {showMeasurementTabs ? (
         <div className="mt-5 inline-flex w-fit rounded-[0.6rem] border border-foreground/10 bg-surface-panel-alt p-1">
           <button
             aria-pressed={activeTab === "note"}
@@ -262,81 +179,55 @@ function WorkoutDetailPanel({
             Note
           </button>
           <button
-            aria-pressed={activeTab === "appleHealth"}
+            aria-pressed={activeTab === "measurements"}
             className={cn(
               "rounded-[0.45rem] px-3 py-2 text-sm font-semibold transition-colors",
-              activeTab === "appleHealth" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+              activeTab === "measurements" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
             )}
             type="button"
-            onClick={() => setActiveTab("appleHealth")}
+            onClick={() => setActiveTab("measurements")}
           >
-            Apple Health
+            Measurements
           </button>
           <button
-            aria-pressed={activeTab === "appleHealthRecovery"}
+            aria-pressed={activeTab === "recovery"}
             className={cn(
               "rounded-[0.45rem] px-3 py-2 text-sm font-semibold transition-colors",
-              activeTab === "appleHealthRecovery" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+              activeTab === "recovery" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
             )}
             type="button"
-            onClick={() => setActiveTab("appleHealthRecovery")}
+            onClick={() => setActiveTab("recovery")}
           >
             Recovery
           </button>
         </div>
       ) : null}
 
-      {activeTab === "appleHealth" && appleHealthSource ? (
-        <WorkoutSourcePanel
-          key={buildWorkoutSourcePanelKey("appleHealth", "duringWorkout", appleHealthSource.activityId)}
-          measurementSection="duringWorkout"
-          provider="appleHealth"
-          source={appleHealthSource}
-          workout={workout}
-        />
-      ) : activeTab === "appleHealthRecovery" && appleHealthSource ? (
-        <WorkoutSourcePanel
-          key={buildWorkoutSourcePanelKey("appleHealth", "recoveryContext", appleHealthSource.activityId)}
-          measurementSection="recoveryContext"
-          provider="appleHealth"
-          source={appleHealthSource}
-          workout={workout}
-        />
-      ) : activeTab === "appleHealth" && showAppleHealthTab && !sourceDetailsLoaded ? (
-        <WorkoutSourcePanelSkeleton providerLabel="Apple Health" />
-      ) : activeTab === "appleHealthRecovery" && showAppleHealthTab && !sourceDetailsLoaded ? (
-        <WorkoutSourcePanelSkeleton providerLabel="Apple Health recovery" />
-      ) : (activeTab === "appleHealth" || activeTab === "appleHealthRecovery") && showAppleHealthTab ? (
-        <WorkoutSourcePanelUnavailable providerLabel="Apple Health" />
+      {activeTab === "measurements" && showMeasurementTabs ? (
+        <WorkoutMeasurementsPanel measurementSection="duringWorkout" workout={workout} />
+      ) : activeTab === "recovery" && showMeasurementTabs ? (
+        <WorkoutMeasurementsPanel measurementSection="recoveryContext" workout={workout} />
       ) : (
-        <WorkoutNarrativePanel loadedSources={loadedSources} workout={workout} onLinkClick={onLinkClick} />
+        <WorkoutNarrativePanel workout={workout} onLinkClick={onLinkClick} />
       )}
     </div>
   );
 }
 
 function WorkoutNarrativePanel({
-  loadedSources,
   workout,
   onLinkClick,
 }: {
-  loadedSources: Partial<Record<WorkoutProvider, WorkoutSourceSummary>> | null;
   workout: WorkoutNote;
   onLinkClick: (href: string) => boolean;
 }) {
-  const displaySource = getNoteDisplaySource(workout, loadedSources);
   const narrativeContent = buildWorkoutNarrativeMarkdown(workout);
   const stravaAnalysisSections = getStravaMeasurementAnalysisSections(workout);
-  const routeActivityId =
-    displaySource?.provider === "strava"
-      ? normalizeNumericActivityId(displaySource.activityId)
-      : workout.stravaId;
-  const routePath = displaySource?.routePath ?? null;
-  const routePolyline = displaySource?.summaryPolyline ?? workout.summaryPolyline;
-  const hasRouteStreams = displaySource?.hasRouteStreams ?? workout.hasStravaStreams;
-  const imageUrl = displaySource?.primaryImageUrl ?? workout.primaryImageUrl;
-  const hasRoutePanel = routePolyline !== null || (hasRouteStreams && (routePath !== null || routeActivityId !== null));
-  const routeMapKey = buildRouteMapKey(routeActivityId, routePath, generatedAt);
+  const routePolyline = workout.summaryPolyline;
+  const hasRouteStreams = workout.hasRouteStreams;
+  const imageUrl = workout.primaryImageUrl;
+  const hasRoutePanel = routePolyline !== null || (hasRouteStreams && workout.routePath !== null);
+  const routeMapKey = buildRouteMapKey(workout.routePath, generatedAt);
 
   return (
     <>
@@ -366,12 +257,12 @@ function WorkoutNarrativePanel({
         {hasRoutePanel ? (
           <div className="mt-5 border-b border-foreground/10 pb-5">
             <RouteMap
-              activityId={routeActivityId}
+              activityId={null}
               generatedAt={generatedAt}
               hasRouteStreams={hasRouteStreams}
               key={routeMapKey}
               polyline={routePolyline ?? ""}
-              routePath={routePath}
+              routePath={workout.routePath}
               title={workout.title}
             />
           </div>
@@ -398,13 +289,13 @@ function WorkoutNarrativePanel({
         <aside className="space-y-5 pt-6">
           {hasRoutePanel ? (
             <section>
-              <RouteMap
-                activityId={routeActivityId}
+                <RouteMap
+                activityId={null}
                 generatedAt={generatedAt}
                 hasRouteStreams={hasRouteStreams}
                 key={routeMapKey}
                 polyline={routePolyline ?? ""}
-                routePath={routePath}
+                routePath={workout.routePath}
                 title={workout.title}
               />
             </section>
@@ -420,146 +311,6 @@ function WorkoutNarrativePanel({
   );
 }
 
-function WorkoutSourcePanel({
-  measurementSection,
-  provider,
-  source,
-  workout,
-}: {
-  measurementSection?: AppleHealthMeasurementSeries["section"];
-  provider: WorkoutProvider;
-  source: WorkoutSourceSummary;
-  workout: WorkoutNote;
-}) {
-  const providerLabel = getWorkoutProviderLabel(provider);
-  const hasRoutePanel = source.summaryPolyline !== null || (source.hasRouteStreams && source.routePath !== null);
-  const shouldLoadMeasurements = provider === "appleHealth";
-  const [measurements, setMeasurements] = useState<AppleHealthWorkoutMeasurements | null>(null);
-  const [measurementsLoaded, setMeasurementsLoaded] = useState(!shouldLoadMeasurements);
-  const routeMapKey = buildRouteMapKey(
-    provider === "strava" ? normalizeNumericActivityId(source.activityId) : null,
-    source.routePath,
-    generatedAt,
-  );
-
-  useEffect(() => {
-    if (!shouldLoadMeasurements) {
-      return;
-    }
-
-    let cancelled = false;
-
-    loadAppleHealthWorkoutMeasurements(source.activityId, generatedAt)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-
-        setMeasurements(payload);
-        setMeasurementsLoaded(true);
-      })
-      .catch(() => {
-        if (cancelled) {
-          return;
-        }
-
-        setMeasurements(null);
-        setMeasurementsLoaded(true);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [shouldLoadMeasurements, source.activityId]);
-
-  return (
-    <>
-      {source.primaryImageUrl ? (
-        <div className="mt-5 overflow-hidden rounded-[1rem] border border-foreground/10 bg-surface-elevated">
-          <img
-            alt={`${providerLabel} activity image for ${workout.title}`}
-            className="block max-h-[32rem] w-full object-contain"
-            loading="lazy"
-            src={source.primaryImageUrl}
-          />
-        </div>
-      ) : null}
-
-      <div className="mt-5 lg:hidden">
-        <Accordion className="border-b border-foreground/10" collapsible type="single">
-          <AccordionItem className="border-b-0" value="metadata">
-            <AccordionTrigger className="py-3 text-base font-semibold">
-              {providerLabel} metadata
-            </AccordionTrigger>
-            <AccordionContent>
-              <WorkoutSourceMetadataGrid provider={provider} source={source} />
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-
-        {provider === "appleHealth" ? (
-          <div className="mt-5">
-            <AppleHealthMeasurementsSection
-              measurements={measurements}
-              measurementsLoaded={measurementsLoaded}
-              section={measurementSection ?? "duringWorkout"}
-              workout={workout}
-            />
-          </div>
-        ) : null}
-
-        {hasRoutePanel ? (
-          <div className="mt-5 border-b border-foreground/10 pb-5">
-            <RouteMap
-              activityId={provider === "strava" ? normalizeNumericActivityId(source.activityId) : null}
-              generatedAt={generatedAt}
-              hasRouteStreams={source.hasRouteStreams}
-              key={routeMapKey}
-              polyline={source.summaryPolyline ?? ""}
-              routePath={source.routePath}
-              title={`${workout.title} (${providerLabel})`}
-            />
-          </div>
-        ) : null}
-      </div>
-
-      <div className="hidden lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8">
-        <div className="min-w-0 space-y-5 pt-6">
-          {provider === "appleHealth" ? (
-            <AppleHealthMeasurementsSection
-              measurements={measurements}
-              measurementsLoaded={measurementsLoaded}
-              section={measurementSection ?? "duringWorkout"}
-              workout={workout}
-            />
-          ) : null}
-        </div>
-
-        <aside className="space-y-5 pt-6">
-          {hasRoutePanel ? (
-            <section>
-              <RouteMap
-                activityId={provider === "strava" ? normalizeNumericActivityId(source.activityId) : null}
-                generatedAt={generatedAt}
-                hasRouteStreams={source.hasRouteStreams}
-                key={routeMapKey}
-                polyline={source.summaryPolyline ?? ""}
-                routePath={source.routePath}
-                title={`${workout.title} (${providerLabel})`}
-              />
-            </section>
-          ) : null}
-
-          <section>
-            <p className="eyebrow">{providerLabel} metadata</p>
-            <WorkoutSourceMetadataGrid className="mt-4 pt-0" provider={provider} source={source} />
-          </section>
-        </aside>
-      </div>
-    </>
-  );
-}
-
 function WorkoutMetadataGrid({
   className,
   workout,
@@ -568,7 +319,6 @@ function WorkoutMetadataGrid({
   workout: WorkoutNote;
 }) {
   const weatherRows = getWorkoutWeatherRows(workout.weather);
-  const appleHealthActivityId = workout.activityRefs?.appleHealth ?? null;
 
   return (
     <div className={cn("grid gap-4 pt-1 text-sm", className)}>
@@ -576,13 +326,6 @@ function WorkoutMetadataGrid({
       <MetadataRow label="Expected distance" value={formatDistance(workout.expectedDistanceKm)} />
       <MetadataRow label="Actual distance" value={formatDistance(workout.actualDistanceKm)} />
       <MetadataRow label="Status" value={formatCompletedTimestamp(workout.completed)} />
-      <MetadataRow
-        label="Strava activity"
-        value={workout.stravaId === null ? "Not linked" : String(workout.stravaId)}
-      />
-      {appleHealthActivityId ? (
-        <MetadataRow label="Apple Health activity" value={appleHealthActivityId} />
-      ) : null}
       <MetadataRow label="All day" value={workout.allDay ? "Yes" : "No"} />
       <MetadataRow label="Type" value={workout.type} />
       {weatherRows.map((row) => (
@@ -593,39 +336,57 @@ function WorkoutMetadataGrid({
   );
 }
 
-function WorkoutSourceMetadataGrid({
-  className,
-  provider,
-  source,
+function WorkoutMeasurementsPanel({
+  measurementSection,
+  workout,
 }: {
-  className?: string;
-  provider: WorkoutProvider;
-  source: WorkoutSourceSummary;
+  measurementSection: AppleHealthMeasurementSeries["section"];
+  workout: WorkoutNote;
 }) {
-  const providerLabel = getWorkoutProviderLabel(provider);
-  const startedAt = formatSourceTimestamp(source.startDate);
-  const movingTime = formatDuration(source.movingTimeSeconds);
-  const elapsedTime = formatDuration(source.elapsedTimeSeconds);
-  const showProviderIdentityRows = provider !== "appleHealth";
+  const measurementsPath = workout.measurementsPath;
+  const [measurementResult, setMeasurementResult] = useState<{
+    measurements: AppleHealthWorkoutMeasurements | null;
+    path: string;
+  } | null>(null);
+  const measurements = measurementResult?.path === measurementsPath ? measurementResult.measurements : null;
+  const measurementsLoaded = !measurementsPath || measurementResult?.path === measurementsPath;
+
+  useEffect(() => {
+    if (!measurementsPath) {
+      return;
+    }
+
+    let cancelled = false;
+
+    loadAppleHealthWorkoutMeasurements(measurementsPath, generatedAt)
+      .then((payload) => {
+        if (cancelled) {
+          return;
+        }
+
+        setMeasurementResult({ measurements: payload, path: measurementsPath });
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+
+        setMeasurementResult({ measurements: null, path: measurementsPath });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [measurementsPath]);
 
   return (
-    <div className={cn("grid gap-4 pt-1 text-sm", className)}>
-      <MetadataRow label="Provider" value={providerLabel} />
-      {showProviderIdentityRows ? <MetadataRow label="Activity ID" value={source.activityId} /> : null}
-      {source.sportType ? <MetadataRow label="Sport type" value={source.sportType} /> : null}
-      {startedAt ? <MetadataRow label="Started" value={startedAt} /> : null}
-      <MetadataRow label="Distance" value={source.actualDistance ?? formatDistance(source.actualDistanceKm)} />
-      {movingTime ? <MetadataRow label="Moving time" value={movingTime} /> : null}
-      {elapsedTime ? <MetadataRow label="Elapsed time" value={elapsedTime} /> : null}
-      {source.averageHeartrate !== null ? (
-        <MetadataRow label="Average HR" value={`${trimTrailingZero(source.averageHeartrate)} bpm`} />
-      ) : null}
-      {source.maxHeartrate !== null ? (
-        <MetadataRow label="Max HR" value={`${trimTrailingZero(source.maxHeartrate)} bpm`} />
-      ) : null}
-      {showProviderIdentityRows && source.source?.name ? <MetadataRow label="Source app" value={source.source.name} /> : null}
-      {showProviderIdentityRows && source.source?.deviceName ? <MetadataRow label="Device" value={source.source.deviceName} /> : null}
-      {showProviderIdentityRows && source.source?.deviceModel ? <MetadataRow label="Device model" value={source.source.deviceModel} /> : null}
+    <div className="mt-5">
+      <AppleHealthMeasurementsSection
+        measurements={measurements}
+        measurementsLoaded={measurementsLoaded}
+        section={measurementSection}
+        workout={workout}
+      />
     </div>
   );
 }
@@ -648,7 +409,7 @@ function AppleHealthMeasurementsSection({
     return (
       <section className="rounded-[1rem] border border-foreground/10 bg-background/40 p-5">
         <p className="eyebrow">Measurements</p>
-        <p className="mt-3 text-sm text-muted-foreground">Linking Apple Health samples to this activity…</p>
+        <p className="mt-3 text-sm text-muted-foreground">Loading workout samples...</p>
       </section>
     );
   }
@@ -659,8 +420,8 @@ function AppleHealthMeasurementsSection({
         <p className="eyebrow">Measurements</p>
         <p className="mt-3 text-sm text-muted-foreground">
           {section === "recoveryContext"
-            ? "No Apple Health recovery samples were linked to this workout."
-            : "No Apple Health measurement samples were linked to this workout window."}
+            ? "No recovery samples were linked to this workout."
+            : "No measurement samples were linked to this workout window."}
         </p>
       </section>
     );
@@ -903,7 +664,7 @@ function StravaAnalysisSectionGrid({
 }) {
   return (
     <section className={className}>
-      <p className="eyebrow">Strava Analysis</p>
+      <p className="eyebrow">Activity Analysis</p>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         {sections.map((section) => {
           const meta = STRAVA_MEASUREMENT_CARD_META[section.measurement];
@@ -930,37 +691,6 @@ function StravaAnalysisSectionGrid({
   );
 }
 
-function getWorkoutDataSourceMeta(dataSource: WorkoutDataSource | null) {
-  if (!dataSource) {
-    return null;
-  }
-
-  return WORKOUT_SOURCE_BADGE_META[dataSource];
-}
-
-function getWorkoutProviderLabel(provider: WorkoutProvider) {
-  return provider === "appleHealth" ? "Apple Health" : "Strava";
-}
-
-function getNoteDisplaySource(
-  workout: WorkoutNote,
-  loadedSources: Partial<Record<WorkoutProvider, WorkoutSourceSummary>> | null,
-) {
-  if (workout.dataSource === "strava" && loadedSources?.strava) {
-    return loadedSources.strava;
-  }
-
-  if (workout.dataSource === "apple-health" && loadedSources?.appleHealth) {
-    return loadedSources.appleHealth;
-  }
-
-  return (
-    loadedSources?.strava ??
-    loadedSources?.appleHealth ??
-    null
-  );
-}
-
 function buildWorkoutNarrativeMarkdown(workout: WorkoutNote) {
   if (!workout.sections || workout.sections.length === 0) {
     return workout.body;
@@ -979,7 +709,7 @@ function renderNarrativeSection(section: WorkoutNoteSourceSection) {
   }
 
   if (section.kind === "importedFromStrava") {
-    return renderMarkdownSection("Imported from Strava", section.markdown, 2);
+    return renderMarkdownSection("Imported Activity", section.markdown, 2);
   }
 
   if (section.kind === "markdown") {
@@ -1086,25 +816,6 @@ function getStravaMeasurementAnalysisSections(workout: WorkoutNote) {
   return measurements;
 }
 
-function WorkoutSourcePanelSkeleton({ providerLabel }: { providerLabel: string }) {
-  return (
-    <div className="mt-5 rounded-[1rem] border border-foreground/10 bg-background/40 p-5">
-      <p className="eyebrow">{providerLabel}</p>
-      <p className="mt-3 text-sm text-muted-foreground">Loading provider-specific activity details…</p>
-    </div>
-  );
-}
-
-function WorkoutSourcePanelUnavailable({ providerLabel }: { providerLabel: string }) {
-  return (
-    <div className="mt-5 rounded-[1rem] border border-foreground/10 bg-background/40 p-5">
-      <p className="eyebrow">{providerLabel}</p>
-      <p className="mt-3 text-sm text-muted-foreground">
-        Provider-specific activity details are not available for this workout in the current generated data.
-      </p>
-    </div>
-  );
-}
 function getWorkoutWeatherRows(weather: WorkoutWeather | null) {
   if (!weather) {
     return [];
@@ -1196,33 +907,6 @@ function formatWind(speedKph: number | null, gustKph: number | null) {
   }
 
   return speed ?? gust ?? null;
-}
-
-function formatSourceTimestamp(value: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  return new Intl.DateTimeFormat("en-AU", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-
-function formatDuration(value: number | null) {
-  if (value === null) {
-    return null;
-  }
-
-  const hours = Math.floor(value / 3600);
-  const minutes = Math.floor((value % 3600) / 60);
-  const seconds = value % 60;
-
-  if (hours > 0) {
-    return `${hours}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
-  }
-
-  return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
 }
 
 function buildMeasurementChartData(points: AppleHealthMeasurementSeries["points"]) {
@@ -1427,25 +1111,8 @@ function formatDurationLabel(totalSeconds: number) {
   return `${minutes}m`;
 }
 
-function buildWorkoutSourcePanelKey(
-  provider: WorkoutProvider,
-  section: AppleHealthMeasurementSeries["section"] | "note",
-  activityId: string | null,
-) {
-  return `${provider}:${section}:${activityId ?? "none"}`;
-}
-
-function buildRouteMapKey(activityId: number | null, routePath: string | null | undefined, versionKey: string) {
-  return `${activityId ?? "none"}:${routePath ?? "no-path"}:${versionKey}`;
-}
-
-function normalizeNumericActivityId(value: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
+function buildRouteMapKey(routePath: string | null | undefined, versionKey: string) {
+  return `${routePath ?? "no-path"}:${versionKey}`;
 }
 function trimTrailingZero(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/u, "");

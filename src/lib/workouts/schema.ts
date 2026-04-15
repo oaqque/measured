@@ -168,7 +168,7 @@ export interface AppleHealthMeasurementSeries {
 }
 
 export interface AppleHealthWorkoutMeasurements {
-  activityId: string;
+  workoutSlug: string;
   startDate: string | null;
   elapsedTimeSeconds: number | null;
   series: AppleHealthMeasurementSeries[];
@@ -183,8 +183,8 @@ export interface WorkoutNote {
   actualDistance: string | null;
   actualDistanceKm: number | null;
   completed: string | null;
-  stravaId: number | null;
-  dataSource: WorkoutDataSource | null;
+  stravaId?: number | null;
+  dataSource?: WorkoutDataSource | null;
   actualMovingTimeSeconds: number | null;
   actualElapsedTimeSeconds: number | null;
   averageHeartrate: number | null;
@@ -192,7 +192,10 @@ export interface WorkoutNote {
   summaryPolyline: string | null;
   primaryImageUrl: string | null;
   weather: WorkoutWeather | null;
-  hasStravaStreams: boolean;
+  hasStravaStreams?: boolean;
+  hasRouteStreams: boolean;
+  routePath: string | null;
+  measurementsPath: string | null;
   allDay: boolean;
   type: string;
   body: string;

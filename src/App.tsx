@@ -218,8 +218,8 @@ export default function App() {
 
     return null;
   }, [selectedWorkout, view]);
-  const stravaRunCount = useMemo(
-    () => allWorkouts.filter((workout) => workout.stravaId !== null).length,
+  const completedWorkoutCount = useMemo(
+    () => allWorkouts.filter((workout) => workout.completed !== null).length,
     [],
   );
   const calendarFocusDate = useMemo(() => {
@@ -467,7 +467,7 @@ export default function App() {
             <SidebarContent
               generatedAtLabel={formatTimestamp(generatedAt)}
               notesLoaded={allWorkouts.length}
-              stravaRunsLoaded={stravaRunCount}
+              completedWorkoutsLoaded={completedWorkoutCount}
               view={view}
               onNavigate={navigateToView}
             />
@@ -484,7 +484,7 @@ export default function App() {
             <SidebarContent
               generatedAtLabel={formatTimestamp(generatedAt)}
               notesLoaded={allWorkouts.length}
-              stravaRunsLoaded={stravaRunCount}
+              completedWorkoutsLoaded={completedWorkoutCount}
               view={view}
               onNavigate={navigateToView}
             />
@@ -644,13 +644,13 @@ export default function App() {
 function SidebarContent({
   generatedAtLabel,
   notesLoaded,
-  stravaRunsLoaded,
+  completedWorkoutsLoaded,
   view,
   onNavigate,
 }: {
   generatedAtLabel: string;
   notesLoaded: number;
-  stravaRunsLoaded: number;
+  completedWorkoutsLoaded: number;
   view: View;
   onNavigate: (view: View) => void;
 }) {
@@ -707,7 +707,7 @@ function SidebarContent({
 
       <dl className="mt-8 grid gap-5 border-t border-foreground/10 pt-6 text-sm">
         <MetadataRow label="Notes loaded" value={String(notesLoaded)} />
-        <MetadataRow label="Strava runs loaded" value={String(stravaRunsLoaded)} />
+        <MetadataRow label="Completed workouts" value={String(completedWorkoutsLoaded)} />
         <MetadataRow label="Generated" value={generatedAtLabel} />
       </dl>
     </>

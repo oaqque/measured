@@ -7,7 +7,7 @@ import {
 describe("measurement analysis helpers", () => {
   it("builds apple health heart-rate and cadence sections", () => {
     const sections = buildAppleHealthMeasurementAnalysisSections({
-      activityId: "ah_test",
+      workoutSlug: "test-workout",
       startDate: "2026-04-08T00:34:09Z",
       elapsedTimeSeconds: 1800,
       series: [

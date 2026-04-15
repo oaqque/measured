@@ -1,28 +1,17 @@
 import workoutsJson from "@/generated/workouts.json";
 import type {
   ChangelogEntry,
-  WorkoutActivityRefMap,
-  WorkoutDataSource,
   WorkoutFilters,
   WorkoutNote,
-  WorkoutProvider,
-  WorkoutSourceDetailsPayload,
-  WorkoutSourceSummary,
   WorkoutsData,
 } from "@/lib/workouts/schema";
 
-type RawWorkoutProvider = WorkoutProvider;
-type RawWorkoutSourceSummary = WorkoutSourceSummary;
-type RawWorkoutNote = WorkoutNote & {
-  activityRefs?: WorkoutActivityRefMap;
-  sources?: Partial<Record<RawWorkoutProvider, RawWorkoutSourceSummary>>;
-};
+type RawWorkoutNote = WorkoutNote;
 
 type RawWorkoutsData = Omit<WorkoutsData, "workouts"> & {
   workouts: RawWorkoutNote[];
 };
 
-const workoutSourceDetailsPath = "/generated/workout-source-details.json";
 const rawWorkoutsData = workoutsJson as RawWorkoutsData;
 const changelog = [...rawWorkoutsData.changelog].sort((left, right) =>
   left.date === right.date ? right.slug.localeCompare(left.slug) : right.date.localeCompare(left.date),
@@ -37,8 +26,6 @@ const goalNotes = [...rawWorkoutsData.goalNotes].sort((left, right) =>
 );
 const workoutsBySlug = new Map(workouts.map((workout) => [workout.slug, workout]));
 const changelogByAffectedFile = buildChangelogByAffectedFile(changelog);
-let workoutSourceDetailsPromise: Promise<Map<string, Partial<Record<WorkoutProvider, WorkoutSourceSummary>>>> | null =
-  null;
 
 export const generatedAt = rawWorkoutsData.generatedAt;
 export const welcomeDocument = rawWorkoutsData.welcome;
@@ -57,21 +44,6 @@ export const availableChangelogAffectedFiles = Array.from(
 
 export function getWorkoutBySlug(slug: string) {
   return workoutsBySlug.get(slug) ?? null;
-}
-
-export async function loadWorkoutSourceDetails(slug: string) {
-  const existingWorkout = workoutsBySlug.get(slug);
-  if (existingWorkout?.sources && Object.keys(existingWorkout.sources).length > 0) {
-    return existingWorkout.sources;
-  }
-
-  const detailsBySlug = await readWorkoutSourceDetails();
-  const sources = detailsBySlug.get(slug) ?? null;
-  if (existingWorkout && sources) {
-    existingWorkout.sources = sources;
-  }
-
-  return sources;
 }
 
 export function getChangelogEntriesForFile(sourcePath: string) {
@@ -248,9 +220,6 @@ export function formatChangelogDate(date: string) {
 }
 
 function normalizeWorkoutNote(workout: RawWorkoutNote): WorkoutNote {
-  const preferredSource = getPreferredWorkoutSource(workout);
-  const stravaSource = workout.sources?.strava ?? null;
-
   return {
     slug: workout.slug,
     title: workout.title,
@@ -261,105 +230,22 @@ function normalizeWorkoutNote(workout: RawWorkoutNote): WorkoutNote {
     actualDistance: workout.actualDistance,
     actualDistanceKm: workout.actualDistanceKm,
     completed: workout.completed,
-    stravaId:
-      workout.stravaId ??
-      normalizeNumericActivityId(workout.activityRefs?.strava ?? stravaSource?.activityId ?? null),
-    dataSource: workout.dataSource ?? normalizeLegacyDataSource(preferredSource?.provider ?? null),
-    actualMovingTimeSeconds: workout.actualMovingTimeSeconds ?? preferredSource?.movingTimeSeconds ?? null,
-    actualElapsedTimeSeconds: workout.actualElapsedTimeSeconds ?? preferredSource?.elapsedTimeSeconds ?? null,
-    averageHeartrate: workout.averageHeartrate ?? preferredSource?.averageHeartrate ?? null,
-    maxHeartrate: workout.maxHeartrate ?? preferredSource?.maxHeartrate ?? null,
-    summaryPolyline: workout.summaryPolyline ?? preferredSource?.summaryPolyline ?? null,
-    primaryImageUrl: workout.primaryImageUrl ?? preferredSource?.primaryImageUrl ?? null,
+    actualMovingTimeSeconds: workout.actualMovingTimeSeconds,
+    actualElapsedTimeSeconds: workout.actualElapsedTimeSeconds,
+    averageHeartrate: workout.averageHeartrate,
+    maxHeartrate: workout.maxHeartrate,
+    summaryPolyline: workout.summaryPolyline,
+    primaryImageUrl: workout.primaryImageUrl,
     weather: workout.weather ?? null,
-    hasStravaStreams:
-      workout.hasStravaStreams || Boolean(stravaSource?.hasRouteStreams && stravaSource.routePath),
-    activityRefs: workout.activityRefs,
-    sources: workout.sources,
+    hasRouteStreams: workout.hasRouteStreams ?? workout.hasStravaStreams ?? false,
+    routePath: workout.routePath ?? null,
+    measurementsPath: workout.measurementsPath ?? null,
     allDay: workout.allDay,
     type: workout.type,
     body: workout.body,
     sections: workout.sections,
     sourcePath: workout.sourcePath,
   };
-}
-
-function getPreferredWorkoutSource(workout: RawWorkoutNote) {
-  return (
-    getSourceMatching(workout, (source) => source.hasRouteStreams && source.routePath !== null) ??
-    getSourceMatching(workout, (source) => source.summaryPolyline !== null) ??
-    getSourceMatching(workout, (source) => source.primaryImageUrl !== null) ??
-    getSourceMatching(workout)
-  );
-}
-
-function getSourceMatching(
-  workout: RawWorkoutNote,
-  predicate?: (source: RawWorkoutSourceSummary) => boolean,
-) {
-  for (const provider of ["strava", "appleHealth"] as const) {
-    const source = workout.sources?.[provider];
-    if (!source) {
-      continue;
-    }
-
-    if (predicate && !predicate(source)) {
-      continue;
-    }
-
-    return source;
-  }
-
-  return null;
-}
-
-function normalizeLegacyDataSource(provider: RawWorkoutProvider | null): WorkoutDataSource | null {
-  if (provider === "strava") {
-    return "strava";
-  }
-
-  if (provider === "appleHealth") {
-    return "apple-health";
-  }
-
-  return null;
-}
-
-function normalizeNumericActivityId(value: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-async function readWorkoutSourceDetails() {
-  if (!workoutSourceDetailsPromise) {
-    workoutSourceDetailsPromise = fetch(`${workoutSourceDetailsPath}?v=${encodeURIComponent(generatedAt)}`, {
-      cache: "no-store",
-    })
-      .then(async (response) => {
-        if (response.status === 404) {
-          return new Map<string, Partial<Record<WorkoutProvider, WorkoutSourceSummary>>>();
-        }
-
-        if (!response.ok) {
-          throw new Error(`Unable to load workout source details: ${response.status}`);
-        }
-
-        const payload = (await response.json()) as WorkoutSourceDetailsPayload;
-        return new Map(
-          Object.entries(payload.workouts ?? {}).map(([slug, details]) => [slug, details.sources ?? {}]),
-        );
-      })
-      .catch((error) => {
-        workoutSourceDetailsPromise = null;
-        throw error;
-      });
-  }
-
-  return workoutSourceDetailsPromise;
 }
 
 function buildChangelogByAffectedFile(entries: ChangelogEntry[]) {
