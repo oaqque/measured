@@ -728,10 +728,24 @@ async function withReceiverDatabase<T>(
       throw error
     }
 
-    throw new ValidationError("Receiver database is unreadable.")
+    const wrappedError = new ValidationError(buildReceiverDatabaseErrorMessage(error))
+    ;(wrappedError as ValidationError & { cause?: unknown }).cause = error
+    throw wrappedError
   } finally {
     db?.close()
   }
+}
+
+function buildReceiverDatabaseErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    const message = error.message.trim()
+
+    if (message.length > 0) {
+      return `Receiver database is unreadable: ${message}`
+    }
+  }
+
+  return "Receiver database is unreadable."
 }
 
 function initializeSchema(db: SQLiteDatabase) {

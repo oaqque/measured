@@ -1,5 +1,11 @@
 .PHONY: help setup install sync build-data dev receiver build typecheck lint test preview vercel-link deploy-preview deploy-prod clean
 
+PNPM_BIN ?= $(shell command -v pnpm)
+PNPM_NODE_BIN := $(dir $(PNPM_BIN))node
+PNPM_NODE_DIR := $(dir $(PNPM_NODE_BIN))
+PNPM := $(if $(wildcard $(PNPM_NODE_BIN)),$(PNPM_NODE_BIN) $(PNPM_BIN),pnpm)
+PNPM_ENV := PATH="$(PNPM_NODE_DIR):$$PATH"
+
 RECEIVER_HOST ?= 0.0.0.0
 RECEIVER_PORT ?= 8788
 RECEIVER_OUTPUT_ROOT ?= vault/apple-health
@@ -34,48 +40,48 @@ help:
 	@echo "  clean           - Remove generated workout data and route files"
 
 install:
-	pnpm install
+	$(PNPM_ENV) $(PNPM) install
 
 sync:
 	uv sync
 
 setup:
 	git submodule update --init --recursive
-	pnpm install
+	$(PNPM_ENV) $(PNPM) install
 	uv sync
 
 build-data:
-	pnpm run build:data
+	$(PNPM_ENV) $(PNPM) run build:data
 
 dev:
-	pnpm run dev
+	$(PNPM_ENV) $(PNPM) run dev
 
 receiver:
-	pnpm run serve:apple-health-sync -- --host $(RECEIVER_HOST) --port $(RECEIVER_PORT) --output-root $(RECEIVER_OUTPUT_ROOT) --state-root $(RECEIVER_STATE_ROOT)
+	$(PNPM_ENV) $(PNPM) run serve:apple-health-sync -- --host $(RECEIVER_HOST) --port $(RECEIVER_PORT) --output-root $(RECEIVER_OUTPUT_ROOT) --state-root $(RECEIVER_STATE_ROOT)
 
 build:
-	pnpm run build
+	$(PNPM_ENV) $(PNPM) run build
 
 typecheck:
-	pnpm run typecheck
+	$(PNPM_ENV) $(PNPM) run typecheck
 
 lint:
-	pnpm run lint
+	$(PNPM_ENV) $(PNPM) run lint
 
 test:
-	pnpm run test
+	$(PNPM_ENV) $(PNPM) run test
 
 preview:
-	pnpm run preview
+	$(PNPM_ENV) $(PNPM) run preview
 
 vercel-link:
-	pnpm run vercel:link
+	$(PNPM_ENV) $(PNPM) run vercel:link
 
 deploy-preview:
-	pnpm run deploy:vercel:preview
+	$(PNPM_ENV) $(PNPM) run deploy:vercel:preview
 
 deploy-prod:
-	pnpm run deploy:vercel:prod
+	$(PNPM_ENV) $(PNPM) run deploy:vercel:prod
 
 clean:
 	rm -f src/generated/workouts.json

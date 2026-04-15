@@ -55,6 +55,10 @@ async function main() {
     maxBlobBytes: DEFAULT_MAX_BLOB_BYTES,
   }
 
+  // Fail fast on startup so runtime /health-sync probes do not hide DB/open issues
+  // behind a superficially healthy listening socket.
+  await getReceiverStatus(options)
+
   const server = createServer(async (request, response) => {
     try {
       const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`)
