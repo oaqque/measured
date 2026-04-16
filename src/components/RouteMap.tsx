@@ -24,7 +24,8 @@ import { decodePolyline, type RouteCoordinate } from "@/lib/workouts/polyline";
 import type { WorkoutRouteStreams } from "@/lib/workouts/schema";
 import { clearRouteStreamsCache, loadRouteStreamsForActivity, loadRouteStreamsForPath } from "@/lib/workouts/routes";
 import { cn } from "@/lib/utils";
-type RouteColorMode = "route" | "pace" | "heartrate" | "moving" | "elevation";
+
+export type RouteColorMode = "route" | "pace" | "heartrate" | "moving" | "elevation" | "gradient";
 type RouteLegendItem = {
   color: string;
   label: string;
@@ -45,6 +46,7 @@ const ROUTE_MODES: Array<{ id: RouteColorMode; label: string }> = [
   { id: "heartrate", label: "Heart rate" },
   { id: "moving", label: "Moving" },
   { id: "elevation", label: "Elevation" },
+  { id: "gradient", label: "Gradient" },
 ];
 
 const START_MARKER_RADIUS = 9;
@@ -469,7 +471,8 @@ function flyToRouteBounds(map: LeafletMap, bounds: LatLngBoundsExpression) {
   });
 }
 
-function getAvailableModes(routeStreams: WorkoutRouteStreams | null): RouteColorMode[] {
+// eslint-disable-next-line react-refresh/only-export-components
+export function getAvailableModes(routeStreams: WorkoutRouteStreams | null): RouteColorMode[] {
   const modes: RouteColorMode[] = ["route"];
   if (canColorByNumericStream(routeStreams?.latlng, routeStreams?.velocitySmooth)) {
     modes.push("pace");
@@ -483,10 +486,14 @@ function getAvailableModes(routeStreams: WorkoutRouteStreams | null): RouteColor
   if (canColorByNumericStream(routeStreams?.latlng, routeStreams?.altitude)) {
     modes.push("elevation");
   }
+  if (canColorByGradientStream(routeStreams?.latlng, routeStreams?.distance, routeStreams?.altitude)) {
+    modes.push("gradient");
+  }
   return modes;
 }
 
-function getLegendItems(
+// eslint-disable-next-line react-refresh/only-export-components
+export function getLegendItems(
   mode: RouteColorMode,
   routeStreams: WorkoutRouteStreams | null,
 ): RouteLegendItem[] {
@@ -516,14 +523,19 @@ function getLegendItems(
     return getElevationLegendItems(routeStreams?.altitude ?? null);
   }
 
+  if (mode === "gradient") {
+    return getGradientLegendItems();
+  }
+
   return [{ color: "#1d2a6d", label: "Route" }];
 }
 
-function buildRouteSegments(
+// eslint-disable-next-line react-refresh/only-export-components
+export function buildRouteSegments(
   coordinates: RouteCoordinate[],
   routeStreams: WorkoutRouteStreams | null,
   mode: RouteColorMode,
-) : RouteSegment[] {
+): RouteSegment[] {
   if (mode === "pace" && canColorByNumericStream(routeStreams?.latlng, routeStreams?.velocitySmooth)) {
     return buildNumericSegments(
       routeStreams!.latlng!,
@@ -551,6 +563,18 @@ function buildRouteSegments(
 
   if (mode === "elevation" && canColorByNumericStream(routeStreams?.latlng, routeStreams?.altitude)) {
     return buildElevationSegments(routeStreams!.latlng!, routeStreams!.altitude!, "elevation");
+  }
+
+  if (
+    mode === "gradient" &&
+    canColorByGradientStream(routeStreams?.latlng, routeStreams?.distance, routeStreams?.altitude)
+  ) {
+    return buildGradientSegments(
+      routeStreams!.latlng!,
+      routeStreams!.distance!,
+      routeStreams!.altitude!,
+      "gradient",
+    );
   }
 
   return buildSolidSegments(coordinates, "route-base", "#1d2a6d", 0.92, 4);
@@ -584,7 +608,7 @@ function buildNumericSegments(
   values: number[],
   colorForValue: (value: number) => string,
   keyPrefix: string,
-) : RouteSegment[] {
+): RouteSegment[] {
   const segments: RouteSegment[] = [];
 
   for (let index = 0; index < coordinates.length - 1; index += 1) {
@@ -614,7 +638,7 @@ function buildBooleanSegments(
   coordinates: RouteCoordinate[],
   values: boolean[],
   keyPrefix: string,
-) : RouteSegment[] {
+): RouteSegment[] {
   const segments: RouteSegment[] = [];
 
   for (let index = 0; index < coordinates.length - 1; index += 1) {
@@ -652,6 +676,36 @@ function buildElevationSegments(
     (value) => elevationToColor(value, bounds.min, bounds.max),
     keyPrefix,
   );
+}
+
+function buildGradientSegments(
+  coordinates: RouteCoordinate[],
+  distance: number[],
+  altitude: number[],
+  keyPrefix: string,
+): RouteSegment[] {
+  const maxIndex = Math.min(coordinates.length, distance.length, altitude.length);
+  const segments: RouteSegment[] = [];
+
+  for (let index = 0; index < maxIndex - 1; index += 1) {
+    const gradientPercent = estimateSegmentGradientPercent(distance, altitude, index);
+    if (gradientPercent === null) {
+      continue;
+    }
+
+    segments.push({
+      color: gradientToColor(gradientPercent),
+      index,
+      key: `${keyPrefix}-${index}`,
+      opacity: 0.98,
+      positions: [coordinates[index], coordinates[index + 1]],
+      weight: 5,
+    });
+  }
+
+  return segments.length > 0
+    ? segments
+    : buildSolidSegments(coordinates.slice(0, maxIndex), keyPrefix, "#1d2a6d", 0.92, 4);
 }
 
 function trimRouteSegments(segments: RouteSegment[], progress: number): RouteSegment[] {
@@ -708,6 +762,14 @@ function canColorByBooleanStream(
   return Boolean(coordinates && values && coordinates.length > 1 && values.length > 1);
 }
 
+function canColorByGradientStream(
+  coordinates: WorkoutRouteStreams["latlng"] | null | undefined,
+  distance: number[] | null | undefined,
+  altitude: number[] | null | undefined,
+) {
+  return Boolean(coordinates && distance && altitude && coordinates.length > 1 && distance.length > 1 && altitude.length > 1);
+}
+
 function speedToColor(speedMps: number) {
   const speedKph = speedMps * 3.6;
   if (speedKph >= 14) {
@@ -760,6 +822,18 @@ function getElevationLegendItems(values: number[] | null): RouteLegendItem[] {
   });
 }
 
+function getGradientLegendItems(): RouteLegendItem[] {
+  return [
+    { color: "#991b1b", label: ">= 8% climb" },
+    { color: "#ea580c", label: "4% to < 8% climb" },
+    { color: "#d97706", label: "1% to < 4% rise" },
+    { color: "#64748b", label: "-1% to < 1% flat" },
+    { color: "#0284c7", label: "-4% to < -1% descent" },
+    { color: "#2563eb", label: "-8% to < -4% descent" },
+    { color: "#1e3a8a", label: "< -8% descent" },
+  ];
+}
+
 function getElevationBounds(values: number[] | null) {
   if (!values || values.length < 2) {
     return null;
@@ -803,4 +877,82 @@ function elevationToColor(value: number, min: number, max: number) {
     return "#0284c7";
   }
   return "#1d4ed8";
+}
+
+function estimateSegmentGradientPercent(
+  distance: number[],
+  altitude: number[],
+  segmentIndex: number,
+) {
+  const smoothed = estimateGradientForWindow(distance, altitude, Math.max(0, segmentIndex - 2), segmentIndex + 3);
+  if (smoothed !== null) {
+    return smoothed;
+  }
+
+  return estimateGradientForWindow(distance, altitude, segmentIndex, segmentIndex + 1);
+}
+
+function estimateGradientForWindow(
+  distance: number[],
+  altitude: number[],
+  startIndex: number,
+  endIndex: number,
+) {
+  const lastIndex = Math.min(distance.length, altitude.length) - 1;
+  if (lastIndex < 1) {
+    return null;
+  }
+
+  const clampedStartIndex = clampIndex(startIndex, lastIndex);
+  const clampedEndIndex = clampIndex(endIndex, lastIndex);
+  const startDistance = distance[clampedStartIndex];
+  const endDistance = distance[clampedEndIndex];
+  const startAltitude = altitude[clampedStartIndex];
+  const endAltitude = altitude[clampedEndIndex];
+
+  if (
+    startDistance === undefined ||
+    endDistance === undefined ||
+    startAltitude === undefined ||
+    endAltitude === undefined ||
+    !Number.isFinite(startDistance) ||
+    !Number.isFinite(endDistance) ||
+    !Number.isFinite(startAltitude) ||
+    !Number.isFinite(endAltitude)
+  ) {
+    return null;
+  }
+
+  const horizontalDistance = endDistance - startDistance;
+  if (horizontalDistance <= 0.5) {
+    return null;
+  }
+
+  return ((endAltitude - startAltitude) / horizontalDistance) * 100;
+}
+
+function clampIndex(value: number, max: number) {
+  return Math.max(0, Math.min(value, max));
+}
+
+function gradientToColor(gradientPercent: number) {
+  if (gradientPercent >= 8) {
+    return "#991b1b";
+  }
+  if (gradientPercent >= 4) {
+    return "#ea580c";
+  }
+  if (gradientPercent >= 1) {
+    return "#d97706";
+  }
+  if (gradientPercent > -1) {
+    return "#64748b";
+  }
+  if (gradientPercent > -4) {
+    return "#0284c7";
+  }
+  if (gradientPercent > -8) {
+    return "#2563eb";
+  }
+  return "#1e3a8a";
 }
