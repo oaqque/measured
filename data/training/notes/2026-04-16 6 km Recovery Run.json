@@ -4,13 +4,39 @@
   "allDay": true,
   "type": "single",
   "date": "2026-04-16",
-  "completed": false,
+  "completed": "2026-04-16T06:48:31.000Z",
   "eventType": "run",
   "expectedDistance": "6 km",
+  "stravaId": 18128277385,
+  "activityRefs": {
+    "strava": "18128277385",
+    "appleHealth": "920E21C3-1CD3-4C78-B0D8-0ECCC8034767"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- 6 km recovery run\n- Keep this fully easy after Wednesday's `21.27 km` half-marathon substitute.\n- No uptempo section. The only goal is to check whether both ankles calm down once you start moving.\n- If either ankle still feels loaded after `10 to 15 minutes`, stop early and switch the rest of the day to walking, mobility, and basic stability only.\n- Thursday's gym stays mobility and stability only."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This did stay on the planned day, Thursday, `2026-04-16`, but it did not stay as the prescribed `6 km` ankle-check recovery run. The completed workout covered `7.293 km` in `44:31` moving time (`44:38` elapsed) with `125.8 m` of climbing, average HR `153.3`, and max HR `164`, so it landed `1.293 km` over plan and on a hillier route than the note called for.\n- The stream data still reads as controlled rather than a disguised quality session. The first `3.647 km` averaged about `5:59 /km` at average HR about `151.6` with `57.6 m` of climbing, while the second half slowed to about `6:24 /km` as climbing rose to `77.8 m` and average HR drifted to about `155.1`. That is consistent with an easy run that got gradually costlier late, not with a fresh recovery check where the ankles clearly settled and the effort stayed flat."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate takeaway for Friday and the weekend is that this run should count as the week's second load-management test, and it was only a partial pass. Weekly running volume is now `35.687 km` through three runs, so there is no need to chase extra distance on Friday or Saturday to make the week look cleaner.\n- The next few days should keep the same conservative bias already written into the plan: Friday only if the ankles feel better, Saturday remains optional, and Sunday's run should stay genuinely easy and capped if the ankles are still talking. The useful move now is to protect absorption from Wednesday-plus-Thursday rather than turning this into a stealth rebuild."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- Long term, this run still supports the block because it shows you can come back for controlled aerobic volume two days after the half-marathon substitute instead of needing complete shutdown. That matters for marathon durability, especially when the route is not perfectly flat.\n- The risk is that the pattern this week keeps drifting beyond the intended recovery cost. A `7.293 km` run with `125.8 m` of climb the day after a `21.27 km` substitute is manageable only if the following sessions stay cheap enough to let the ankles settle. Durable progress here comes from respecting the recovery prescription when the plan calls for it, not from proving you can always handle a little more."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        }
+      ]
     }
   ]
 }
