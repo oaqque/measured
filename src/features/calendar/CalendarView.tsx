@@ -57,7 +57,7 @@ export function CalendarView({
           isMobileViewport && "flex min-h-0 flex-1 flex-col justify-center pt-3",
         )}
       >
-        <div className="hidden items-center justify-end lg:flex">
+        <div className="hidden items-center justify-center lg:flex">
           <CalendarControls
             calendarFocusDate={calendarFocusDate}
             eventType={eventType}
