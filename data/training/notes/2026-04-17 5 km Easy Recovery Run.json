@@ -4,13 +4,59 @@
   "allDay": true,
   "type": "single",
   "date": "2026-04-17",
-  "completed": false,
+  "completed": "2026-04-16T20:59:36.000Z",
   "eventType": "run",
   "expectedDistance": "5 km",
+  "stravaId": 18137814163,
+  "activityRefs": {
+    "strava": "18137814163",
+    "appleHealth": "C607EF7D-5899-4BB2-A767-58E1A03BECB2"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- 5 km easy recovery run\n- Keep this genuinely light and unambitious.\n- Only run if Thursday leaves both ankles feeling better, not just tolerable.\n- If there is still meaningful ankle feedback, replace this with full rest rather than forcing the distance."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This landed on the planned Friday, `2026-04-17`, but it did not stay as the prescribed `5 km` recovery check. The completed run covered `10.030 km` in `1:00:23` moving time (`1:01:00` elapsed) with `111.8 m` of climbing, average HR `153.1`, and max HR `169`, so it finished `5.030 km` over plan.\n- The stream data says the effort stayed controlled rather than turning into disguised quality work. Estimated first-half moving pace was `6:00 /km` and second-half pace was `6:02 /km`, while distance-split HR only rose from `151.7 bpm` to `154.4 bpm`. Apple Health matched the same workout at `10.030 km` and `3660` seconds with average HR `152.9` and max HR `169`, so the provider data agrees that this was one continuous easy-to-moderate run, not a bad linkage.\n- What changed was cost, not execution style. Doubling the planned distance the day after Thursday's `7.293 km` run and two days after Wednesday's `21.27 km` half-marathon substitute turned a recovery slot into another meaningful aerobic load."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate job is to stop the rest of this week from drifting upward just because Friday felt runnable. Weekly running volume is now `45.717 km` through four runs, which leaves only `6.283 km` to reach the planned `52 km` week.\n- That means there is no reason to take both remaining weekend runs exactly as first written. If you also run Saturday's `4 km` and Sunday's `10 km`, the week lands around `59.717 km`, or `7.717 km` above plan. The conservative read is to treat Saturday's shakeout as truly optional and default toward full rest if the ankles or general fatigue are still present, then keep Sunday easy and capped rather than trying to reclaim the original weekend stack."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- Long term, this still helps the block because it shows you can cover `10 km` at a controlled aerobic effort on a week that already included a `21.27 km` substitute and another `7.293 km` support run. That is a useful durability signal for the half-marathon and marathon build.\n- The risk is the same one already sitting over this block: easy and recovery days keep drifting into medium-cost days. A `10.030 km` run at `153.1 bpm` average HR is manageable only if the following sessions get cheaper, not if the week keeps accumulating extra load. The durable win here is protecting the separation between real recovery and real work so higher-volume weeks stay repeatable instead of becoming a chain of almost-hard days."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `6:01 /km` across `10.030 km` in `1:00:23` moving time.\n- Estimated first-half moving pace was `6:00 /km` and second-half pace was `6:02 /km` (+2 s/km), so pace stayed broadly even."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava summary HR came in at `153.1 bpm` average and `169 bpm` max.\n- Distance-split HR averaged `151.7 bpm` in the first half and `154.4 bpm` in the second (+2.7 bpm), which reads as broadly stable across the run."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `1:00:23` out of `1:01:00` elapsed (99.0%), which kept stoppage cost negligible.\n- The downsampled moving stream shows `8` stop segments and `0.8%` stationary samples, so the run was mostly continuous with a few interruptions."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged about `116.0 m` of climbing, with altitude moving between roughly `42.4 m` and `64.8 m`.\n- Estimated climbing was `54.2 m` in the first half and `61.8 m` in the second, so the climbing load was split fairly evenly."
+        }
+      ]
     }
   ]
 }
