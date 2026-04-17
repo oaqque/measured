@@ -33,25 +33,6 @@ function createWorkout(overrides: Partial<WorkoutNote> = {}): WorkoutNote {
   };
 }
 
-function setViewportMetrics(
-  element: HTMLDivElement,
-  metrics: { clientHeight: number; scrollHeight: number; scrollTop: number },
-) {
-  Object.defineProperty(element, "clientHeight", {
-    configurable: true,
-    value: metrics.clientHeight,
-  });
-  Object.defineProperty(element, "scrollHeight", {
-    configurable: true,
-    value: metrics.scrollHeight,
-  });
-  Object.defineProperty(element, "scrollTop", {
-    configurable: true,
-    value: metrics.scrollTop,
-    writable: true,
-  });
-}
-
 describe("calendarTestUtils", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -114,128 +95,101 @@ describe("calendarTestUtils", () => {
     expect(calendarTestUtils.resolveDefaultFocusDate([])).toBe("2026-04-05");
   });
 
-  it("chunks calendar cells into week-sized groups", () => {
-    const cells = Array.from({ length: 10 }, (_, index) => ({
-      key: `2026-04-${String(index + 1).padStart(2, "0")}`,
-      date: `2026-04-${String(index + 1).padStart(2, "0")}`,
-      isToday: false,
-      isOutsideRange: false,
-      workouts: [],
-    }));
+  it("groups workouts by date", () => {
+    const map = calendarTestUtils.buildWorkoutsByDate([
+      createWorkout({ slug: "a", date: "2026-04-05" }),
+      createWorkout({ slug: "b", date: "2026-04-05" }),
+      createWorkout({ slug: "c", date: "2026-04-06" }),
+    ]);
 
-    const weeks = calendarTestUtils.chunkCalendarWeeks(cells);
-
-    expect(weeks).toHaveLength(2);
-    expect(weeks[0]).toHaveLength(7);
-    expect(weeks[1]).toHaveLength(3);
-    expect(weeks[1][0]?.date).toBe("2026-04-08");
+    expect(map.get("2026-04-05")?.map((workout) => workout.slug)).toEqual(["a", "b"]);
+    expect(map.get("2026-04-06")?.map((workout) => workout.slug)).toEqual(["c"]);
   });
 
-  it("builds the mobile calendar window from the start of the focus month week", () => {
-    expect(calendarTestUtils.buildCalendarWindow("2026-04-05", true)).toEqual({
-      startDate: "2026-03-30",
-      endDate: "2026-05-10",
-    });
-  });
+  it("builds a clamped date range around the filtered workouts", () => {
+    const range = calendarTestUtils.getWorkoutDateRange(
+      [createWorkout({ date: "2026-04-05" }), createWorkout({ date: "2026-04-10" })],
+      2,
+    );
 
-  it("builds the desktop calendar window around the focus week", () => {
-    expect(calendarTestUtils.buildCalendarWindow("2026-04-05", false)).toEqual({
-      startDate: "2026-03-02",
-      endDate: "2026-05-03",
-    });
-  });
-
-  it("shifts the calendar window by four weeks in either direction", () => {
-    const initialRange = {
-      startDate: "2026-03-30",
-      endDate: "2026-05-10",
-    };
-
-    expect(calendarTestUtils.shiftCalendarWindow(initialRange, "forward")).toEqual({
-      startDate: "2026-04-27",
-      endDate: "2026-06-07",
-    });
-    expect(calendarTestUtils.shiftCalendarWindow(initialRange, "backward")).toEqual({
-      startDate: "2026-03-02",
+    expect(range).toEqual({
+      startDate: "2026-04-03",
       endDate: "2026-04-12",
     });
   });
 
-  it("calculates the scroll offset needed to preserve continuity across window shifts", () => {
-    expect(calendarTestUtils.getCalendarWindowShiftScrollOffset(true)).toBe(6608);
-    expect(calendarTestUtils.getCalendarWindowShiftScrollOffset(false)).toBe(704);
+  it("clamps a date to the allowed range", () => {
+    const range = {
+      startDate: "2026-04-03",
+      endDate: "2026-04-12",
+    };
+
+    expect(calendarTestUtils.clampDateToRange("2026-04-01", range)).toBe("2026-04-03");
+    expect(calendarTestUtils.clampDateToRange("2026-04-08", range)).toBe("2026-04-08");
+    expect(calendarTestUtils.clampDateToRange("2026-04-20", range)).toBe("2026-04-12");
   });
 
-  it("releases the edge lock only after moving beyond the release threshold", () => {
-    const viewport = document.createElement("div");
-
-    setViewportMetrics(viewport, {
-      clientHeight: 500,
-      scrollHeight: 2000,
-      scrollTop: 449,
-    });
-    expect(calendarTestUtils.shouldReleaseCalendarEdgeLock(viewport, "backward", true)).toBe(true);
-
-    setViewportMetrics(viewport, {
-      clientHeight: 500,
-      scrollHeight: 2000,
-      scrollTop: 351,
-    });
-    expect(calendarTestUtils.shouldReleaseCalendarEdgeLock(viewport, "backward", false)).toBe(false);
-
-    setViewportMetrics(viewport, {
-      clientHeight: 500,
-      scrollHeight: 2000,
-      scrollTop: 1100,
-    });
-    expect(calendarTestUtils.shouldReleaseCalendarEdgeLock(viewport, "forward", false)).toBe(true);
-
-    setViewportMetrics(viewport, {
-      clientHeight: 500,
-      scrollHeight: 2000,
-      scrollTop: 1060,
-    });
-    expect(calendarTestUtils.shouldReleaseCalendarEdgeLock(viewport, "forward", true)).toBe(false);
+  it("returns the adjacent previous and next dates", () => {
+    expect(calendarTestUtils.getAdjacentDate("2026-04-05", "backward")).toBe("2026-04-04");
+    expect(calendarTestUtils.getAdjacentDate("2026-04-05", "forward")).toBe("2026-04-06");
   });
 
-  it("freezes viewport scrolling and restores the prior inline styles", () => {
-    const viewport = document.createElement("div");
-    viewport.style.overflowY = "auto";
-    viewport.style.overscrollBehavior = "contain";
-    viewport.scrollTop = 320;
-
-    const restore = calendarTestUtils.freezeViewportScroll(viewport);
-
-    expect(viewport.style.overflowY).toBe("hidden");
-    expect(viewport.style.overscrollBehavior).toBe("none");
-    expect(viewport.scrollTop).toBe(320);
-
-    restore();
-
-    expect(viewport.style.overflowY).toBe("auto");
-    expect(viewport.style.overscrollBehavior).toBe("contain");
-  });
-
-  it("builds inclusive calendar cells and preserves workouts by date", () => {
-    const workoutOnToday = createWorkout({ slug: "today-run", date: "2026-04-05" });
-    const workoutTomorrow = createWorkout({ slug: "tomorrow-run", date: "2026-04-06" });
+  it("builds an individual calendar day with workouts and today state", () => {
     const workoutsByDate = new Map<string, WorkoutNote[]>([
-      ["2026-04-05", [workoutOnToday]],
-      ["2026-04-06", [workoutTomorrow]],
+      ["2026-04-05", [createWorkout({ slug: "today-run", date: "2026-04-05" })]],
     ]);
 
-    const cells = calendarTestUtils.buildCalendarCells("2026-04-05", "2026-04-07", workoutsByDate);
-
-    expect(cells).toHaveLength(3);
-    expect(cells.map((cell) => cell.date)).toEqual(["2026-04-05", "2026-04-06", "2026-04-07"]);
-    expect(cells[0]).toMatchObject({
+    expect(calendarTestUtils.buildCalendarDay("2026-04-05", workoutsByDate)).toMatchObject({
       date: "2026-04-05",
-      key: "2026-04-05",
       isToday: true,
-      isOutsideRange: false,
     });
-    expect(cells[0]?.workouts).toEqual([workoutOnToday]);
-    expect(cells[1]?.workouts).toEqual([workoutTomorrow]);
-    expect(cells[2]?.workouts).toEqual([]);
+    expect(calendarTestUtils.buildCalendarDay("2026-04-06", workoutsByDate)).toMatchObject({
+      date: "2026-04-06",
+      isToday: false,
+      workouts: [],
+    });
+  });
+
+  it("builds a bounded day buffer with previous and next slots around the active day", () => {
+    const workoutsByDate = new Map<string, WorkoutNote[]>([
+      ["2026-04-05", [createWorkout({ slug: "a", date: "2026-04-05" })]],
+      ["2026-04-06", [createWorkout({ slug: "b", date: "2026-04-06" })]],
+      ["2026-04-04", [createWorkout({ slug: "c", date: "2026-04-04" })]],
+    ]);
+
+    const items = calendarTestUtils.buildCalendarDayBuffer({
+      activeDate: "2026-04-05",
+      after: 2,
+      before: 2,
+      range: {
+        startDate: "2026-04-03",
+        endDate: "2026-04-08",
+      },
+      workoutsByDate,
+    });
+
+    expect(items.map((item) => `${item.position}:${item.date}:${item.relativeOffset}`)).toEqual([
+      "0:2026-04-03:-2",
+      "1:2026-04-04:-1",
+      "2:2026-04-05:0",
+      "3:2026-04-06:1",
+      "4:2026-04-07:2",
+    ]);
+    expect(items[2]).toMatchObject({ isActive: true, date: "2026-04-05" });
+  });
+
+  it("drops day-buffer entries that fall outside the range", () => {
+    const items = calendarTestUtils.buildCalendarDayBuffer({
+      activeDate: "2026-04-03",
+      after: 2,
+      before: 2,
+      range: {
+        startDate: "2026-04-03",
+        endDate: "2026-04-04",
+      },
+      workoutsByDate: new Map(),
+    });
+
+    expect(items.map((item) => item.date)).toEqual(["2026-04-03", "2026-04-04"]);
   });
 });

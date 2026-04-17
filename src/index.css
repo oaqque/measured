@@ -172,13 +172,28 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  .calendar-scroll-pane {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  .calendar-day-deck {
+    overscroll-behavior: none;
+    perspective: 1200px;
+    touch-action: pan-y;
   }
 
-  .calendar-scroll-pane::-webkit-scrollbar {
-    display: none;
+  .calendar-day-deck:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 6px;
+  }
+
+  .calendar-day-card {
+    will-change: transform;
+  }
+
+  .calendar-day-carousel {
+    background: var(--page);
+  }
+
+  .calendar-day-workout-list {
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .leaflet-container {

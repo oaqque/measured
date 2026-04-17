@@ -1,19 +1,22 @@
 import type { WorkoutNote } from "@/lib/workouts/schema";
 
-export type CalendarCell = {
+export type CalendarDateRange = {
+  startDate: string;
+  endDate: string;
+};
+
+export type CalendarDayData = {
   date: string;
   isToday: boolean;
-  isOutsideRange: boolean;
-  key: string;
   workouts: WorkoutNote[];
 };
 
-export const DESKTOP_CALENDAR_ROW_HEIGHT = 176;
-export const MOBILE_CALENDAR_CARD_HEIGHT = 224;
-export const MOBILE_CALENDAR_CARD_GAP = 12;
-export const DESKTOP_CALENDAR_WINDOW_WEEKS = 9;
-export const MOBILE_CALENDAR_WINDOW_WEEKS = 6;
-export const CALENDAR_WINDOW_SHIFT_WEEKS = 4;
+export type CalendarDayStackItem = CalendarDayData & {
+  isActive: boolean;
+  key: string;
+  position: number;
+  relativeOffset: number;
+};
 
 export function formatDayLabel(value: string) {
   return new Intl.DateTimeFormat("en-AU", {
@@ -34,109 +37,113 @@ export function getTodayDateKey() {
 
 export function resolveDefaultFocusDate(workouts: WorkoutNote[]) {
   const today = getTodayDateKey();
-  return workouts.find((workout) => workout.date >= today)?.date ?? workouts[workouts.length - 1]?.date ?? today;
+  return (
+    workouts.find((workout) => workout.date >= today)?.date ??
+    workouts[workouts.length - 1]?.date ??
+    today
+  );
 }
 
-export function chunkCalendarWeeks(cells: CalendarCell[]) {
-  const weeks: CalendarCell[][] = [];
+export function buildWorkoutsByDate(workouts: WorkoutNote[]) {
+  const workoutsByDate = new Map<string, WorkoutNote[]>();
 
-  for (let index = 0; index < cells.length; index += 7) {
-    weeks.push(cells.slice(index, index + 7));
+  for (const workout of workouts) {
+    const existing = workoutsByDate.get(workout.date);
+    if (existing) {
+      existing.push(workout);
+      continue;
+    }
+
+    workoutsByDate.set(workout.date, [workout]);
   }
 
-  return weeks;
+  return workoutsByDate;
 }
 
-export function buildCalendarWindow(focusDate: string, isMobileViewport: boolean) {
-  const resolvedFocusDate = focusDate || getTodayDateKey();
-  const focus = parseDateKey(resolvedFocusDate);
-
-  if (isMobileViewport) {
-    const rangeStartDate = startOfWeek(startOfMonth(focus));
-    return {
-      startDate: formatDateKey(rangeStartDate),
-      endDate: formatDateKey(addDaysToDate(rangeStartDate, MOBILE_CALENDAR_WINDOW_WEEKS * 7 - 1)),
-    };
+export function getWorkoutDateRange(workouts: WorkoutNote[], marginDays = 14): CalendarDateRange | null {
+  if (workouts.length === 0) {
+    return null;
   }
 
-  const rangeStartDate = addDaysToDate(startOfWeek(focus), -Math.floor(DESKTOP_CALENDAR_WINDOW_WEEKS / 2) * 7);
+  const sortedWorkouts = [...workouts].sort((left, right) => left.date.localeCompare(right.date));
+  const startDate = addDaysToDate(parseDateKey(sortedWorkouts[0]!.date), -marginDays);
+  const endDate = addDaysToDate(parseDateKey(sortedWorkouts[sortedWorkouts.length - 1]!.date), marginDays);
 
   return {
-    startDate: formatDateKey(rangeStartDate),
-    endDate: formatDateKey(addDaysToDate(rangeStartDate, DESKTOP_CALENDAR_WINDOW_WEEKS * 7 - 1)),
+    startDate: formatDateKey(startDate),
+    endDate: formatDateKey(endDate),
   };
 }
 
-export function shiftCalendarWindow(
-  range: { startDate: string; endDate: string },
-  direction: "backward" | "forward",
-) {
-  const dayOffset = (direction === "backward" ? -1 : 1) * CALENDAR_WINDOW_SHIFT_WEEKS * 7;
+export function isDateWithinRange(date: string, range: CalendarDateRange) {
+  return date >= range.startDate && date <= range.endDate;
+}
+
+export function clampDateToRange(date: string, range: CalendarDateRange) {
+  if (date < range.startDate) {
+    return range.startDate;
+  }
+
+  if (date > range.endDate) {
+    return range.endDate;
+  }
+
+  return date;
+}
+
+export function getAdjacentDate(date: string, direction: "backward" | "forward") {
+  return formatDateKey(addDaysToDate(parseDateKey(date), direction === "backward" ? -1 : 1));
+}
+
+export function buildCalendarDay(date: string, workoutsByDate: Map<string, WorkoutNote[]>): CalendarDayData {
   return {
-    startDate: formatDateKey(addDaysToDate(parseDateKey(range.startDate), dayOffset)),
-    endDate: formatDateKey(addDaysToDate(parseDateKey(range.endDate), dayOffset)),
+    date,
+    isToday: date === getTodayDateKey(),
+    workouts: workoutsByDate.get(date) ?? [],
   };
 }
 
-export function getCalendarWindowShiftScrollOffset(isMobileViewport: boolean) {
-  if (isMobileViewport) {
-    return CALENDAR_WINDOW_SHIFT_WEEKS * 7 * (MOBILE_CALENDAR_CARD_HEIGHT + MOBILE_CALENDAR_CARD_GAP);
+export function buildCalendarDayBuffer({
+  activeDate,
+  after,
+  before,
+  range,
+  workoutsByDate,
+}: {
+  activeDate: string;
+  after: number;
+  before: number;
+  range: CalendarDateRange;
+  workoutsByDate: Map<string, WorkoutNote[]>;
+}) {
+  const items: CalendarDayStackItem[] = [];
+  const offsets: number[] = [];
+
+  for (let offset = before; offset >= 1; offset -= 1) {
+    offsets.push(-offset);
+  }
+  offsets.push(0);
+  for (let offset = 1; offset <= after; offset += 1) {
+    offsets.push(offset);
   }
 
-  return CALENDAR_WINDOW_SHIFT_WEEKS * DESKTOP_CALENDAR_ROW_HEIGHT;
-}
+  offsets.forEach((relativeOffset) => {
+    const date = formatDateKey(addDaysToDate(parseDateKey(activeDate), relativeOffset));
+    if (!isDateWithinRange(date, range)) {
+      return;
+    }
 
-export function shouldReleaseCalendarEdgeLock(
-  viewport: HTMLDivElement,
-  direction: "backward" | "forward",
-  isMobileViewport: boolean,
-) {
-  const threshold = isMobileViewport ? MOBILE_CALENDAR_CARD_HEIGHT : DESKTOP_CALENDAR_ROW_HEIGHT;
-  const releaseThreshold = threshold * 2;
-
-  if (direction === "backward") {
-    return viewport.scrollTop > releaseThreshold;
-  }
-
-  const remainingScroll = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
-  return remainingScroll > releaseThreshold;
-}
-
-export function freezeViewportScroll(viewport: HTMLDivElement) {
-  const previousOverflowY = viewport.style.overflowY;
-  const previousOverscrollBehavior = viewport.style.overscrollBehavior;
-
-  viewport.style.overflowY = "hidden";
-  viewport.style.overscrollBehavior = "none";
-
-  return () => {
-    viewport.style.overflowY = previousOverflowY;
-    viewport.style.overscrollBehavior = previousOverscrollBehavior;
-  };
-}
-
-export function buildCalendarCells(
-  startDateKey: string,
-  endDateKey: string,
-  workoutsByDate: Map<string, WorkoutNote[]>,
-) {
-  const startDate = parseDateKey(startDateKey);
-  const endDate = parseDateKey(endDateKey);
-  const todayDateKey = getTodayDateKey();
-  const cells: CalendarCell[] = [];
-
-  for (let currentDate = startDate; currentDate <= endDate; currentDate = addDaysToDate(currentDate, 1)) {
-    const date = formatDateKey(currentDate);
-    cells.push({
+    const day = buildCalendarDay(date, workoutsByDate);
+    items.push({
+      ...day,
+      isActive: relativeOffset === 0,
       key: date,
-      date,
-      isToday: date === todayDateKey,
-      isOutsideRange: false,
-      workouts: workoutsByDate.get(date) ?? [],
+      position: items.length,
+      relativeOffset,
     });
-  }
+  });
 
-  return cells;
+  return items;
 }
 
 export function parseDateKey(value: string) {
@@ -174,21 +181,21 @@ export function startOfMonth(value: Date) {
 
 export const calendarTestUtils = {
   addDaysToDate,
-  buildCalendarCells,
-  buildCalendarWindow,
-  chunkCalendarWeeks,
+  buildCalendarDay,
+  buildCalendarDayBuffer,
+  buildWorkoutsByDate,
+  clampDateToRange,
   formatDateKey,
   formatDayLabel,
   formatDayWeekday,
   formatMonthFromDate,
   formatMonthLabel,
-  freezeViewportScroll,
-  getCalendarWindowShiftScrollOffset,
+  getAdjacentDate,
   getTodayDateKey,
+  getWorkoutDateRange,
+  isDateWithinRange,
   parseDateKey,
   resolveDefaultFocusDate,
-  shiftCalendarWindow,
-  shouldReleaseCalendarEdgeLock,
   startOfMonth,
   startOfWeek,
 };
