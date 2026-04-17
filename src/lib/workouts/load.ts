@@ -236,6 +236,7 @@ function normalizeWorkoutNote(workout: RawWorkoutNote): WorkoutNote {
     maxHeartrate: workout.maxHeartrate,
     summaryPolyline: workout.summaryPolyline,
     primaryImageUrl: workout.primaryImageUrl,
+    mediaThumbnailUrl: workout.mediaThumbnailUrl ?? null,
     weather: workout.weather ?? null,
     hasRouteStreams: workout.hasRouteStreams ?? workout.hasStravaStreams ?? false,
     routePath: workout.routePath ?? null,
@@ -245,6 +246,7 @@ function normalizeWorkoutNote(workout: RawWorkoutNote): WorkoutNote {
     body: workout.body,
     sections: workout.sections,
     sourcePath: workout.sourcePath,
+    media: workout.media ?? null,
   };
 }
 

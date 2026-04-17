@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Activity, ArrowLeft, Gauge, HeartPulse, Info, Mountain } from "lucide-react";
 import {
   Area,
@@ -17,6 +17,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { WorkoutShareButton } from "@/components/WorkoutShareButton";
+import { resolveWorkoutMediaEmbed } from "@/lib/workouts/media";
 import { loadAppleHealthWorkoutMeasurements } from "@/lib/workouts/apple-health";
 import { LTHR_HEART_RATE_ZONE_BANDS, getLthrHeartRateZoneColor } from "@/lib/workouts/heart-rate-zones";
 import {
@@ -228,20 +229,31 @@ function WorkoutNarrativePanel({
   const imageUrl = workout.primaryImageUrl;
   const hasRoutePanel = routePolyline !== null || (hasRouteStreams && workout.routePath !== null);
   const routeMapKey = buildRouteMapKey(workout.routePath, generatedAt);
+  const mediaEmbed = resolveWorkoutMediaEmbed(workout.media);
+  const mediaItems: ReactNode[] = [];
+
+  if (imageUrl) {
+    mediaItems.push(
+      <article
+        className="overflow-hidden rounded-[0.85rem] border border-foreground/10 bg-surface-elevated"
+        key="workout-image"
+      >
+        <img
+          alt={`Workout image for ${workout.title}`}
+          className="block max-h-[32rem] w-full object-contain"
+          loading="lazy"
+          src={imageUrl}
+        />
+      </article>,
+    );
+  }
+
+  if (mediaEmbed) {
+    mediaItems.push(<WorkoutMediaEmbedCard key="linked-media" mediaEmbed={mediaEmbed} />);
+  }
 
   return (
     <>
-      {imageUrl ? (
-        <div className="mt-5 overflow-hidden rounded-[1rem] border border-foreground/10 bg-surface-elevated">
-          <img
-            alt={`Workout image for ${workout.title}`}
-            className="block max-h-[32rem] w-full object-contain"
-            loading="lazy"
-            src={imageUrl}
-          />
-        </div>
-      ) : null}
-
       <div className="mt-5 lg:hidden">
         <Accordion className="border-b border-foreground/10" collapsible type="single">
           <AccordionItem className="border-b-0" value="metadata">
@@ -271,6 +283,7 @@ function WorkoutNarrativePanel({
         <div className="markdown-prose mt-5 flex-1">
           <MarkdownContent content={narrativeContent} onLinkClick={onLinkClick} />
         </div>
+        {mediaItems.length > 0 ? <WorkoutMediaSection className="mt-5" items={mediaItems} /> : null}
         {stravaAnalysisSections.length > 0 ? (
           <StravaAnalysisSectionGrid className="mt-5" sections={stravaAnalysisSections} onLinkClick={onLinkClick} />
         ) : null}
@@ -289,7 +302,7 @@ function WorkoutNarrativePanel({
         <aside className="space-y-5 pt-6">
           {hasRoutePanel ? (
             <section>
-                <RouteMap
+              <RouteMap
                 activityId={null}
                 generatedAt={generatedAt}
                 hasRouteStreams={hasRouteStreams}
@@ -301,6 +314,8 @@ function WorkoutNarrativePanel({
             </section>
           ) : null}
 
+          {mediaItems.length > 0 ? <WorkoutMediaSection items={mediaItems} /> : null}
+
           <section>
             <p className="eyebrow">Metadata</p>
             <WorkoutMetadataGrid className="mt-4 pt-0" workout={workout} />
@@ -308,6 +323,49 @@ function WorkoutNarrativePanel({
         </aside>
       </div>
     </>
+  );
+}
+
+function WorkoutMediaSection({
+  className,
+  items,
+}: {
+  className?: string;
+  items: ReactNode[];
+}) {
+  const scrollable = items.length > 1;
+
+  return (
+    <section className={className}>
+      <div
+        className={cn(
+          "space-y-3",
+          scrollable && "max-h-[min(72vh,56rem)] overflow-y-auto",
+        )}
+      >
+        {items}
+      </div>
+    </section>
+  );
+}
+
+function WorkoutMediaEmbedCard({
+  mediaEmbed,
+}: {
+  mediaEmbed: NonNullable<ReturnType<typeof resolveWorkoutMediaEmbed>>;
+}) {
+  return (
+    <div className={cn("overflow-hidden rounded-[0.85rem] bg-black", mediaEmbed.shape === "video" ? "aspect-video" : "h-[352px]")}>
+      <iframe
+        allow={mediaEmbed.provider === "spotify" ? "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" : "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"}
+        allowFullScreen
+        className="block h-full w-full border-0"
+        loading="lazy"
+        referrerPolicy="strict-origin-when-cross-origin"
+        src={mediaEmbed.embedUrl}
+        title={mediaEmbed.iframeTitle}
+      />
+    </div>
   );
 }
 

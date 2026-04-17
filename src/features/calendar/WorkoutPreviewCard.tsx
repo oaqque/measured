@@ -74,7 +74,8 @@ function WorkoutCardContent({
   const iconSizeClass = compact ? "size-3.5" : "size-4";
   const routeOutlinePath = getWorkoutCardRouteOutlinePath(workout.summaryPolyline);
   const StatusIcon = statusMeta.icon;
-  const hasBackgroundImage = workout.primaryImageUrl !== null;
+  const backgroundImageUrl = getWorkoutCardBackgroundImageUrl(workout);
+  const hasBackgroundImage = backgroundImageUrl !== null;
   const weatherIconMeta = getWorkoutWeatherIconMeta(workout);
   const WeatherIcon = weatherIconMeta?.icon ?? null;
   const weatherIconClassName = weatherIconMeta?.className ?? null;
@@ -175,7 +176,8 @@ function WorkoutCardBackground({
   selected: boolean;
   workout: WorkoutNote;
 }) {
-  if (!workout.primaryImageUrl) {
+  const backgroundImageUrl = getWorkoutCardBackgroundImageUrl(workout);
+  if (!backgroundImageUrl) {
     return null;
   }
 
@@ -187,7 +189,7 @@ function WorkoutCardBackground({
           "pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat",
           selected ? "opacity-[0.9]" : "opacity-[0.98]",
         )}
-        style={{ backgroundImage: `url("${workout.primaryImageUrl}")` }}
+        style={{ backgroundImage: `url("${backgroundImageUrl}")` }}
       />
       <span
         aria-hidden="true"
@@ -332,6 +334,10 @@ function getWorkoutWeatherIconMeta(workout: WorkoutNote) {
     icon: Moon,
     label: "Night",
   };
+}
+
+function getWorkoutCardBackgroundImageUrl(workout: WorkoutNote) {
+  return workout.primaryImageUrl ?? workout.mediaThumbnailUrl ?? null;
 }
 
 function getWorkoutCardRouteOutlinePath(summaryPolyline: string | null) {

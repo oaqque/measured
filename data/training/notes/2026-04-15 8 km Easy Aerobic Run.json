@@ -12,6 +12,10 @@
     "strava": "18112387242",
     "appleHealth": "9127A084-F32C-4FD2-8FF6-BF4A681193D8"
   },
+  "media": {
+    "provider": "youtube",
+    "url": "https://www.youtube.com/watch?v=gfF8jzBVWvM&t=6589s"
+  },
   "sections": [
     {
       "kind": "program",

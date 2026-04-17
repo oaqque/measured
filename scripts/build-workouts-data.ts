@@ -12,6 +12,7 @@ import {
   parseWorkoutNoteSourceDocument,
   renderWorkoutNoteSourceDocumentBody,
 } from "../src/lib/workouts/source-note";
+import { resolveWorkoutMediaThumbnail } from "../src/lib/workouts/media";
 import type {
   AppleHealthMeasurementPoint,
   AppleHealthMeasurementSeries,
@@ -171,6 +172,14 @@ async function main() {
       };
     }),
   );
+  const mediaThumbnailsBySourcePath = new Map(
+    await Promise.all(
+      noteInputs.map(async (noteInput) => [
+        noteInput.sourcePath,
+        await resolveWorkoutMediaThumbnail(noteInput.document.media ?? null),
+      ] as const),
+    ),
+  );
 
   progress.step("Loading provider caches");
   const referencedActivityIds = collectReferencedActivityIds(noteInputs);
@@ -215,6 +224,7 @@ async function main() {
         noteInput.sourcePath,
         providerCaches,
         existingWorkoutFallbacks.get(noteInput.sourcePath) ?? null,
+        mediaThumbnailsBySourcePath.get(noteInput.sourcePath) ?? null,
       ),
     );
   }
@@ -904,6 +914,7 @@ function buildWorkoutNote(
   sourcePath: string,
   providerCaches: Record<WorkoutProvider, ProviderCacheSnapshot>,
   existingFallback: GeneratedWorkoutFallback | null,
+  mediaThumbnailUrl: string | null,
 ): WorkoutNote {
   const legacyStravaId = normalizeOptionalInteger(document.stravaId, fileName, "stravaId");
   const activityRefs = normalizeActivityRefs(document.activityRefs, fileName);
@@ -963,6 +974,7 @@ function buildWorkoutNote(
     primaryImageUrl: displaySource?.primaryImageUrl
       ? buildPublicWorkoutImagePath(slug, displaySource.primaryImageUrl)
       : null,
+    mediaThumbnailUrl,
     weather:
       selectWorkoutWeather(activityRefs, providerCaches) ??
       (hasDeletedLinkedActivity ? null : validFallback?.weather ?? null),
@@ -975,6 +987,7 @@ function buildWorkoutNote(
     allDay: expectBoolean(document.allDay, fileName, "allDay"),
     type: expectString(document.type, fileName, "type"),
     body: sanitizePublicText(renderWorkoutNoteSourceDocumentBody(document)),
+    media: document.media ?? null,
     sections: sanitizePublicWorkoutSections(document.sections),
     sourcePath,
   };

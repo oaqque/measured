@@ -3,6 +3,7 @@ export const WORKOUT_DATA_SOURCES = ["strava", "apple-health"] as const;
 export const WORKOUT_PROVIDERS = ["strava", "appleHealth"] as const;
 export const APPLE_HEALTH_ANALYSIS_MEASUREMENTS = ["heartRate", "cadence"] as const;
 export const STRAVA_ANALYSIS_MEASUREMENTS = ["pace", "heartRate", "moving", "elevation"] as const;
+export const WORKOUT_MEDIA_PROVIDERS = ["spotify", "youtube"] as const;
 export const WORKOUT_NOTE_SOURCE_SCHEMA_VERSION = 1 as const;
 
 export type WorkoutEventType = (typeof WORKOUT_EVENT_TYPES)[number];
@@ -10,6 +11,7 @@ export type WorkoutDataSource = (typeof WORKOUT_DATA_SOURCES)[number];
 export type WorkoutProvider = (typeof WORKOUT_PROVIDERS)[number];
 export type AppleHealthAnalysisMeasurement = (typeof APPLE_HEALTH_ANALYSIS_MEASUREMENTS)[number];
 export type StravaAnalysisMeasurement = (typeof STRAVA_ANALYSIS_MEASUREMENTS)[number];
+export type WorkoutMediaProvider = (typeof WORKOUT_MEDIA_PROVIDERS)[number];
 export type WorkoutMarkdown = string;
 
 export interface WorkoutRouteStreams {
@@ -39,6 +41,12 @@ export interface WorkoutWeather {
 export interface WorkoutActivityRefMap {
   strava?: string;
   appleHealth?: string;
+}
+
+export interface WorkoutMediaEmbed {
+  provider: WorkoutMediaProvider;
+  url: string;
+  title?: string;
 }
 
 export interface WorkoutNoteMarkdownSection {
@@ -104,6 +112,7 @@ export interface WorkoutNoteSourceDocument {
   actualDistance?: string;
   stravaId?: number;
   activityRefs?: WorkoutActivityRefMap;
+  media?: WorkoutMediaEmbed;
   sections: WorkoutNoteSourceSection[];
 }
 
@@ -191,6 +200,7 @@ export interface WorkoutNote {
   maxHeartrate: number | null;
   summaryPolyline: string | null;
   primaryImageUrl: string | null;
+  mediaThumbnailUrl?: string | null;
   weather: WorkoutWeather | null;
   hasStravaStreams?: boolean;
   hasRouteStreams: boolean;
@@ -203,6 +213,7 @@ export interface WorkoutNote {
   sourcePath: string;
   activityRefs?: WorkoutActivityRefMap;
   sources?: Partial<Record<WorkoutProvider, WorkoutSourceSummary>>;
+  media?: WorkoutMediaEmbed | null;
 }
 
 export interface PlanDocument {

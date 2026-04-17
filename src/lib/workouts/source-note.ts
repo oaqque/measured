@@ -1,9 +1,11 @@
 import matter from "gray-matter";
 import {
+  WORKOUT_MEDIA_PROVIDERS,
   WORKOUT_NOTE_SOURCE_SCHEMA_VERSION,
   type AppleHealthAnalysisMeasurement,
   type StravaAnalysisMeasurement,
   type WorkoutNoteAnalysisSection,
+  type WorkoutMediaEmbed,
   type WorkoutNoteMarkdownSection,
   type WorkoutNoteSourceDocument,
   type WorkoutNoteSourceSection,
@@ -126,6 +128,7 @@ export function convertLegacyMarkdownWorkoutNote(fileName: string, fileContent: 
       actualDistance: data.actualDistance,
       stravaId: data.stravaId,
       activityRefs: data.activityRefs,
+      media: data.media,
       sections,
     },
     fileName,
@@ -322,6 +325,10 @@ function normalizeWorkoutNoteSourceDocument(value: unknown, fileName: string): W
     throw new Error(`${fileName}: sections must be an array`);
   }
 
+  if (candidate.media !== undefined && !isPlainObject(candidate.media)) {
+    throw new Error(`${fileName}: media must be an object`);
+  }
+
   return {
     schemaVersion: WORKOUT_NOTE_SOURCE_SCHEMA_VERSION,
     title: candidate.title as string,
@@ -334,7 +341,34 @@ function normalizeWorkoutNoteSourceDocument(value: unknown, fileName: string): W
     ...(typeof candidate.actualDistance === "string" ? { actualDistance: candidate.actualDistance } : {}),
     ...(typeof candidate.stravaId === "number" ? { stravaId: candidate.stravaId } : {}),
     ...(isPlainObject(candidate.activityRefs) ? { activityRefs: candidate.activityRefs as WorkoutNoteSourceDocument["activityRefs"] } : {}),
+    ...(isPlainObject(candidate.media) ? { media: normalizeWorkoutMediaEmbed(candidate.media, fileName) } : {}),
     sections: sections.map((section, index) => normalizeWorkoutNoteSourceSection(section, fileName, index)),
+  };
+}
+
+function normalizeWorkoutMediaEmbed(value: unknown, fileName: string): WorkoutMediaEmbed {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`${fileName}: media must be an object`);
+  }
+
+  const candidate = value as Record<string, unknown>;
+  if (
+    typeof candidate.provider !== "string" ||
+    !WORKOUT_MEDIA_PROVIDERS.includes(candidate.provider as (typeof WORKOUT_MEDIA_PROVIDERS)[number])
+  ) {
+    throw new Error(`${fileName}: media.provider must be one of ${WORKOUT_MEDIA_PROVIDERS.join(", ")}`);
+  }
+
+  if (typeof candidate.url !== "string" || candidate.url.trim().length === 0) {
+    throw new Error(`${fileName}: media.url must be a non-empty string`);
+  }
+
+  return {
+    provider: candidate.provider as WorkoutMediaEmbed["provider"],
+    url: candidate.url.trim(),
+    ...(typeof candidate.title === "string" && candidate.title.trim().length > 0
+      ? { title: candidate.title.trim() }
+      : {}),
   };
 }
 

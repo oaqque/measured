@@ -119,4 +119,40 @@ activityRefs:
 
 - Pace drifted late.`);
   });
+
+  it("parses optional media embeds from source documents", () => {
+    const document = parseWorkoutNoteSourceDocument(
+      "2026-04-17 5 km Easy Recovery Run.json",
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          title: "5 km Easy Recovery Run",
+          allDay: true,
+          type: "single",
+          date: "2026-04-17",
+          completed: false,
+          eventType: "run",
+          media: {
+            provider: "spotify",
+            url: "https://open.spotify.com/track/2TpxZ7JUBn3uw46aR7qd6V",
+            title: "Recovery playlist",
+          },
+          sections: [
+            {
+              kind: "program",
+              markdown: "- 5 km easy recovery run",
+            },
+          ],
+        },
+        null,
+        2,
+      ),
+    );
+
+    expect(document.media).toEqual({
+      provider: "spotify",
+      url: "https://open.spotify.com/track/2TpxZ7JUBn3uw46aR7qd6V",
+      title: "Recovery playlist",
+    });
+  });
 });

@@ -12,6 +12,10 @@
     "strava": "18128277385",
     "appleHealth": "920E21C3-1CD3-4C78-B0D8-0ECCC8034767"
   },
+  "media": {
+    "provider": "spotify",
+    "url": "https://open.spotify.com/episode/1viBRy6dQdlSw0OdFvogXB?si=fad8c13916d742d3"
+  },
   "sections": [
     {
       "kind": "program",

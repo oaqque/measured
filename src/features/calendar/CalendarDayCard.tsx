@@ -10,7 +10,9 @@ export function CalendarDayCard({
   selectedWorkoutSlug: string | null;
   onSelectWorkout: (slug: string) => void;
 }) {
-  const useLightDateLabel = day.workouts.some((workout) => workout.primaryImageUrl);
+  const useLightDateLabel = day.workouts.some(
+    (workout) => workout.primaryImageUrl !== null || workout.mediaThumbnailUrl !== null,
+  );
 
   return (
     <section className="calendar-day-card h-full overflow-hidden rounded-[0.65rem] bg-[rgb(247,251,255)]">
