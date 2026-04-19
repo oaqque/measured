@@ -31,7 +31,7 @@ The latest `73 bpm` reading looks elevated relative to the rest of the month, so
 ### Estimated lactate-threshold heart rate
 
 - Working LTHR: `173 bpm`
-- Source: sustained-work estimate from the `2026-04-01` [10 km Threshold Run](notes/2026-04-01%2010%20km%20Threshold%20Run.md)
+- Source: sustained-work estimate from the `2026-04-01` [10 km Threshold Run](../notes/2026-04-01%2010%20km%20Threshold%20Run.md)
 
 This is the least certain input on the page.
 It is good enough for a working running-zone model, but it should eventually be replaced by a dedicated threshold test rather than inferred from a normal training session.

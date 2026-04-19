@@ -18,6 +18,7 @@ import {
   Menu,
   NotebookText,
   Trophy,
+  Zap,
 } from "lucide-react";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ import {
   getChangelogEntriesForFile,
   goalsDocument,
   heartRateDocument,
+  morningMobilityDocument,
   getWorkoutBySlug,
   trainingPlan,
   welcomeDocument,
@@ -46,7 +48,7 @@ import {
 import type { ChangelogEntry, GoalNote, WorkoutFilters } from "@/lib/workouts/schema";
 import { cn } from "@/lib/utils";
 
-type View = "welcome" | "goals" | "heart-rate" | "plan" | "calendar";
+type View = "welcome" | "goals" | "heart-rate" | "morning-mobility" | "plan" | "calendar";
 type WorkoutStatus = WorkoutFilters["status"];
 type AppRoute = {
   view: View;
@@ -102,6 +104,10 @@ export default function App() {
     () => getChangelogEntriesForFile(heartRateDocument.sourcePath),
     [],
   );
+  const morningMobilityChanges = useMemo(
+    () => getChangelogEntriesForFile(morningMobilityDocument.sourcePath),
+    [],
+  );
   const changelogFocusedFile = useMemo(() => {
     if (selectedWorkout) {
       return selectedWorkout.sourcePath;
@@ -117,6 +123,10 @@ export default function App() {
 
     if (view === "heart-rate") {
       return heartRateDocument.sourcePath;
+    }
+
+    if (view === "morning-mobility") {
+      return morningMobilityDocument.sourcePath;
     }
 
     if (view === "plan") {
@@ -255,7 +265,7 @@ export default function App() {
   };
 
   const handleMarkdownLink = (href: string) => {
-    const normalizedHref = href.split("#")[0]?.split("?")[0] ?? href;
+    const normalizedHref = normalizeInternalHref(href);
 
     if (normalizedHref === "README.md" || normalizedHref === "PLAN.md") {
       navigateToView("plan");
@@ -267,8 +277,16 @@ export default function App() {
       return true;
     }
 
-    if (normalizedHref === "HEART_RATE.md") {
+    if (normalizedHref === "HEART_RATE.md" || normalizedHref === "metaanalysis/HEART_RATE.md") {
       navigateToView("heart-rate");
+      return true;
+    }
+
+    if (
+      normalizedHref === "MORNING_MOBILITY.md" ||
+      normalizedHref === "metaanalysis/MORNING_MOBILITY.md"
+    ) {
+      navigateToView("morning-mobility");
       return true;
     }
 
@@ -468,6 +486,16 @@ export default function App() {
                     onLinkClick={handleMarkdownLink}
                   />
                 </div>
+              ) : view === "morning-mobility" ? (
+                <div className="app-scroll-pane h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
+                  <MarkdownPage
+                    content={morningMobilityDocument.body}
+                    relatedChanges={morningMobilityChanges}
+                    sourcePath={morningMobilityDocument.sourcePath}
+                    onFileClick={handleMarkdownLink}
+                    onLinkClick={handleMarkdownLink}
+                  />
+                </div>
               ) : view === "plan" ? (
                 <div className="app-scroll-pane h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
                   <MarkdownPage
@@ -535,6 +563,12 @@ function SidebarContent({
           icon={<HeartPulse className="size-4" />}
           label="Heart Rate"
           onClick={() => onNavigate("heart-rate")}
+        />
+        <SidebarNavButton
+          active={view === "morning-mobility"}
+          icon={<Zap className="size-4" />}
+          label="Morning Mobility"
+          onClick={() => onNavigate("morning-mobility")}
         />
         <SidebarNavButton
           active={view === "calendar"}
@@ -1062,6 +1096,10 @@ function getRouteFromPath(pathname: string): AppRoute {
     return { view: "heart-rate", noteSlug: null };
   }
 
+  if (normalizedPath === "/morning-mobility") {
+    return { view: "morning-mobility", noteSlug: null };
+  }
+
   if (normalizedPath === "/plan") {
     return { view: "plan", noteSlug: null };
   }
@@ -1084,6 +1122,10 @@ function getPathFromRoute(route: AppRoute) {
 
   if (route.view === "heart-rate") {
     return "/heart-rate";
+  }
+
+  if (route.view === "morning-mobility") {
+    return "/morning-mobility";
   }
 
   if (route.view === "plan") {
@@ -1118,6 +1160,10 @@ function formatViewLabel(view: View) {
     return "Heart Rate";
   }
 
+  if (view === "morning-mobility") {
+    return "Morning Mobility";
+  }
+
   if (view === "calendar") {
     return "Calendar";
   }
@@ -1127,6 +1173,20 @@ function formatViewLabel(view: View) {
 
 function clampNumber(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function normalizeInternalHref(href: string) {
+  let normalizedHref = href.split("#")[0]?.split("?")[0] ?? href;
+
+  while (normalizedHref.startsWith("./")) {
+    normalizedHref = normalizedHref.slice(2);
+  }
+
+  while (normalizedHref.startsWith("../")) {
+    normalizedHref = normalizedHref.slice(3);
+  }
+
+  return normalizedHref;
 }
 
 function formatTimestamp(value: string) {
@@ -1190,8 +1250,19 @@ function formatAffectedFileLabel(sourcePath: string) {
     return "GOALS.md";
   }
 
-  if (sourcePath === "HEART_RATE.md") {
+  if (sourcePath === "HEART_RATE.md" || sourcePath === "metaanalysis/HEART_RATE.md") {
     return "HEART_RATE.md";
+  }
+
+  if (
+    sourcePath === "MORNING_MOBILITY.md" ||
+    sourcePath === "metaanalysis/MORNING_MOBILITY.md"
+  ) {
+    return "MORNING_MOBILITY.md";
+  }
+
+  if (sourcePath.startsWith("metaanalysis/")) {
+    return sourcePath.slice("metaanalysis/".length).replace(/\.md$/u, "");
   }
 
   if (sourcePath.startsWith("goals/")) {
@@ -1210,7 +1281,7 @@ function formatAffectedFileLabel(sourcePath: string) {
 }
 
 function workoutHrefToSlug(href: string) {
-  const normalizedHref = href.split("#")[0]?.split("?")[0] ?? "";
+  const normalizedHref = normalizeInternalHref(href);
   if (normalizedHref.startsWith("/notes/")) {
     const slug = decodeURIComponent(normalizedHref.slice("/notes/".length)).trim();
     return slug.length > 0 ? slug : null;

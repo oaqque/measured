@@ -247,6 +247,7 @@ export interface WorkoutsData {
   welcome: PlanDocument;
   goals: PlanDocument;
   heartRate: PlanDocument;
+  morningMobility: PlanDocument;
   goalNotes: GoalNote[];
   plan: PlanDocument;
   changelog: ChangelogEntry[];

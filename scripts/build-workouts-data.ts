@@ -207,12 +207,14 @@ async function main() {
   let welcome: PlanDocument | null = null;
   let goals: PlanDocument | null = null;
   let heartRate: PlanDocument | null = null;
+  let morningMobility: PlanDocument | null = null;
   let plan: PlanDocument | null = null;
 
   progress.step("Reading plan documents");
   welcome = await readDocument(path.join(dataDir, "WELCOME.md"), dataDir);
   goals = await readDocument(path.join(dataDir, "GOALS.md"), dataDir);
-  heartRate = await readDocument(path.join(dataDir, "HEART_RATE.md"), dataDir);
+  heartRate = await readDocument(path.join(dataDir, "metaanalysis", "HEART_RATE.md"), dataDir);
+  morningMobility = await readDocument(path.join(dataDir, "metaanalysis", "MORNING_MOBILITY.md"), dataDir);
   plan = await readDocument(path.join(dataDir, "PLAN.md"), dataDir);
 
   progress.step("Building workout payload");
@@ -251,7 +253,11 @@ async function main() {
   }
 
   if (!heartRate) {
-    throw new Error(`Missing HEART_RATE.md in workouts source directory: ${dataDir}`);
+    throw new Error(`Missing metaanalysis/HEART_RATE.md in workouts source directory: ${dataDir}`);
+  }
+
+  if (!morningMobility) {
+    throw new Error(`Missing metaanalysis/MORNING_MOBILITY.md in workouts source directory: ${dataDir}`);
   }
 
   workouts.sort((left, right) =>
@@ -264,6 +270,7 @@ async function main() {
     welcome,
     goals,
     heartRate,
+    morningMobility,
     goalNotes,
     plan,
     changelog: changelogEntries,
@@ -772,7 +779,7 @@ async function assertNotesDirectory(notesDir: string) {
     throw new Error(
       [
         `Unable to read workout notes directory: ${notesDir}`,
-        `Expected structure: <data-root>/${notesDirName}/*.json with PLAN.md, WELCOME.md, GOALS.md, AGENTS.md, and goals/*.md in <data-root>`,
+        `Expected structure: <data-root>/${notesDirName}/*.json with PLAN.md, WELCOME.md, GOALS.md, AGENTS.md, goals/*.md, metaanalysis/HEART_RATE.md, and metaanalysis/MORNING_MOBILITY.md in <data-root>`,
         `Details: ${detail}`,
       ].join("\n"),
     );

@@ -57,6 +57,7 @@ export function CalendarDayCard({
 
 function formatFullDate(value: string) {
   return new Intl.DateTimeFormat("en-AU", {
+    weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",

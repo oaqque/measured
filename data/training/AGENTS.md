@@ -1,7 +1,8 @@
 # Training Authoring Rules
 
 This folder is the editable training plan and workout note source used by
-`measured`. Root documents live here, and individual workout notes live under `notes/`.
+`measured`. Core planning documents live here, metaanalysis references live under
+`metaanalysis/`, and individual workout notes live under `notes/`.
 
 Standardize scheduled training events as all-day calendar notes with:
 
