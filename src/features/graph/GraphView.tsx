@@ -12,15 +12,15 @@ const GRAPH_LABELS_KEY = "measured.noteGraph.showAllLabels";
 export function GraphView({
   initialGraphData,
   noteOverlay,
-  onCloseWorkout,
-  selectedWorkoutSlug,
-  onSelectWorkout,
+  onCloseSelection,
+  selectedNodeId,
+  onSelectNode,
 }: {
   initialGraphData: NoteGraphData;
   noteOverlay?: ReactNode;
-  onCloseWorkout: () => void;
-  selectedWorkoutSlug: string | null;
-  onSelectWorkout: (slug: string | null) => void;
+  onCloseSelection: () => void;
+  selectedNodeId: string | null;
+  onSelectNode: (nodeId: string | null) => void;
 }) {
   const [fitRequestVersion, setFitRequestVersion] = useState(0);
   const [showAllLabels, setShowAllLabels] = useState(() => {
@@ -37,7 +37,7 @@ export function GraphView({
 
     return new URLSearchParams(window.location.search).get("graphTelemetry") === "1";
   });
-  const previousDetailOpenRef = useRef(Boolean(selectedWorkoutSlug));
+  const previousDetailOpenRef = useRef(Boolean(selectedNodeId));
   const {
     assistantText,
     backendLabel,
@@ -71,25 +71,25 @@ export function GraphView({
   }, []);
 
   useEffect(() => {
-    const nextOpen = Boolean(selectedWorkoutSlug);
+    const nextOpen = Boolean(selectedNodeId);
     if (previousDetailOpenRef.current !== nextOpen && nextOpen) {
       graphTelemetry.recordDetailPaneOpen();
     }
     previousDetailOpenRef.current = nextOpen;
-  }, [selectedWorkoutSlug]);
+  }, [selectedNodeId]);
 
   useEffect(() => {
     window.localStorage.setItem(GRAPH_LABELS_KEY, String(showAllLabels));
   }, [showAllLabels]);
 
   useEffect(() => {
-    if (!selectedWorkoutSlug) {
+    if (!selectedNodeId) {
       return;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        onCloseWorkout();
+        onCloseSelection();
       }
     };
 
@@ -97,7 +97,7 @@ export function GraphView({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onCloseWorkout, selectedWorkoutSlug]);
+  }, [onCloseSelection, selectedNodeId]);
 
   return (
     <div className="relative h-full min-h-0">
@@ -107,10 +107,10 @@ export function GraphView({
           data={graphData}
           fitRequestVersion={fitRequestVersion}
           paused={paused}
-          selectedSlug={selectedWorkoutSlug}
+          selectedNodeId={selectedNodeId}
           showAllLabels={showAllLabels}
           showAuthoredOnly={showAuthoredOnly}
-          onSelectSlug={onSelectWorkout}
+          onSelectNode={onSelectNode}
         />
 
         <GraphToolbar
@@ -144,7 +144,7 @@ export function GraphView({
               aria-label="Close selected note"
               className="absolute inset-0 bg-foreground/10 backdrop-blur-[2px]"
               type="button"
-              onClick={onCloseWorkout}
+              onClick={onCloseSelection}
             />
             <div className="pointer-events-none absolute inset-0 flex items-stretch justify-center p-3 md:p-5">
               <div className="pointer-events-auto h-full w-full max-w-[min(72rem,calc(100%-1rem))] overflow-hidden rounded-[1.7rem] border border-foreground/10 bg-background/96 shadow-2xl shadow-primary/15 backdrop-blur">

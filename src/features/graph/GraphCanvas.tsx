@@ -1,18 +1,27 @@
 import { useEffect, useMemo, useRef } from "react";
 import { graphTelemetry } from "@/features/graph/telemetry";
 import { useGraphWasm } from "@/features/graph/useGraphWasm";
+import { graphFolderNodeIdToPath } from "@/lib/graph/ids";
+import { formatGraphFolderLabel } from "@/lib/graph/labels";
 import type { GraphClusterMode, NoteGraphData } from "@/lib/graph/schema";
 import type { GraphEngineController } from "@/features/graph/engine-types";
 
-const EVENT_TYPE_COLORS = {
+const CATEGORY_COLORS = {
   basketball: "#f08a24",
+  changelog: "#8c5e3c",
+  folder: "#4c6285",
+  goal: "#b03f78",
+  goals: "#9150b8",
+  metaanalysis: "#4f7aa7",
   mobility: "#5c6bc0",
+  plan: "#2e5f73",
   race: "#c93636",
   run: "#1d2a6d",
   strength: "#2f7d51",
+  welcome: "#6a6f8c",
 } as const;
 
-const DEFAULT_CLUSTER_MODE: GraphClusterMode = "eventType";
+const DEFAULT_CLUSTER_MODE: GraphClusterMode = "none";
 
 function getClusterValue(node: NoteGraphData["nodes"][number], clusterMode: GraphClusterMode) {
   if (clusterMode === "eventType") {
@@ -39,19 +48,19 @@ export function GraphCanvas({
   data,
   fitRequestVersion,
   paused,
-  selectedSlug,
+  selectedNodeId,
   showAllLabels,
   showAuthoredOnly,
-  onSelectSlug,
+  onSelectNode,
 }: {
   clusterMode: GraphClusterMode;
   data: NoteGraphData;
   fitRequestVersion: number;
   paused: boolean;
-  selectedSlug: string | null;
+  selectedNodeId: string | null;
   showAllLabels: boolean;
   showAuthoredOnly: boolean;
-  onSelectSlug: (slug: string | null) => void;
+  onSelectNode: (nodeId: string | null) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -69,17 +78,17 @@ export function GraphCanvas({
   const autoFitStillFramesRef = useRef(0);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const { createEngine, error, usingFallback } = useGraphWasm();
-  const onSelectSlugRef = useRef(onSelectSlug);
+  const onSelectNodeRef = useRef(onSelectNode);
   const markDirty = (reason: string) => {
     pendingDrawReasonsRef.current.add(reason);
     needsDrawRef.current = true;
   };
 
-  const selectedId = selectedSlug;
+  const selectedId = selectedNodeId;
 
   useEffect(() => {
-    onSelectSlugRef.current = onSelectSlug;
-  }, [onSelectSlug]);
+    onSelectNodeRef.current = onSelectNode;
+  }, [onSelectNode]);
 
   const clusterLabelByKey = useMemo(
     () => new Map(data.clusters.map((cluster) => [`${cluster.mode}:${cluster.key}`, cluster.label])),
@@ -87,11 +96,18 @@ export function GraphCanvas({
   );
   const activeClusterLabelByNodeId = useMemo(() => {
     const labels = new Map<string, string>();
-    if (clusterMode === "none") {
-      return labels;
-    }
-
     for (const node of data.nodes) {
+      if (node.nodeKind === "folder") {
+        const folderPath = graphFolderNodeIdToPath(node.id);
+        labels.set(node.id, folderPath ? formatGraphFolderLabel(folderPath) : node.title);
+        continue;
+      }
+
+      if (clusterMode === "none") {
+        labels.set(node.id, node.title);
+        continue;
+      }
+
       const clusterKey = getClusterValue(node, clusterMode);
       if (!clusterKey) {
         continue;
@@ -140,10 +156,16 @@ export function GraphCanvas({
       for (const node of snapshot.nodes) {
         const isSelected = snapshot.selectedNodeId === node.id;
         const isHovered = snapshot.hoveredNodeId === node.id;
+        context.fillStyle = CATEGORY_COLORS[node.category];
+        context.globalAlpha = node.status === "planned" ? 0.78 : node.nodeKind === "folder" ? 0.88 : 0.94;
         context.beginPath();
-        context.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-        context.fillStyle = EVENT_TYPE_COLORS[node.eventType];
-        context.globalAlpha = node.status === "planned" ? 0.78 : 0.94;
+        if (node.nodeKind === "folder") {
+          const width = node.radius * 2.4;
+          const height = node.radius * 1.45;
+          context.roundRect(node.x - width / 2, node.y - height / 2, width, height, 9);
+        } else {
+          context.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+        }
         context.fill();
         context.globalAlpha = 1;
 
@@ -188,7 +210,7 @@ export function GraphCanvas({
         context.restore();
       };
 
-      if (showAllLabels && clusterMode !== "none") {
+      if (showAllLabels) {
         for (const node of snapshot.nodes) {
           if (hoveredNode && node.id === hoveredNode.id) {
             continue;
@@ -203,7 +225,7 @@ export function GraphCanvas({
         }
       }
 
-      if (hoveredNode && clusterMode !== "none") {
+      if (hoveredNode) {
         const hoverLabel = activeClusterLabelByNodeId.get(hoveredNode.id);
         if (hoverLabel) {
           drawNodeLabel(hoveredNode, hoverLabel, true);
@@ -214,7 +236,7 @@ export function GraphCanvas({
       graphTelemetry.recordDraw(performance.now() - drawStartedAt, Array.from(pendingDrawReasonsRef.current));
       pendingDrawReasonsRef.current.clear();
     },
-    [activeClusterLabelByNodeId, clusterMode, showAllLabels],
+    [activeClusterLabelByNodeId, showAllLabels],
   );
 
   useEffect(() => {
@@ -335,7 +357,7 @@ export function GraphCanvas({
     const handleEvents = (events: Array<{ nodeId?: string | null; type: string }>) => {
       for (const event of events) {
         if (event.type === "selectionChanged") {
-          onSelectSlugRef.current(event.nodeId ?? null);
+          onSelectNodeRef.current(event.nodeId ?? null);
           graphTelemetry.recordSelectionChange(event.nodeId ?? null);
         }
         if (event.type === "dragStateChanged") {

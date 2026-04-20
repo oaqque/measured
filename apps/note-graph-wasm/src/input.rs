@@ -100,10 +100,10 @@ impl GraphState {
         let mut events = Vec::new();
         if let Some(node_id) = self.pending_node_selection_id.clone() {
             if self.dragging_node_id.is_none() {
-                self.selected_node_id = Some(node_id.clone());
+                let next_selected_node_id = self.apply_selection(Some(node_id), true);
                 events.push(GraphInteractionEvent {
                     event_type: "selectionChanged".to_string(),
-                    nodeId: Some(node_id),
+                    nodeId: next_selected_node_id,
                     dragging: None,
                     viewport: None,
                 });
@@ -126,22 +126,22 @@ impl GraphState {
     }
 
     pub fn select_node(&mut self, node_id: Option<String>) -> Vec<GraphInteractionEvent> {
-        self.selected_node_id = node_id.clone();
+        let next_selected_node_id = self.sync_selection(node_id, true);
         vec![GraphInteractionEvent {
             event_type: "selectionChanged".to_string(),
-            nodeId: node_id,
+            nodeId: next_selected_node_id,
             dragging: None,
             viewport: None,
         }]
     }
 
     fn find_node_at(&self, x: f64, y: f64) -> Option<usize> {
-        self.nodes.iter().enumerate().rev().find_map(|(index, node)| {
-            if (node.x - x).hypot(node.y - y) <= node.radius + 8.0 {
-                Some(index)
-            } else {
-                None
-            }
-        })
+        self.renderable_node_indexes()
+            .into_iter()
+            .rev()
+            .find(|index| {
+                let node = &self.nodes[*index];
+                (node.x - x).hypot(node.y - y) <= node.radius + 8.0
+            })
     }
 }

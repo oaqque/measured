@@ -1,7 +1,7 @@
 import noteGraphJson from "@/generated/note-graph.json";
 import type { NoteGraphData } from "@/lib/graph/schema";
 
-export const noteGraph = noteGraphJson as NoteGraphData;
+export const noteGraph = noteGraphJson as unknown as NoteGraphData;
 
 export function getGraphNodeBySlug(slug: string) {
   return noteGraph.nodes.find((node) => node.slug === slug) ?? null;

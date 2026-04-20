@@ -1,21 +1,36 @@
-import type { WorkoutEventType } from "@/lib/workouts/schema";
-
 export const NOTE_GRAPH_SCHEMA_VERSION = 1 as const;
 export const GRAPH_CLUSTER_MODES = ["none", "eventType", "status", "month", "trainingBlock"] as const;
-export const GRAPH_NODE_STATUSES = ["planned", "completed"] as const;
+export const GRAPH_NODE_KINDS = ["workout", "document", "folder"] as const;
+export const GRAPH_NODE_STATUSES = ["planned", "completed", "reference", "folder"] as const;
+export const GRAPH_NODE_CATEGORIES = [
+  "run",
+  "basketball",
+  "strength",
+  "mobility",
+  "race",
+  "welcome",
+  "plan",
+  "goals",
+  "goal",
+  "metaanalysis",
+  "changelog",
+  "folder",
+] as const;
 export const GRAPH_LINK_SOURCES = ["authored", "derived"] as const;
 export const GRAPH_LINK_KINDS = [
   "progression",
   "taper",
   "goalBridge",
-  "adjacent",
-  "sameDay",
+  "contains",
+  "references",
   "derived",
   "custom",
 ] as const;
 
 export type GraphClusterMode = (typeof GRAPH_CLUSTER_MODES)[number];
+export type GraphNodeKind = (typeof GRAPH_NODE_KINDS)[number];
 export type GraphNodeStatus = (typeof GRAPH_NODE_STATUSES)[number];
+export type GraphNodeCategory = (typeof GRAPH_NODE_CATEGORIES)[number];
 export type GraphLinkSource = (typeof GRAPH_LINK_SOURCES)[number];
 export type GraphLinkKind = (typeof GRAPH_LINK_KINDS)[number];
 
@@ -41,12 +56,13 @@ export interface NoteGraphNodeClusterRefs {
 
 export interface NoteGraphNode {
   id: string;
-  slug: string;
+  slug: string | null;
+  nodeKind: GraphNodeKind;
   title: string;
-  date: string;
-  eventType: WorkoutEventType;
+  date: string | null;
+  category: GraphNodeCategory;
   status: GraphNodeStatus;
-  sourcePath: string;
+  sourcePath: string | null;
   excerpt: string | null;
   radius: number;
   x: number;
@@ -100,7 +116,8 @@ export interface GraphSnapshot {
     y: number;
     radius: number;
     label: string;
-    eventType: WorkoutEventType;
+    category: GraphNodeCategory;
+    nodeKind: GraphNodeKind;
     status: GraphNodeStatus;
   }>;
   links: Array<{

@@ -12,8 +12,10 @@ import type { GraphEngineController } from "@/features/graph/engine-types";
 interface InternalNode {
   id: string;
   label: string;
-  eventType: NoteGraphNode["eventType"];
+  category: NoteGraphNode["category"];
+  nodeKind: NoteGraphNode["nodeKind"];
   status: NoteGraphNode["status"];
+  degree: number;
   radius: number;
   x: number;
   y: number;
@@ -40,6 +42,7 @@ export function createFallbackGraphEngine(data: NoteGraphData): GraphEngineContr
 class FallbackGraphEngine implements GraphEngineController {
   private allLinks: InternalLink[] = [];
   private allNodes: InternalNode[] = [];
+  private focusedFolderNodeId: string | null = null;
   private pendingNodeSelectionId: string | null = null;
   private height = 1;
   private lastPointerWorld: { x: number; y: number } | null = null;
@@ -65,8 +68,10 @@ class FallbackGraphEngine implements GraphEngineController {
     this.allNodes = data.nodes.map((node) => ({
       id: node.id,
       label: node.title,
-      eventType: node.eventType,
+      category: node.category,
+      nodeKind: node.nodeKind,
       status: node.status,
+      degree: 0,
       radius: node.radius,
       x: node.x,
       y: node.y,
@@ -119,16 +124,20 @@ class FallbackGraphEngine implements GraphEngineController {
     }
 
     const step = Math.min(1.8, Math.max(0.45, dtMs / 16));
-    this.assignTargets();
+    const activeNodeIds = this.getRenderableNodeIds();
+    const activeNodes = this.getRenderableNodes(activeNodeIds);
+    const activeLinks = this.getRenderableLinks(activeNodeIds);
+    this.assignTargets(activeNodes);
 
-    const nodeById = new Map(this.nodes.map((node) => [node.id, node]));
-    for (const node of this.nodes) {
-      const attraction = node.id === this.draggingNodeId ? 0.38 : 0.012;
+    const nodeById = new Map(activeNodes.map((node) => [node.id, node]));
+    for (const node of activeNodes) {
+      const attraction =
+        node.id === this.draggingNodeId ? 0.38 : node.nodeKind === "folder" ? 0.038 : node.nodeKind === "document" ? 0.024 : 0.012;
       node.vx += (node.targetX - node.x) * attraction * step;
       node.vy += (node.targetY - node.y) * attraction * step;
     }
 
-    for (const link of this.links) {
+    for (const link of activeLinks) {
       const source = nodeById.get(link.source);
       const target = nodeById.get(link.target);
       if (!source || !target) {
@@ -138,20 +147,23 @@ class FallbackGraphEngine implements GraphEngineController {
       const dx = target.x - source.x;
       const dy = target.y - source.y;
       const distance = Math.max(1, Math.hypot(dx, dy));
-      const desired = 72 + (1 - link.strength) * 48;
-      const force = ((distance - desired) / distance) * (0.02 + link.strength * 0.025) * step;
-      const fx = dx * force;
-      const fy = dy * force;
+      const desired = getLinkDesiredLength(link, source, target);
+      const stretch = clamp(distance - desired, -140, 140);
+      const directionX = dx / distance;
+      const directionY = dy / distance;
+      const stiffness = getLinkStiffness(link, source, target) * step;
+      const fx = directionX * stretch * stiffness;
+      const fy = directionY * stretch * stiffness;
       source.vx += fx;
       source.vy += fy;
       target.vx -= fx;
       target.vy -= fy;
     }
 
-    for (let leftIndex = 0; leftIndex < this.nodes.length; leftIndex += 1) {
-      const left = this.nodes[leftIndex];
-      for (let rightIndex = leftIndex + 1; rightIndex < this.nodes.length; rightIndex += 1) {
-        const right = this.nodes[rightIndex];
+    for (let leftIndex = 0; leftIndex < activeNodes.length; leftIndex += 1) {
+      const left = activeNodes[leftIndex];
+      for (let rightIndex = leftIndex + 1; rightIndex < activeNodes.length; rightIndex += 1) {
+        const right = activeNodes[rightIndex];
         const dx = right.x - left.x;
         const dy = right.y - left.y;
         const distanceSq = Math.max(16, dx * dx + dy * dy);
@@ -176,7 +188,7 @@ class FallbackGraphEngine implements GraphEngineController {
     }
 
     let moved = false;
-    for (const node of this.nodes) {
+    for (const node of activeNodes) {
       if (node.id === this.draggingNodeId && this.lastPointerWorld) {
         node.x = this.lastPointerWorld.x;
         node.y = this.lastPointerWorld.y;
@@ -188,8 +200,15 @@ class FallbackGraphEngine implements GraphEngineController {
 
       node.vx *= 0.86;
       node.vy *= 0.86;
+      clampVelocity(node, 24);
       node.x += node.vx * step;
       node.y += node.vy * step;
+      if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) {
+        node.x = node.targetX;
+        node.y = node.targetY;
+        node.vx = 0;
+        node.vy = 0;
+      }
       if (Math.abs(node.vx) > 0.015 || Math.abs(node.vy) > 0.015) {
         moved = true;
       }
@@ -199,22 +218,28 @@ class FallbackGraphEngine implements GraphEngineController {
   }
 
   getSnapshot(): GraphSnapshot {
-    const nodeById = new Map(this.nodes.map((node) => [node.id, node]));
+    const activeNodeIds = this.getRenderableNodeIds();
+    const activeNodes = this.getRenderableNodes(activeNodeIds);
+    const activeLinks = this.getRenderableLinks(activeNodeIds);
+    const nodeById = new Map(activeNodes.map((node) => [node.id, node]));
+    const hoveredNodeId = this.hoveredNodeId && nodeById.has(this.hoveredNodeId) ? this.hoveredNodeId : null;
+    const selectedNodeId = this.selectedNodeId && nodeById.has(this.selectedNodeId) ? this.selectedNodeId : null;
 
     return {
       viewport: this.viewport,
-      hoveredNodeId: this.hoveredNodeId,
-      selectedNodeId: this.selectedNodeId,
-      nodes: this.nodes.map((node) => ({
+      hoveredNodeId,
+      selectedNodeId,
+      nodes: activeNodes.map((node) => ({
         id: node.id,
         x: node.x,
         y: node.y,
         radius: node.radius,
         label: node.label,
-        eventType: node.eventType,
+        category: node.category,
+        nodeKind: node.nodeKind,
         status: node.status,
       })),
-      links: this.links.flatMap((link) => {
+      links: activeLinks.flatMap((link) => {
         const source = nodeById.get(link.source);
         const target = nodeById.get(link.target);
         if (!source || !target) {
@@ -308,8 +333,8 @@ class FallbackGraphEngine implements GraphEngineController {
       events.push({ type: "dragStateChanged", dragging: false });
     }
     if (this.pendingNodeSelectionId && !this.draggingNodeId) {
-      this.selectedNodeId = this.pendingNodeSelectionId;
-      events.push({ type: "selectionChanged", nodeId: this.pendingNodeSelectionId });
+      const nextSelectedNodeId = this.applySelection(this.pendingNodeSelectionId, true);
+      events.push({ type: "selectionChanged", nodeId: nextSelectedNodeId });
     }
     this.pendingNodeSelectionId = null;
     this.draggingNodeId = null;
@@ -353,8 +378,8 @@ class FallbackGraphEngine implements GraphEngineController {
   }
 
   selectNode(nodeId: string | null): GraphInteractionEvent[] {
-    this.selectedNodeId = nodeId;
-    return [{ type: "selectionChanged", nodeId }];
+    const nextSelectedNodeId = this.syncSelection(nodeId, true);
+    return [{ type: "selectionChanged", nodeId: nextSelectedNodeId }];
   }
 
   applyOps(opsJson: string) {
@@ -371,31 +396,44 @@ class FallbackGraphEngine implements GraphEngineController {
     const visibleLinks = this.showAuthoredOnly
       ? this.allLinks.filter((link) => link.sourceType === "authored")
       : this.allLinks;
+    const degreeById = new Map<string, number>();
     const visibleNodeIds = new Set<string>();
     for (const link of visibleLinks) {
       visibleNodeIds.add(link.source);
       visibleNodeIds.add(link.target);
+      degreeById.set(link.source, (degreeById.get(link.source) ?? 0) + 1);
+      degreeById.set(link.target, (degreeById.get(link.target) ?? 0) + 1);
     }
 
     this.links = visibleLinks.map((link) => ({ ...link }));
     this.nodes = this.allNodes
       .filter((node) => !this.showAuthoredOnly || visibleNodeIds.has(node.id))
-      .map((node) => ({ ...node }));
+      .map((node) => ({ ...node, degree: degreeById.get(node.id) ?? 0 }));
 
     if (this.nodes.length === 0) {
-      this.nodes = this.allNodes.map((node) => ({ ...node }));
+      this.nodes = this.allNodes.map((node) => ({ ...node, degree: 0 }));
+    }
+
+    if (!this.nodes.some((node) => node.id === this.focusedFolderNodeId && node.nodeKind === "folder")) {
+      this.focusedFolderNodeId = null;
+    }
+    if (this.selectedNodeId && !this.nodes.some((node) => node.id === this.selectedNodeId)) {
+      this.selectedNodeId = null;
+    }
+    if (this.hoveredNodeId && !this.nodes.some((node) => node.id === this.hoveredNodeId)) {
+      this.hoveredNodeId = null;
     }
 
     this.assignTargets();
   }
 
-  private assignTargets() {
-    if (this.clusterMode === "none") {
+  private assignTargets(nodes = this.nodes) {
+    if (this.clusterMode === "none" || nodes.length === 0) {
       return;
     }
 
     const clusterMembers = new Map<string, InternalNode[]>();
-    for (const node of this.nodes) {
+    for (const node of nodes) {
       const key = this.getClusterKey(node);
       const existing = clusterMembers.get(key);
       if (existing) {
@@ -459,8 +497,9 @@ class FallbackGraphEngine implements GraphEngineController {
   }
 
   private findNodeAt(x: number, y: number) {
-    for (let index = this.nodes.length - 1; index >= 0; index -= 1) {
-      const node = this.nodes[index];
+    const activeNodes = this.getRenderableNodes();
+    for (let index = activeNodes.length - 1; index >= 0; index -= 1) {
+      const node = activeNodes[index];
       if (Math.hypot(node.x - x, node.y - y) <= node.radius + 8) {
         return node;
       }
@@ -476,19 +515,20 @@ class FallbackGraphEngine implements GraphEngineController {
   }
 
   private getFitMetrics() {
-    if (this.nodes.length === 0) {
+    const finiteNodes = this.getRenderableNodes().filter((node) => Number.isFinite(node.x) && Number.isFinite(node.y));
+    if (finiteNodes.length === 0) {
       return null;
     }
 
-    const leftEdges = this.nodes.map((node) => node.x - node.radius).sort((left, right) => left - right);
-    const topEdges = this.nodes.map((node) => node.y - node.radius).sort((left, right) => left - right);
-    const rightEdges = this.nodes.map((node) => node.x + node.radius).sort((left, right) => left - right);
-    const bottomEdges = this.nodes.map((node) => node.y + node.radius).sort((left, right) => left - right);
-    const centerXs = this.nodes.map((node) => node.x).sort((left, right) => left - right);
-    const centerYs = this.nodes.map((node) => node.y).sort((left, right) => left - right);
+    const leftEdges = finiteNodes.map((node) => node.x - node.radius).sort((left, right) => left - right);
+    const topEdges = finiteNodes.map((node) => node.y - node.radius).sort((left, right) => left - right);
+    const rightEdges = finiteNodes.map((node) => node.x + node.radius).sort((left, right) => left - right);
+    const bottomEdges = finiteNodes.map((node) => node.y + node.radius).sort((left, right) => left - right);
+    const centerXs = finiteNodes.map((node) => node.x).sort((left, right) => left - right);
+    const centerYs = finiteNodes.map((node) => node.y).sort((left, right) => left - right);
 
-    const trimCount = this.nodes.length >= 80 ? Math.min(Math.floor(this.nodes.length * 0.05), 20) : 0;
-    const maxIndex = this.nodes.length - 1;
+    const trimCount = finiteNodes.length >= 80 ? Math.min(Math.floor(finiteNodes.length * 0.05), 20) : 0;
+    const maxIndex = finiteNodes.length - 1;
     const minIndex = Math.min(trimCount, maxIndex);
     const trimmedMaxIndex = Math.max(0, maxIndex - trimCount);
 
@@ -511,10 +551,152 @@ class FallbackGraphEngine implements GraphEngineController {
     return { minX, minY, maxX, maxY, centerX, centerY };
   }
 
+  private applySelection(nodeId: string | null, preserveFolderFocusOnNonFolder: boolean) {
+    if (!nodeId) {
+      this.focusedFolderNodeId = null;
+      this.selectedNodeId = null;
+      this.hoveredNodeId = null;
+      return null;
+    }
+
+    const node = this.nodes.find((candidate) => candidate.id === nodeId) ?? this.allNodes.find((candidate) => candidate.id === nodeId);
+    if (!node) {
+      this.focusedFolderNodeId = null;
+      this.selectedNodeId = null;
+      this.hoveredNodeId = null;
+      return null;
+    }
+
+    if (node.nodeKind === "folder") {
+      if (this.focusedFolderNodeId === nodeId) {
+        this.focusedFolderNodeId = null;
+        this.selectedNodeId = null;
+        this.hoveredNodeId = null;
+        return null;
+      }
+
+      this.focusedFolderNodeId = nodeId;
+      this.selectedNodeId = nodeId;
+    } else {
+      if (!preserveFolderFocusOnNonFolder) {
+        this.focusedFolderNodeId = null;
+      }
+      this.selectedNodeId = nodeId;
+    }
+
+    const activeNodeIds = this.getRenderableNodeIds();
+    if (activeNodeIds && this.hoveredNodeId && !activeNodeIds.has(this.hoveredNodeId)) {
+      this.hoveredNodeId = null;
+    }
+
+    return this.selectedNodeId;
+  }
+
+  private syncSelection(nodeId: string | null, preserveFolderFocusOnNonFolder: boolean) {
+    if (!nodeId) {
+      this.focusedFolderNodeId = null;
+      this.selectedNodeId = null;
+      this.hoveredNodeId = null;
+      return null;
+    }
+
+    const node = this.nodes.find((candidate) => candidate.id === nodeId) ?? this.allNodes.find((candidate) => candidate.id === nodeId);
+    if (!node) {
+      this.focusedFolderNodeId = null;
+      this.selectedNodeId = null;
+      this.hoveredNodeId = null;
+      return null;
+    }
+
+    if (node.nodeKind === "folder") {
+      this.focusedFolderNodeId = nodeId;
+      this.selectedNodeId = nodeId;
+    } else {
+      if (!preserveFolderFocusOnNonFolder) {
+        this.focusedFolderNodeId = null;
+      }
+      this.selectedNodeId = nodeId;
+    }
+
+    const activeNodeIds = this.getRenderableNodeIds();
+    if (activeNodeIds && this.hoveredNodeId && !activeNodeIds.has(this.hoveredNodeId)) {
+      this.hoveredNodeId = null;
+    }
+
+    return this.selectedNodeId;
+  }
+
+  private getRenderableNodeIds() {
+    if (!this.focusedFolderNodeId) {
+      return null;
+    }
+
+    if (!this.nodes.some((node) => node.id === this.focusedFolderNodeId && node.nodeKind === "folder")) {
+      return null;
+    }
+
+    const nodeIds = new Set<string>([this.focusedFolderNodeId]);
+    for (const link of this.links) {
+      if (link.source === this.focusedFolderNodeId || link.target === this.focusedFolderNodeId) {
+        nodeIds.add(link.source);
+        nodeIds.add(link.target);
+      }
+    }
+    return nodeIds;
+  }
+
+  private getRenderableNodes(nodeIds = this.getRenderableNodeIds()) {
+    return nodeIds ? this.nodes.filter((node) => nodeIds.has(node.id)) : this.nodes;
+  }
+
+  private getRenderableLinks(nodeIds = this.getRenderableNodeIds()) {
+    return nodeIds ? this.links.filter((link) => nodeIds.has(link.source) && nodeIds.has(link.target)) : this.links;
+  }
+
 }
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function clampVelocity(node: Pick<InternalNode, "vx" | "vy">, maxSpeed: number) {
+  const speed = Math.hypot(node.vx, node.vy);
+  if (speed <= maxSpeed || speed === 0) {
+    return;
+  }
+
+  const scale = maxSpeed / speed;
+  node.vx *= scale;
+  node.vy *= scale;
+}
+
+function getLinkDesiredLength(link: InternalLink, source: InternalNode, target: InternalNode) {
+  if (link.kind === "contains") {
+    return 138;
+  }
+
+  if (source.nodeKind !== "workout" || target.nodeKind !== "workout") {
+    return link.kind === "references" ? 112 : 96;
+  }
+
+  return 76 + (1 - link.strength) * 42;
+}
+
+function getLinkStiffness(link: InternalLink, source: InternalNode, target: InternalNode) {
+  const hubDegree = Math.max(1, source.degree, target.degree);
+  const hubScale = Math.max(0.03, 1 / Math.sqrt(hubDegree));
+  const baseStiffness = 0.006 + link.strength * 0.01;
+
+  let kindScale = 1;
+  if (link.kind === "contains") {
+    kindScale = 0.12;
+  } else if (link.kind === "references") {
+    kindScale = source.nodeKind === "workout" && target.nodeKind === "workout" ? 0.34 : 0.18;
+  } else if (link.sourceType === "derived") {
+    kindScale = 0.26;
+  }
+
+  return baseStiffness * kindScale * hubScale;
 }
 
 function hashNodeId(value: string) {

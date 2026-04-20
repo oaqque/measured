@@ -4,18 +4,18 @@ use crate::types::GraphState;
 
 impl GraphState {
     pub fn assign_targets(&mut self) {
-        if self.cluster_mode == "none" || self.nodes.is_empty() {
+        let active_node_indexes = self.renderable_node_indexes();
+        if self.cluster_mode == "none" || active_node_indexes.is_empty() {
             return;
         }
 
-        let mut ordered_keys = self
-            .nodes
+        let mut ordered_keys = active_node_indexes
             .iter()
-            .map(|node| match self.cluster_mode.as_str() {
-                "status" => node.clusters.status.clone(),
-                "month" => node.clusters.month.clone(),
-                "trainingBlock" => node.clusters.trainingBlock.clone(),
-                _ => node.clusters.eventType.clone(),
+            .map(|index| match self.cluster_mode.as_str() {
+                "status" => self.nodes[*index].clusters.status.clone(),
+                "month" => self.nodes[*index].clusters.month.clone(),
+                "trainingBlock" => self.nodes[*index].clusters.trainingBlock.clone(),
+                _ => self.nodes[*index].clusters.eventType.clone(),
             })
             .collect::<Vec<_>>();
         ordered_keys.sort();
@@ -30,12 +30,12 @@ impl GraphState {
         }
 
         let mut cluster_members = HashMap::<String, Vec<usize>>::new();
-        for (index, node) in self.nodes.iter().enumerate() {
+        for index in active_node_indexes {
             let key = match self.cluster_mode.as_str() {
-                "status" => node.clusters.status.clone(),
-                "month" => node.clusters.month.clone(),
-                "trainingBlock" => node.clusters.trainingBlock.clone(),
-                _ => node.clusters.eventType.clone(),
+                "status" => self.nodes[index].clusters.status.clone(),
+                "month" => self.nodes[index].clusters.month.clone(),
+                "trainingBlock" => self.nodes[index].clusters.trainingBlock.clone(),
+                _ => self.nodes[index].clusters.eventType.clone(),
             };
             cluster_members.entry(key).or_default().push(index);
         }
@@ -66,7 +66,8 @@ impl GraphState {
     }
 
     pub fn tick_layout(&mut self, dt_ms: f64) -> bool {
-        if self.nodes.is_empty() {
+        let active_node_indexes = self.renderable_node_indexes();
+        if active_node_indexes.is_empty() {
             return false;
         }
 
@@ -77,9 +78,14 @@ impl GraphState {
         self.assign_targets();
         let step = (dt_ms / 16.0).clamp(0.45, 1.8);
 
-        for node in &mut self.nodes {
+        for index in &active_node_indexes {
+            let node = &mut self.nodes[*index];
             let attraction = if self.dragging_node_id.as_ref() == Some(&node.id) {
                 0.38
+            } else if node.node_kind == "folder" {
+                0.038
+            } else if node.node_kind == "document" {
+                0.024
             } else {
                 0.012
             };
@@ -87,14 +93,19 @@ impl GraphState {
             node.vy += (node.target_y - node.y) * attraction * step;
         }
 
-        let node_index = self
-            .nodes
+        let node_index = active_node_indexes
             .iter()
-            .enumerate()
-            .map(|(index, node)| (node.id.clone(), index))
+            .map(|index| (self.nodes[*index].id.clone(), *index))
             .collect::<HashMap<_, _>>();
+        let renderable_node_ids = self.renderable_node_ids();
 
         for link in &self.links {
+            if let Some(renderable_node_ids_value) = renderable_node_ids.as_ref() {
+                if !renderable_node_ids_value.contains(&link.source) || !renderable_node_ids_value.contains(&link.target) {
+                    continue;
+                }
+            }
+
             let Some(source_index) = node_index.get(&link.source).copied() else {
                 continue;
             };
@@ -105,10 +116,24 @@ impl GraphState {
             let dx = self.nodes[target_index].x - self.nodes[source_index].x;
             let dy = self.nodes[target_index].y - self.nodes[source_index].y;
             let distance = dx.hypot(dy).max(1.0);
-            let desired = 72.0 + (1.0 - link.strength) * 48.0;
-            let force = ((distance - desired) / distance) * (0.02 + link.strength * 0.025) * step;
-            let fx = dx * force;
-            let fy = dy * force;
+            let desired = get_link_desired_length(
+                link.kind.as_str(),
+                self.nodes[source_index].node_kind.as_str(),
+                self.nodes[target_index].node_kind.as_str(),
+                link.strength,
+            );
+            let stretch = (distance - desired).clamp(-140.0, 140.0);
+            let stiffness = get_link_stiffness(
+                link.kind.as_str(),
+                link.source_type.as_str(),
+                self.nodes[source_index].node_kind.as_str(),
+                self.nodes[target_index].node_kind.as_str(),
+                self.nodes[source_index].degree,
+                self.nodes[target_index].degree,
+                link.strength,
+            ) * step;
+            let fx = (dx / distance) * stretch * stiffness;
+            let fy = (dy / distance) * stretch * stiffness;
 
             self.nodes[source_index].vx += fx;
             self.nodes[source_index].vy += fy;
@@ -116,8 +141,10 @@ impl GraphState {
             self.nodes[target_index].vy -= fy;
         }
 
-        for left_index in 0..self.nodes.len() {
-            for right_index in (left_index + 1)..self.nodes.len() {
+        for left_position in 0..active_node_indexes.len() {
+            let left_index = active_node_indexes[left_position];
+            for right_position in (left_position + 1)..active_node_indexes.len() {
+                let right_index = active_node_indexes[right_position];
                 let dx = self.nodes[right_index].x - self.nodes[left_index].x;
                 let dy = self.nodes[right_index].y - self.nodes[left_index].y;
                 let distance_sq = (dx * dx + dy * dy).max(16.0);
@@ -142,7 +169,8 @@ impl GraphState {
         }
 
         let mut moved = false;
-        for node in &mut self.nodes {
+        for index in active_node_indexes {
+            let node = &mut self.nodes[index];
             if self.dragging_node_id.as_ref() == Some(&node.id) {
                 if let Some((pointer_x, pointer_y)) = self.last_pointer_world {
                     node.x = pointer_x;
@@ -156,8 +184,15 @@ impl GraphState {
 
             node.vx *= 0.86;
             node.vy *= 0.86;
+            clamp_velocity(node, 24.0);
             node.x += node.vx * step;
             node.y += node.vy * step;
+            if !node.x.is_finite() || !node.y.is_finite() {
+                node.x = node.target_x;
+                node.y = node.target_y;
+                node.vx = 0.0;
+                node.vy = 0.0;
+            }
             if node.vx.abs() > 0.015 || node.vy.abs() > 0.015 {
                 moved = true;
             }
@@ -174,4 +209,57 @@ fn hash_node_id(value: &str) -> u32 {
         hash = hash.wrapping_mul(16_777_619);
     }
     hash
+}
+
+fn clamp_velocity(node: &mut crate::types::GraphNode, max_speed: f64) {
+    let speed = node.vx.hypot(node.vy);
+    if speed <= max_speed || speed == 0.0 {
+        return;
+    }
+
+    let scale = max_speed / speed;
+    node.vx *= scale;
+    node.vy *= scale;
+}
+
+fn get_link_desired_length(kind: &str, source_kind: &str, target_kind: &str, strength: f64) -> f64 {
+    if kind == "contains" {
+        return 138.0;
+    }
+
+    if source_kind != "workout" || target_kind != "workout" {
+        return if kind == "references" { 112.0 } else { 96.0 };
+    }
+
+    76.0 + (1.0 - strength) * 42.0
+}
+
+fn get_link_stiffness(
+    kind: &str,
+    source_type: &str,
+    source_kind: &str,
+    target_kind: &str,
+    source_degree: usize,
+    target_degree: usize,
+    strength: f64,
+) -> f64 {
+    let hub_degree = source_degree.max(target_degree).max(1) as f64;
+    let hub_scale = (1.0 / hub_degree.sqrt()).max(0.03);
+    let base_stiffness = 0.006 + strength * 0.01;
+
+    let kind_scale = if kind == "contains" {
+        0.12
+    } else if kind == "references" {
+        if source_kind == "workout" && target_kind == "workout" {
+            0.34
+        } else {
+            0.18
+        }
+    } else if source_type == "derived" {
+        0.26
+    } else {
+        1.0
+    };
+
+    base_stiffness * kind_scale * hub_scale
 }

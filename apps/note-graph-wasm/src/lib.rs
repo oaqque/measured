@@ -151,7 +151,7 @@ impl GraphEngine {
                     self.state.rebuild_visible_graph();
                 }
                 GraphOp::FocusNode { slug } => {
-                    self.state.selected_node_id = Some(slug);
+                    self.state.sync_selection(Some(slug), true);
                 }
                 GraphOp::SetClusterMode { mode } => {
                     self.state.cluster_mode = mode;

@@ -73,16 +73,24 @@ impl GraphState {
     }
 
     fn fit_metrics(&self) -> Option<(f64, f64, f64, f64, f64, f64)> {
-        if self.nodes.is_empty() {
+        let active_node_indexes = self.renderable_node_indexes();
+        let finite_nodes = self
+            .nodes
+            .iter()
+            .enumerate()
+            .filter(|(index, node)| active_node_indexes.contains(index) && node.x.is_finite() && node.y.is_finite())
+            .map(|(_, node)| node)
+            .collect::<Vec<_>>();
+        if finite_nodes.is_empty() {
             return None;
         }
 
-        let mut left_edges = self.nodes.iter().map(|node| node.x - node.radius).collect::<Vec<_>>();
-        let mut top_edges = self.nodes.iter().map(|node| node.y - node.radius).collect::<Vec<_>>();
-        let mut right_edges = self.nodes.iter().map(|node| node.x + node.radius).collect::<Vec<_>>();
-        let mut bottom_edges = self.nodes.iter().map(|node| node.y + node.radius).collect::<Vec<_>>();
-        let mut center_xs = self.nodes.iter().map(|node| node.x).collect::<Vec<_>>();
-        let mut center_ys = self.nodes.iter().map(|node| node.y).collect::<Vec<_>>();
+        let mut left_edges = finite_nodes.iter().map(|node| node.x - node.radius).collect::<Vec<_>>();
+        let mut top_edges = finite_nodes.iter().map(|node| node.y - node.radius).collect::<Vec<_>>();
+        let mut right_edges = finite_nodes.iter().map(|node| node.x + node.radius).collect::<Vec<_>>();
+        let mut bottom_edges = finite_nodes.iter().map(|node| node.y + node.radius).collect::<Vec<_>>();
+        let mut center_xs = finite_nodes.iter().map(|node| node.x).collect::<Vec<_>>();
+        let mut center_ys = finite_nodes.iter().map(|node| node.y).collect::<Vec<_>>();
         left_edges.sort_by(|left, right| left.total_cmp(right));
         top_edges.sort_by(|left, right| left.total_cmp(right));
         right_edges.sort_by(|left, right| left.total_cmp(right));
@@ -90,7 +98,7 @@ impl GraphState {
         center_xs.sort_by(|left, right| left.total_cmp(right));
         center_ys.sort_by(|left, right| left.total_cmp(right));
 
-        let node_count = self.nodes.len();
+        let node_count = finite_nodes.len();
         let trim_count = if node_count >= 80 {
             std::cmp::min(((node_count as f64) * 0.05).floor() as usize, 20)
         } else {

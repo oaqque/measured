@@ -9,9 +9,17 @@ pub struct LoadedGraph {
 #[derive(Clone, Deserialize, Serialize)]
 pub struct LoadedNode {
     pub id: String,
+    #[serde(default)]
+    pub slug: Option<String>,
+    #[serde(rename = "nodeKind")]
+    pub node_kind: String,
     pub title: String,
-    pub eventType: String,
+    pub category: String,
     pub status: String,
+    #[serde(default)]
+    pub sourcePath: Option<String>,
+    #[serde(default)]
+    pub date: Option<String>,
     pub radius: f64,
     pub x: f64,
     pub y: f64,
@@ -41,8 +49,10 @@ pub struct NodeClusters {
 pub struct GraphNode {
     pub id: String,
     pub label: String,
-    pub event_type: String,
+    pub category: String,
+    pub node_kind: String,
     pub status: String,
+    pub degree: usize,
     pub radius: f64,
     pub x: f64,
     pub y: f64,
@@ -77,7 +87,8 @@ pub struct SnapshotNode {
     pub y: f64,
     pub radius: f64,
     pub label: String,
-    pub eventType: String,
+    pub category: String,
+    pub nodeKind: String,
     pub status: String,
 }
 
@@ -146,6 +157,7 @@ pub enum GraphOp {
 pub struct GraphState {
     pub all_links: Vec<GraphLink>,
     pub all_nodes: Vec<GraphNode>,
+    pub focused_folder_node_id: Option<String>,
     pub links: Vec<GraphLink>,
     pub nodes: Vec<GraphNode>,
     pub pending_node_selection_id: Option<String>,
@@ -172,8 +184,10 @@ impl GraphState {
             .map(|node| GraphNode {
                 id: node.id,
                 label: node.title,
-                event_type: node.eventType,
+                category: node.category,
+                node_kind: node.node_kind,
                 status: node.status,
+                degree: 0,
                 radius: node.radius,
                 x: node.x,
                 y: node.y,
@@ -200,6 +214,7 @@ impl GraphState {
         let mut state = Self {
             all_links,
             all_nodes,
+            focused_folder_node_id: None,
             links: Vec::new(),
             nodes: Vec::new(),
             pending_node_selection_id: None,
@@ -236,9 +251,14 @@ impl GraphState {
             self.all_links.clone()
         };
 
+        let mut degree_by_id = std::collections::HashMap::<String, usize>::new();
         let visible_node_ids = visible_links
             .iter()
-            .flat_map(|link| [link.source.clone(), link.target.clone()])
+            .flat_map(|link| {
+                *degree_by_id.entry(link.source.clone()).or_insert(0) += 1;
+                *degree_by_id.entry(link.target.clone()).or_insert(0) += 1;
+                [link.source.clone(), link.target.clone()]
+            })
             .collect::<std::collections::HashSet<_>>();
 
         self.links = visible_links;
@@ -246,10 +266,167 @@ impl GraphState {
             .all_nodes
             .iter()
             .filter(|node| !self.show_authored_only || visible_node_ids.contains(&node.id))
-            .cloned()
+            .map(|node| {
+                let mut next = node.clone();
+                next.degree = *degree_by_id.get(&node.id).unwrap_or(&0);
+                next
+            })
             .collect::<Vec<_>>();
         if self.nodes.is_empty() {
-            self.nodes = self.all_nodes.clone();
+            self.nodes = self
+                .all_nodes
+                .iter()
+                .map(|node| {
+                    let mut next = node.clone();
+                    next.degree = 0;
+                    next
+                })
+                .collect::<Vec<_>>();
         }
+
+        if let Some(focused_folder_node_id) = &self.focused_folder_node_id {
+            if !self
+                .nodes
+                .iter()
+                .any(|node| &node.id == focused_folder_node_id && node.node_kind == "folder")
+            {
+                self.focused_folder_node_id = None;
+            }
+        }
+        if let Some(selected_node_id) = &self.selected_node_id {
+            if !self.nodes.iter().any(|node| &node.id == selected_node_id) {
+                self.selected_node_id = None;
+            }
+        }
+        if let Some(hovered_node_id) = &self.hovered_node_id {
+            if !self.nodes.iter().any(|node| &node.id == hovered_node_id) {
+                self.hovered_node_id = None;
+            }
+        }
+    }
+
+    pub fn apply_selection(&mut self, node_id: Option<String>, preserve_folder_focus_on_non_folder: bool) -> Option<String> {
+        let Some(node_id_value) = node_id else {
+            self.focused_folder_node_id = None;
+            self.selected_node_id = None;
+            self.hovered_node_id = None;
+            return None;
+        };
+
+        let node_kind = self
+            .nodes
+            .iter()
+            .find(|node| node.id == node_id_value)
+            .or_else(|| self.all_nodes.iter().find(|node| node.id == node_id_value))
+            .map(|node| node.node_kind.clone());
+
+        let Some(node_kind_value) = node_kind else {
+            self.focused_folder_node_id = None;
+            self.selected_node_id = None;
+            self.hovered_node_id = None;
+            return None;
+        };
+
+        if node_kind_value == "folder" {
+            if self.focused_folder_node_id.as_deref() == Some(node_id_value.as_str()) {
+                self.focused_folder_node_id = None;
+                self.selected_node_id = None;
+                self.hovered_node_id = None;
+                return None;
+            }
+
+            self.focused_folder_node_id = Some(node_id_value.clone());
+            self.selected_node_id = Some(node_id_value);
+        } else {
+            if !preserve_folder_focus_on_non_folder {
+                self.focused_folder_node_id = None;
+            }
+            self.selected_node_id = Some(node_id_value);
+        }
+
+        if let Some(renderable_node_ids) = self.renderable_node_ids() {
+            if let Some(hovered_node_id) = &self.hovered_node_id {
+                if !renderable_node_ids.contains(hovered_node_id) {
+                    self.hovered_node_id = None;
+                }
+            }
+        }
+
+        self.selected_node_id.clone()
+    }
+
+    pub fn sync_selection(&mut self, node_id: Option<String>, preserve_folder_focus_on_non_folder: bool) -> Option<String> {
+        let Some(node_id_value) = node_id else {
+            self.focused_folder_node_id = None;
+            self.selected_node_id = None;
+            self.hovered_node_id = None;
+            return None;
+        };
+
+        let node_kind = self
+            .nodes
+            .iter()
+            .find(|node| node.id == node_id_value)
+            .or_else(|| self.all_nodes.iter().find(|node| node.id == node_id_value))
+            .map(|node| node.node_kind.clone());
+
+        let Some(node_kind_value) = node_kind else {
+            self.focused_folder_node_id = None;
+            self.selected_node_id = None;
+            self.hovered_node_id = None;
+            return None;
+        };
+
+        if node_kind_value == "folder" {
+            self.focused_folder_node_id = Some(node_id_value.clone());
+            self.selected_node_id = Some(node_id_value);
+        } else {
+            if !preserve_folder_focus_on_non_folder {
+                self.focused_folder_node_id = None;
+            }
+            self.selected_node_id = Some(node_id_value);
+        }
+
+        if let Some(renderable_node_ids) = self.renderable_node_ids() {
+            if let Some(hovered_node_id) = &self.hovered_node_id {
+                if !renderable_node_ids.contains(hovered_node_id) {
+                    self.hovered_node_id = None;
+                }
+            }
+        }
+
+        self.selected_node_id.clone()
+    }
+
+    pub fn renderable_node_ids(&self) -> Option<std::collections::HashSet<String>> {
+        let focused_folder_node_id = self.focused_folder_node_id.as_ref()?;
+        if !self
+            .nodes
+            .iter()
+            .any(|node| &node.id == focused_folder_node_id && node.node_kind == "folder")
+        {
+            return None;
+        }
+
+        let mut node_ids = std::collections::HashSet::from([focused_folder_node_id.clone()]);
+        for link in &self.links {
+            if &link.source == focused_folder_node_id || &link.target == focused_folder_node_id {
+                node_ids.insert(link.source.clone());
+                node_ids.insert(link.target.clone());
+            }
+        }
+        Some(node_ids)
+    }
+
+    pub fn renderable_node_indexes(&self) -> Vec<usize> {
+        let Some(renderable_node_ids) = self.renderable_node_ids() else {
+            return (0..self.nodes.len()).collect::<Vec<_>>();
+        };
+
+        self.nodes
+            .iter()
+            .enumerate()
+            .filter_map(|(index, node)| renderable_node_ids.contains(&node.id).then_some(index))
+            .collect::<Vec<_>>()
     }
 }

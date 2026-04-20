@@ -27,7 +27,7 @@ interface SessionEventMessage {
   payload?: string;
 }
 
-const CLUSTER_MODE_KEY = "measured.noteGraph.clusterMode";
+const CLUSTER_MODE_KEY = "measured.noteGraph.clusterMode.v2";
 const AUTHORED_ONLY_KEY = "measured.noteGraph.authoredOnly";
 
 export function useGraphSession(initialGraphData: NoteGraphData) {
@@ -302,7 +302,7 @@ export function useGraphSession(initialGraphData: NoteGraphData) {
 
 function readStoredClusterMode(): GraphClusterMode {
   if (typeof window === "undefined") {
-    return "eventType";
+    return "none";
   }
 
   const storedValue = window.localStorage.getItem(CLUSTER_MODE_KEY);
@@ -316,7 +316,7 @@ function readStoredClusterMode(): GraphClusterMode {
     return storedValue;
   }
 
-  return "eventType";
+  return "none";
 }
 
 function readStoredAuthoredOnly() {
