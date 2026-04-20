@@ -14,13 +14,11 @@ import {
   FileText,
   Github,
   GripVertical,
-  HeartPulse,
   History,
   Menu,
   NotebookText,
   Orbit,
   Trophy,
-  Zap,
 } from "lucide-react";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { Button } from "@/components/ui/button";
@@ -71,7 +69,8 @@ export default function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [calendarFocusDateState, setCalendarFocusDate] = useState("");
-  const [graphSelectedNodeId, setGraphSelectedNodeId] = useState<string | null>(null);
+  const [graphFocusedNodeId, setGraphFocusedNodeId] = useState<string | null>(null);
+  const [graphOpenedNodeId, setGraphOpenedNodeId] = useState<string | null>(null);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(Boolean(selectedWorkoutSlug));
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(296);
   const [eventType, setEventType] = useState<WorkoutFilters["eventType"]>(DEFAULT_EVENT_TYPES);
@@ -147,8 +146,8 @@ export default function App() {
     ids.set("MORNING_MOBILITY.md", createGraphDocumentNodeId(morningMobilityDocument.sourcePath));
     return ids;
   }, [graphDocumentsById]);
-  const selectedGraphWorkout = graphSelectedNodeId ? getWorkoutBySlug(graphSelectedNodeId) : null;
-  const selectedGraphDocument = graphSelectedNodeId ? graphDocumentsById.get(graphSelectedNodeId) ?? null : null;
+  const selectedGraphWorkout = graphOpenedNodeId ? getWorkoutBySlug(graphOpenedNodeId) : null;
+  const selectedGraphDocument = graphOpenedNodeId ? graphDocumentsById.get(graphOpenedNodeId) ?? null : null;
   const welcomeChanges = useMemo(
     () => getChangelogEntriesForFile(welcomeDocument.sourcePath),
     [],
@@ -316,8 +315,23 @@ export default function App() {
     openWorkout(slug, false);
   };
 
-  const openNodeFromGraph = (nodeId: string | null) => {
-    setGraphSelectedNodeId(nodeId);
+  const focusNodeFromGraph = (nodeId: string | null) => {
+    setGraphFocusedNodeId(nodeId);
+    if (!nodeId) {
+      setGraphOpenedNodeId(null);
+    }
+  };
+
+  const openFocusedNodeFromGraph = () => {
+    if (!graphFocusedNodeId) {
+      return;
+    }
+
+    if (!graphDocumentsById.has(graphFocusedNodeId) && !getWorkoutBySlug(graphFocusedNodeId)) {
+      return;
+    }
+
+    setGraphOpenedNodeId(graphFocusedNodeId);
   };
 
   const handleDetailPanelOpenChange = (open: boolean) => {
@@ -404,13 +418,15 @@ export default function App() {
     const normalizedHref = normalizeInternalHref(href);
     const documentId = graphDocumentIdByPath.get(normalizedHref);
     if (documentId) {
-      setGraphSelectedNodeId(documentId);
+      setGraphFocusedNodeId(documentId);
+      setGraphOpenedNodeId(documentId);
       return true;
     }
 
     const slug = workoutHrefToSlug(normalizedHref);
     if (slug) {
-      setGraphSelectedNodeId(slug);
+      setGraphFocusedNodeId(slug);
+      setGraphOpenedNodeId(slug);
       return true;
     }
 
@@ -554,38 +570,37 @@ export default function App() {
                   ) : null}
                 </>
               ) : view === "graph" ? (
-                <div className="h-full overflow-hidden px-4 py-3 md:px-6 md:py-8 lg:px-10 lg:py-10">
-                  <div className="h-full min-h-0 min-w-0 overflow-hidden">
-                    <GraphView
-                      initialGraphData={noteGraph}
-                      noteOverlay={
-                        selectedGraphWorkout ? (
-                          <Suspense fallback={<WorkoutNotePaneSkeleton />}>
-                            <LazyWorkoutNotePane
-                              key={selectedGraphWorkout.slug}
-                              backLabel="Close note"
-                              workout={selectedGraphWorkout}
-                              onBack={() => setGraphSelectedNodeId(null)}
-                              onLinkClick={handleGraphMarkdownLink}
-                            />
-                          </Suspense>
-                        ) : selectedGraphDocument ? (
-                          <GraphDocumentOverlay
-                            body={selectedGraphDocument.body}
-                            date={selectedGraphDocument.date}
-                            eyebrow={selectedGraphDocument.eyebrow}
-                            sourcePath={selectedGraphDocument.sourcePath}
-                            title={selectedGraphDocument.title}
-                            onBack={() => setGraphSelectedNodeId(null)}
+                <div className="h-full min-h-0 overflow-hidden">
+                  <GraphView
+                    initialGraphData={noteGraph}
+                    noteOverlay={
+                      selectedGraphWorkout ? (
+                        <Suspense fallback={<WorkoutNotePaneSkeleton />}>
+                          <LazyWorkoutNotePane
+                            key={selectedGraphWorkout.slug}
+                            backLabel="Close note"
+                            workout={selectedGraphWorkout}
+                            onBack={() => setGraphOpenedNodeId(null)}
                             onLinkClick={handleGraphMarkdownLink}
                           />
-                        ) : null
-                      }
-                      selectedNodeId={graphSelectedNodeId}
-                      onCloseSelection={() => setGraphSelectedNodeId(null)}
-                      onSelectNode={openNodeFromGraph}
-                    />
-                  </div>
+                        </Suspense>
+                      ) : selectedGraphDocument ? (
+                        <GraphDocumentOverlay
+                          body={selectedGraphDocument.body}
+                          date={selectedGraphDocument.date}
+                          eyebrow={selectedGraphDocument.eyebrow}
+                          sourcePath={selectedGraphDocument.sourcePath}
+                          title={selectedGraphDocument.title}
+                          onBack={() => setGraphOpenedNodeId(null)}
+                          onLinkClick={handleGraphMarkdownLink}
+                        />
+                      ) : null
+                    }
+                    selectedNodeId={graphFocusedNodeId}
+                    onCloseSelection={() => setGraphOpenedNodeId(null)}
+                    onOpenSelectedNode={openFocusedNodeFromGraph}
+                    onSelectNode={focusNodeFromGraph}
+                  />
                 </div>
               ) : view === "welcome" ? (
                 <div className="app-scroll-pane h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
@@ -689,18 +704,6 @@ function SidebarContent({
           icon={<FileText className="size-4" />}
           label="Plan"
           onClick={() => onNavigate("plan")}
-        />
-        <SidebarNavButton
-          active={view === "heart-rate"}
-          icon={<HeartPulse className="size-4" />}
-          label="Heart Rate"
-          onClick={() => onNavigate("heart-rate")}
-        />
-        <SidebarNavButton
-          active={view === "morning-mobility"}
-          icon={<Zap className="size-4" />}
-          label="Morning Mobility"
-          onClick={() => onNavigate("morning-mobility")}
         />
         <SidebarNavButton
           active={view === "calendar"}

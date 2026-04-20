@@ -23,6 +23,18 @@ const CATEGORY_COLORS = {
 
 const DEFAULT_CLUSTER_MODE: GraphClusterMode = "none";
 
+type TouchGestureState =
+  | {
+      identifier: number;
+      lastPoint: { x: number; y: number };
+      mode: "single";
+    }
+  | {
+      lastCenter: { x: number; y: number };
+      lastDistance: number;
+      mode: "pinch";
+    };
+
 function getClusterValue(node: NoteGraphData["nodes"][number], clusterMode: GraphClusterMode) {
   if (clusterMode === "eventType") {
     return node.clusters.eventType;
@@ -47,8 +59,10 @@ export function GraphCanvas({
   clusterMode,
   data,
   fitRequestVersion,
+  onOpenSelectedNode,
   paused,
   selectedNodeId,
+  selectedNodeSummary,
   showAllLabels,
   showAuthoredOnly,
   onSelectNode,
@@ -56,12 +70,19 @@ export function GraphCanvas({
   clusterMode: GraphClusterMode;
   data: NoteGraphData;
   fitRequestVersion: number;
+  onOpenSelectedNode: () => void;
   paused: boolean;
   selectedNodeId: string | null;
+  selectedNodeSummary: {
+    canOpen: boolean;
+    label: string;
+    nodeKind: NoteGraphData["nodes"][number]["nodeKind"];
+  } | null;
   showAllLabels: boolean;
   showAuthoredOnly: boolean;
   onSelectNode: (nodeId: string | null) => void;
 }) {
+  const actionChipRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<GraphEngineController | null>(null);
@@ -77,6 +98,7 @@ export function GraphCanvas({
   const autoFitReasonRef = useRef<string | null>(null);
   const autoFitStillFramesRef = useRef(0);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const touchGestureRef = useRef<TouchGestureState | null>(null);
   const { createEngine, error, usingFallback } = useGraphWasm();
   const onSelectNodeRef = useRef(onSelectNode);
   const markDirty = (reason: string) => {
@@ -232,11 +254,39 @@ export function GraphCanvas({
         }
       }
 
+      const actionChip = actionChipRef.current;
+      if (actionChip) {
+        const selectedNode =
+          snapshot.selectedNodeId !== null ? snapshot.nodes.find((node) => node.id === snapshot.selectedNodeId) ?? null : null;
+
+        if (!selectedNode || !selectedNodeSummary) {
+          actionChip.style.opacity = "0";
+          actionChip.style.pointerEvents = "none";
+        } else {
+          const screenX = snapshot.viewport.x + selectedNode.x * snapshot.viewport.scale;
+          const screenY = snapshot.viewport.y + selectedNode.y * snapshot.viewport.scale;
+          const chipRect = actionChip.getBoundingClientRect();
+          const chipWidth = chipRect.width || 200;
+          const chipHeight = chipRect.height || 72;
+          const offsetX = selectedNode.nodeKind === "folder" ? 24 : 18;
+          const offsetY = selectedNode.nodeKind === "folder" ? -chipHeight - 12 : -chipHeight - 16;
+          const clampedX = Math.min(Math.max(12, screenX + offsetX), Math.max(12, width - chipWidth - 12));
+          const clampedY = Math.min(
+            Math.max(12, screenY + offsetY),
+            Math.max(12, height - chipHeight - 12),
+          );
+
+          actionChip.style.opacity = "1";
+          actionChip.style.pointerEvents = "auto";
+          actionChip.style.transform = `translate3d(${clampedX}px, ${clampedY}px, 0)`;
+        }
+      }
+
       context.restore();
       graphTelemetry.recordDraw(performance.now() - drawStartedAt, Array.from(pendingDrawReasonsRef.current));
       pendingDrawReasonsRef.current.clear();
     },
-    [activeClusterLabelByNodeId, showAllLabels],
+    [activeClusterLabelByNodeId, selectedNodeSummary, showAllLabels],
   );
 
   useEffect(() => {
@@ -378,7 +428,35 @@ export function GraphCanvas({
       };
     };
 
+    const getCanvasTouchPoint = (touch: Touch) => {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top,
+      };
+    };
+
+    const getPinchMetrics = (touchList: TouchList) => {
+      if (touchList.length < 2) {
+        return null;
+      }
+
+      const first = getCanvasTouchPoint(touchList[0]);
+      const second = getCanvasTouchPoint(touchList[1]);
+      return {
+        center: {
+          x: (first.x + second.x) / 2,
+          y: (first.y + second.y) / 2,
+        },
+        distance: Math.max(1, Math.hypot(second.x - first.x, second.y - first.y)),
+      };
+    };
+
     const handlePointerDown = (event: PointerEvent) => {
+      if (event.pointerType === "touch") {
+        return;
+      }
+
       const point = getCanvasPoint(event);
       clearAutoFit();
       canvas.setPointerCapture(event.pointerId);
@@ -388,11 +466,19 @@ export function GraphCanvas({
     };
 
     const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType === "touch") {
+        return;
+      }
+
       const point = getCanvasPoint(event);
       handleEvents(engine.pointerMove(point.x, point.y));
     };
 
     const handlePointerUp = (event: PointerEvent) => {
+      if (event.pointerType === "touch") {
+        return;
+      }
+
       const point = getCanvasPoint(event);
       if (canvas.hasPointerCapture(event.pointerId)) {
         canvas.releasePointerCapture(event.pointerId);
@@ -408,11 +494,144 @@ export function GraphCanvas({
       handleEvents(engine.wheel(point.x, point.y, event.deltaX, event.deltaY, event.ctrlKey));
     };
 
+    const handleTouchStart = (event: TouchEvent) => {
+      if (event.touches.length === 0) {
+        return;
+      }
+
+      event.preventDefault();
+      clearAutoFit();
+
+      if (event.touches.length === 1) {
+        const touch = event.touches[0];
+        if (!touch) {
+          return;
+        }
+
+        const point = getCanvasTouchPoint(touch);
+        touchGestureRef.current = {
+          identifier: touch.identifier,
+          lastPoint: point,
+          mode: "single",
+        };
+        handleEvents(engine.pointerDown(point.x, point.y, 0, false, false));
+        return;
+      }
+
+      handleEvents(engine.cancelInteraction());
+      const pinchMetrics = getPinchMetrics(event.touches);
+      if (!pinchMetrics) {
+        return;
+      }
+
+      touchGestureRef.current = {
+        lastCenter: pinchMetrics.center,
+        lastDistance: pinchMetrics.distance,
+        mode: "pinch",
+      };
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const gesture = touchGestureRef.current;
+      if (!gesture || event.touches.length === 0) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (event.touches.length >= 2) {
+        const pinchMetrics = getPinchMetrics(event.touches);
+        if (!pinchMetrics) {
+          return;
+        }
+
+        if (gesture.mode !== "pinch") {
+          handleEvents(engine.cancelInteraction());
+          touchGestureRef.current = {
+            lastCenter: pinchMetrics.center,
+            lastDistance: pinchMetrics.distance,
+            mode: "pinch",
+          };
+          return;
+        }
+
+        const panX = pinchMetrics.center.x - gesture.lastCenter.x;
+        const panY = pinchMetrics.center.y - gesture.lastCenter.y;
+        if (panX !== 0 || panY !== 0) {
+          handleEvents(engine.panBy(panX, panY));
+        }
+
+        const scaleMultiplier = pinchMetrics.distance / Math.max(1, gesture.lastDistance);
+        if (Math.abs(scaleMultiplier - 1) > 0.001) {
+          graphTelemetry.recordZoom();
+          handleEvents(engine.zoomAt(pinchMetrics.center.x, pinchMetrics.center.y, scaleMultiplier));
+        }
+
+        gesture.lastCenter = pinchMetrics.center;
+        gesture.lastDistance = pinchMetrics.distance;
+        return;
+      }
+
+      if (gesture.mode !== "single") {
+        return;
+      }
+
+      const activeTouch = Array.from(event.touches).find((touch) => touch.identifier === gesture.identifier) ?? event.touches[0];
+      if (!activeTouch) {
+        return;
+      }
+
+      const point = getCanvasTouchPoint(activeTouch);
+      gesture.lastPoint = point;
+      handleEvents(engine.pointerMove(point.x, point.y));
+    };
+
+    const handleTouchEnd = (event: TouchEvent) => {
+      const gesture = touchGestureRef.current;
+      if (!gesture) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (gesture.mode === "single") {
+        handleEvents(engine.pointerUp(gesture.lastPoint.x, gesture.lastPoint.y));
+        touchGestureRef.current = null;
+        return;
+      }
+
+      if (event.touches.length >= 2) {
+        const pinchMetrics = getPinchMetrics(event.touches);
+        if (!pinchMetrics) {
+          return;
+        }
+
+        touchGestureRef.current = {
+          lastCenter: pinchMetrics.center,
+          lastDistance: pinchMetrics.distance,
+          mode: "pinch",
+        };
+        return;
+      }
+
+      touchGestureRef.current = null;
+    };
+
+    const handleTouchCancel = (event: TouchEvent) => {
+      event.preventDefault();
+      touchGestureRef.current = null;
+      handleEvents(engine.cancelInteraction());
+    };
+
     canvas.addEventListener("pointerdown", handlePointerDown);
     canvas.addEventListener("pointermove", handlePointerMove);
     canvas.addEventListener("pointerup", handlePointerUp);
     canvas.addEventListener("pointerleave", handlePointerUp);
     canvas.addEventListener("wheel", handleWheel, { passive: false });
+    canvas.addEventListener("touchstart", handleTouchStart, { passive: false });
+    canvas.addEventListener("touchmove", handleTouchMove, { passive: false });
+    canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
+    canvas.addEventListener("touchcancel", handleTouchCancel, { passive: false });
 
     return () => {
       if (frameRef.current) {
@@ -424,6 +643,10 @@ export function GraphCanvas({
       canvas.removeEventListener("pointerup", handlePointerUp);
       canvas.removeEventListener("pointerleave", handlePointerUp);
       canvas.removeEventListener("wheel", handleWheel);
+      canvas.removeEventListener("touchstart", handleTouchStart);
+      canvas.removeEventListener("touchmove", handleTouchMove);
+      canvas.removeEventListener("touchend", handleTouchEnd);
+      canvas.removeEventListener("touchcancel", handleTouchCancel);
       engine.destroy();
       engineRef.current = null;
       graphTelemetry.recordEngineDestroy();
@@ -527,8 +750,34 @@ export function GraphCanvas({
   }, [clusterMode, data.links.length, data.nodes.length, showAuthoredOnly]);
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-[2rem] border border-foreground/10 bg-background/70" ref={containerRef}>
-      <canvas className="graph-canvas block h-full w-full cursor-grab active:cursor-grabbing" ref={canvasRef} />
+    <div className="relative h-full w-full overflow-hidden" ref={containerRef}>
+      <canvas className="graph-canvas block h-full w-full touch-none cursor-grab active:cursor-grabbing" ref={canvasRef} />
+      {selectedNodeSummary ? (
+        <div
+          className="pointer-events-none absolute left-0 top-0 z-20 w-[min(16rem,calc(100vw-1.5rem))] rounded-[1rem] border border-foreground/10 bg-background/94 p-2.5 shadow-xl shadow-primary/12 backdrop-blur transition-opacity"
+          ref={actionChipRef}
+          style={{ opacity: 0, transform: "translate3d(-9999px, -9999px, 0)" }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-foreground">{selectedNodeSummary.label}</p>
+              <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                {selectedNodeSummary.nodeKind}
+              </p>
+            </div>
+
+            {selectedNodeSummary.canOpen ? (
+              <button
+                className="pointer-events-auto shrink-0 rounded-[0.75rem] bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                type="button"
+                onClick={onOpenSelectedNode}
+              >
+                Open
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       {error ? (
         <div className="pointer-events-none absolute left-4 top-4 rounded-[0.9rem] bg-background/90 px-3 py-2 text-xs font-semibold text-muted-foreground backdrop-blur">
           {usingFallback ? "Rust WASM unavailable, using fallback engine." : error}

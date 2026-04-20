@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { GraphCanvas } from "@/features/graph/GraphCanvas";
 import { GraphChatBar } from "@/features/graph/GraphChatBar";
 import { GraphTelemetryOverlay } from "@/features/graph/GraphTelemetryOverlay";
 import { graphTelemetry } from "@/features/graph/telemetry";
 import { GraphToolbar } from "@/features/graph/GraphToolbar";
 import { useGraphSession } from "@/features/graph/useGraphSession";
+import { graphFolderNodeIdToPath } from "@/lib/graph/ids";
+import { formatGraphFolderLabel } from "@/lib/graph/labels";
 import type { NoteGraphData } from "@/lib/graph/schema";
 
 const GRAPH_LABELS_KEY = "measured.noteGraph.showAllLabels";
@@ -13,12 +15,14 @@ export function GraphView({
   initialGraphData,
   noteOverlay,
   onCloseSelection,
+  onOpenSelectedNode,
   selectedNodeId,
   onSelectNode,
 }: {
   initialGraphData: NoteGraphData;
   noteOverlay?: ReactNode;
   onCloseSelection: () => void;
+  onOpenSelectedNode: () => void;
   selectedNodeId: string | null;
   onSelectNode: (nodeId: string | null) => void;
 }) {
@@ -37,7 +41,7 @@ export function GraphView({
 
     return new URLSearchParams(window.location.search).get("graphTelemetry") === "1";
   });
-  const previousDetailOpenRef = useRef(Boolean(selectedNodeId));
+  const previousDetailOpenRef = useRef(Boolean(noteOverlay));
   const {
     assistantText,
     backendLabel,
@@ -71,19 +75,19 @@ export function GraphView({
   }, []);
 
   useEffect(() => {
-    const nextOpen = Boolean(selectedNodeId);
+    const nextOpen = Boolean(noteOverlay);
     if (previousDetailOpenRef.current !== nextOpen && nextOpen) {
       graphTelemetry.recordDetailPaneOpen();
     }
     previousDetailOpenRef.current = nextOpen;
-  }, [selectedNodeId]);
+  }, [noteOverlay]);
 
   useEffect(() => {
     window.localStorage.setItem(GRAPH_LABELS_KEY, String(showAllLabels));
   }, [showAllLabels]);
 
   useEffect(() => {
-    if (!selectedNodeId) {
+    if (!noteOverlay) {
       return;
     }
 
@@ -97,7 +101,27 @@ export function GraphView({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onCloseSelection, selectedNodeId]);
+  }, [noteOverlay, onCloseSelection]);
+
+  const selectedNodeSummary = useMemo(() => {
+    if (!selectedNodeId) {
+      return null;
+    }
+
+    const node = graphData.nodes.find((candidate) => candidate.id === selectedNodeId);
+    if (!node) {
+      return null;
+    }
+
+    return {
+      canOpen: node.nodeKind !== "folder",
+      label:
+        node.nodeKind === "folder"
+          ? formatGraphFolderLabel(graphFolderNodeIdToPath(node.id) ?? node.title)
+          : node.title,
+      nodeKind: node.nodeKind,
+    };
+  }, [graphData.nodes, selectedNodeId]);
 
   return (
     <div className="relative h-full min-h-0">
@@ -110,6 +134,8 @@ export function GraphView({
           selectedNodeId={selectedNodeId}
           showAllLabels={showAllLabels}
           showAuthoredOnly={showAuthoredOnly}
+          selectedNodeSummary={selectedNodeSummary}
+          onOpenSelectedNode={onOpenSelectedNode}
           onSelectNode={onSelectNode}
         />
 
@@ -125,18 +151,20 @@ export function GraphView({
           onTogglePaused={() => setPaused((value) => !value)}
         />
 
-        <GraphChatBar
-          assistantText={assistantText}
-          backendLabel={backendLabel}
-          busy={busy}
-          connected={backendReady}
-          inputDisabled={!backendReady}
-          pendingOps={pendingPersistentOps}
-          streamingText={streamingText}
-          onApplyPendingOps={applyPending}
-          onInterrupt={interrupt}
-          onSendMessage={sendMessage}
-        />
+        {backendReady ? (
+          <GraphChatBar
+            assistantText={assistantText}
+            backendLabel={backendLabel}
+            busy={busy}
+            connected={backendReady}
+            inputDisabled={!backendReady}
+            pendingOps={pendingPersistentOps}
+            streamingText={streamingText}
+            onApplyPendingOps={applyPending}
+            onInterrupt={interrupt}
+            onSendMessage={sendMessage}
+          />
+        ) : null}
 
         {noteOverlay ? (
           <div className="absolute inset-0 z-30">

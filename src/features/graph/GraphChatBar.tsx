@@ -43,7 +43,6 @@ export function GraphChatBar({
   };
 
   const transcript = streamingText || assistantText;
-  const collapsedLabel = pendingOps.length > 0 ? `${pendingOps.length} pending` : busy ? "Thinking" : "Chat";
 
   return (
     <div className="pointer-events-none absolute bottom-4 right-4 top-4 z-20 flex items-start justify-end">
@@ -129,16 +128,20 @@ export function GraphChatBar({
       ) : (
         <div className="pointer-events-auto flex h-full items-end">
           <Button
-            className="mb-2 flex h-auto min-h-14 items-center gap-3 rounded-[1.1rem] px-4 py-3 shadow-xl shadow-primary/15"
+            aria-label={
+              pendingOps.length > 0
+                ? `Open graph chat, ${pendingOps.length} pending change${pendingOps.length === 1 ? "" : "s"}`
+                : busy
+                  ? "Open graph chat, thinking"
+                  : "Open graph chat"
+            }
+            className="mb-2 flex min-h-14 items-center gap-2 rounded-[1.1rem] px-4 py-3 shadow-xl shadow-primary/15"
             type="button"
             variant="default"
             onClick={() => setExpanded(true)}
           >
-            <MessageSquareText className="size-4 shrink-0" />
-            <span className="text-left">
-              <span className="block text-xs font-black uppercase tracking-[0.08em] text-primary-foreground/80">Graph chat</span>
-              <span className="block text-sm font-semibold">{collapsedLabel}</span>
-            </span>
+            {busy ? <LoaderCircle className="size-4 shrink-0 animate-spin" /> : <MessageSquareText className="size-4 shrink-0" />}
+            {pendingOps.length > 0 ? <Square className="size-3.5 shrink-0" /> : null}
             <ChevronLeft className="size-4 shrink-0" />
           </Button>
         </div>

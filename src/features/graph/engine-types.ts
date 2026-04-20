@@ -17,6 +17,9 @@ export interface GraphEngineController {
   pointerMove(x: number, y: number): GraphInteractionEvent[];
   pointerUp(x: number, y: number): GraphInteractionEvent[];
   wheel(x: number, y: number, deltaX: number, deltaY: number, ctrl: boolean): GraphInteractionEvent[];
+  panBy(deltaX: number, deltaY: number): GraphInteractionEvent[];
+  zoomAt(x: number, y: number, scaleMultiplier: number): GraphInteractionEvent[];
+  cancelInteraction(): GraphInteractionEvent[];
   fitView(): GraphInteractionEvent[];
   selectNode(nodeId: string | null): GraphInteractionEvent[];
   applyOps(opsJson: string): void;

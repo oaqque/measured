@@ -43,7 +43,28 @@ impl GraphState {
         ctrl: bool,
     ) -> Vec<GraphInteractionEvent> {
         let zoom_factor: f64 = if ctrl { 1.0016 } else { 1.0011 };
-        let next_scale = (self.viewport.scale * zoom_factor.powf(-delta_y)).clamp(0.28, 2.8);
+        self.zoom_at(x, y, zoom_factor.powf(-delta_y))
+    }
+
+    pub fn pan_by(&mut self, delta_x: f64, delta_y: f64) -> Vec<GraphInteractionEvent> {
+        self.viewport.x += delta_x;
+        self.viewport.y += delta_y;
+
+        vec![GraphInteractionEvent {
+            event_type: "viewportChanged".to_string(),
+            nodeId: None,
+            dragging: None,
+            viewport: Some(self.viewport.clone()),
+        }]
+    }
+
+    pub fn zoom_at(&mut self, x: f64, y: f64, scale_multiplier: f64) -> Vec<GraphInteractionEvent> {
+        let normalized_scale_multiplier = if scale_multiplier.is_finite() {
+            scale_multiplier
+        } else {
+            1.0
+        };
+        let next_scale = (self.viewport.scale * normalized_scale_multiplier).clamp(0.28, 2.8);
         let before = self.to_world(x, y);
         self.viewport.scale = next_scale;
         let after = self.to_world(x, y);

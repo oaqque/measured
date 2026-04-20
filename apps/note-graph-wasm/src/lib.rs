@@ -86,6 +86,18 @@ impl GraphEngine {
         serialize_events(self.state.wheel(x, y, delta_x, delta_y, ctrl))
     }
 
+    pub fn pan_by(&mut self, delta_x: f64, delta_y: f64) -> Result<String, JsValue> {
+        serialize_events(self.state.pan_by(delta_x, delta_y))
+    }
+
+    pub fn zoom_at(&mut self, x: f64, y: f64, scale_multiplier: f64) -> Result<String, JsValue> {
+        serialize_events(self.state.zoom_at(x, y, scale_multiplier))
+    }
+
+    pub fn cancel_interaction(&mut self) -> Result<String, JsValue> {
+        serialize_events(self.state.cancel_interaction())
+    }
+
     pub fn fit_view(&mut self) -> Result<String, JsValue> {
         serialize_events(self.state.fit_view())
     }

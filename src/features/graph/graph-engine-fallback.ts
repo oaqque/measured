@@ -42,7 +42,7 @@ export function createFallbackGraphEngine(data: NoteGraphData): GraphEngineContr
 class FallbackGraphEngine implements GraphEngineController {
   private allLinks: InternalLink[] = [];
   private allNodes: InternalNode[] = [];
-  private focusedFolderNodeId: string | null = null;
+  private focusedNodeId: string | null = null;
   private pendingNodeSelectionId: string | null = null;
   private height = 1;
   private lastPointerWorld: { x: number; y: number } | null = null;
@@ -345,7 +345,18 @@ class FallbackGraphEngine implements GraphEngineController {
 
   wheel(x: number, y: number, _deltaX: number, deltaY: number, ctrl: boolean): GraphInteractionEvent[] {
     const zoomFactor = ctrl ? 1.0016 : 1.0011;
-    const nextScale = clamp(this.viewport.scale * Math.pow(zoomFactor, -deltaY), 0.28, 2.8);
+    return this.zoomAt(x, y, Math.pow(zoomFactor, -deltaY));
+  }
+
+  panBy(deltaX: number, deltaY: number): GraphInteractionEvent[] {
+    this.viewport.x += deltaX;
+    this.viewport.y += deltaY;
+    return [{ type: "viewportChanged", viewport: this.viewport }];
+  }
+
+  zoomAt(x: number, y: number, scaleMultiplier: number): GraphInteractionEvent[] {
+    const normalizedScaleMultiplier = Number.isFinite(scaleMultiplier) ? scaleMultiplier : 1;
+    const nextScale = clamp(this.viewport.scale * normalizedScaleMultiplier, 0.28, 2.8);
     const before = this.toWorld(x, y);
     this.viewport.scale = nextScale;
     const after = this.toWorld(x, y);
@@ -353,6 +364,21 @@ class FallbackGraphEngine implements GraphEngineController {
     this.viewport.y += (after.y - before.y) * nextScale;
 
     return [{ type: "viewportChanged", viewport: this.viewport }];
+  }
+
+  cancelInteraction(): GraphInteractionEvent[] {
+    const events: GraphInteractionEvent[] = [];
+    if (this.draggingNodeId || this.panning) {
+      events.push({ type: "dragStateChanged", dragging: false });
+    }
+
+    this.lastPointerWorld = null;
+    this.lastPointerScreen = null;
+    this.pointerDownScreen = null;
+    this.pendingNodeSelectionId = null;
+    this.draggingNodeId = null;
+    this.panning = false;
+    return events;
   }
 
   fitView(): GraphInteractionEvent[] {
@@ -414,8 +440,8 @@ class FallbackGraphEngine implements GraphEngineController {
       this.nodes = this.allNodes.map((node) => ({ ...node, degree: 0 }));
     }
 
-    if (!this.nodes.some((node) => node.id === this.focusedFolderNodeId && node.nodeKind === "folder")) {
-      this.focusedFolderNodeId = null;
+    if (this.focusedNodeId && !this.nodes.some((node) => node.id === this.focusedNodeId)) {
+      this.focusedNodeId = null;
     }
     if (this.selectedNodeId && !this.nodes.some((node) => node.id === this.selectedNodeId)) {
       this.selectedNodeId = null;
@@ -551,9 +577,9 @@ class FallbackGraphEngine implements GraphEngineController {
     return { minX, minY, maxX, maxY, centerX, centerY };
   }
 
-  private applySelection(nodeId: string | null, preserveFolderFocusOnNonFolder: boolean) {
+  private applySelection(nodeId: string | null, preserveNodeFocusOnNonFolder: boolean) {
     if (!nodeId) {
-      this.focusedFolderNodeId = null;
+      this.focusedNodeId = null;
       this.selectedNodeId = null;
       this.hoveredNodeId = null;
       return null;
@@ -561,28 +587,24 @@ class FallbackGraphEngine implements GraphEngineController {
 
     const node = this.nodes.find((candidate) => candidate.id === nodeId) ?? this.allNodes.find((candidate) => candidate.id === nodeId);
     if (!node) {
-      this.focusedFolderNodeId = null;
+      this.focusedNodeId = null;
       this.selectedNodeId = null;
       this.hoveredNodeId = null;
       return null;
     }
 
-    if (node.nodeKind === "folder") {
-      if (this.focusedFolderNodeId === nodeId) {
-        this.focusedFolderNodeId = null;
-        this.selectedNodeId = null;
-        this.hoveredNodeId = null;
-        return null;
-      }
-
-      this.focusedFolderNodeId = nodeId;
-      this.selectedNodeId = nodeId;
-    } else {
-      if (!preserveFolderFocusOnNonFolder) {
-        this.focusedFolderNodeId = null;
-      }
-      this.selectedNodeId = nodeId;
+    if (this.focusedNodeId === nodeId) {
+      this.focusedNodeId = null;
+      this.selectedNodeId = null;
+      this.hoveredNodeId = null;
+      return null;
     }
+
+    if (!preserveNodeFocusOnNonFolder) {
+      this.focusedNodeId = null;
+    }
+    this.focusedNodeId = nodeId;
+    this.selectedNodeId = nodeId;
 
     const activeNodeIds = this.getRenderableNodeIds();
     if (activeNodeIds && this.hoveredNodeId && !activeNodeIds.has(this.hoveredNodeId)) {
@@ -592,9 +614,9 @@ class FallbackGraphEngine implements GraphEngineController {
     return this.selectedNodeId;
   }
 
-  private syncSelection(nodeId: string | null, preserveFolderFocusOnNonFolder: boolean) {
+  private syncSelection(nodeId: string | null, preserveNodeFocusOnNonFolder: boolean) {
     if (!nodeId) {
-      this.focusedFolderNodeId = null;
+      this.focusedNodeId = null;
       this.selectedNodeId = null;
       this.hoveredNodeId = null;
       return null;
@@ -602,21 +624,17 @@ class FallbackGraphEngine implements GraphEngineController {
 
     const node = this.nodes.find((candidate) => candidate.id === nodeId) ?? this.allNodes.find((candidate) => candidate.id === nodeId);
     if (!node) {
-      this.focusedFolderNodeId = null;
+      this.focusedNodeId = null;
       this.selectedNodeId = null;
       this.hoveredNodeId = null;
       return null;
     }
 
-    if (node.nodeKind === "folder") {
-      this.focusedFolderNodeId = nodeId;
-      this.selectedNodeId = nodeId;
-    } else {
-      if (!preserveFolderFocusOnNonFolder) {
-        this.focusedFolderNodeId = null;
-      }
-      this.selectedNodeId = nodeId;
+    if (!preserveNodeFocusOnNonFolder) {
+      this.focusedNodeId = null;
     }
+    this.focusedNodeId = nodeId;
+    this.selectedNodeId = nodeId;
 
     const activeNodeIds = this.getRenderableNodeIds();
     if (activeNodeIds && this.hoveredNodeId && !activeNodeIds.has(this.hoveredNodeId)) {
@@ -627,17 +645,17 @@ class FallbackGraphEngine implements GraphEngineController {
   }
 
   private getRenderableNodeIds() {
-    if (!this.focusedFolderNodeId) {
+    if (!this.focusedNodeId) {
       return null;
     }
 
-    if (!this.nodes.some((node) => node.id === this.focusedFolderNodeId && node.nodeKind === "folder")) {
+    if (!this.nodes.some((node) => node.id === this.focusedNodeId)) {
       return null;
     }
 
-    const nodeIds = new Set<string>([this.focusedFolderNodeId]);
+    const nodeIds = new Set<string>([this.focusedNodeId]);
     for (const link of this.links) {
-      if (link.source === this.focusedFolderNodeId || link.target === this.focusedFolderNodeId) {
+      if (link.source === this.focusedNodeId || link.target === this.focusedNodeId) {
         nodeIds.add(link.source);
         nodeIds.add(link.target);
       }

@@ -135,6 +135,27 @@ impl GraphState {
         }]
     }
 
+    pub fn cancel_interaction(&mut self) -> Vec<GraphInteractionEvent> {
+        let was_dragging = self.dragging_node_id.is_some() || self.panning;
+        self.last_pointer_world = None;
+        self.last_pointer_screen = None;
+        self.pointer_down_screen = None;
+        self.pending_node_selection_id = None;
+        self.dragging_node_id = None;
+        self.panning = false;
+
+        if was_dragging {
+            vec![GraphInteractionEvent {
+                event_type: "dragStateChanged".to_string(),
+                nodeId: None,
+                dragging: Some(false),
+                viewport: None,
+            }]
+        } else {
+            Vec::new()
+        }
+    }
+
     fn find_node_at(&self, x: f64, y: f64) -> Option<usize> {
         self.renderable_node_indexes()
             .into_iter()

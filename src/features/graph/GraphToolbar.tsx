@@ -33,7 +33,7 @@ export function GraphToolbar({
   onToggleAuthoredOnly: () => void;
   onTogglePaused: () => void;
 }) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <div className="pointer-events-none absolute left-4 top-4 z-20 flex max-w-[calc(100%-6rem)] flex-col items-start gap-2">

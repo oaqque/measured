@@ -157,7 +157,7 @@ pub enum GraphOp {
 pub struct GraphState {
     pub all_links: Vec<GraphLink>,
     pub all_nodes: Vec<GraphNode>,
-    pub focused_folder_node_id: Option<String>,
+    pub focused_node_id: Option<String>,
     pub links: Vec<GraphLink>,
     pub nodes: Vec<GraphNode>,
     pub pending_node_selection_id: Option<String>,
@@ -214,7 +214,7 @@ impl GraphState {
         let mut state = Self {
             all_links,
             all_nodes,
-            focused_folder_node_id: None,
+            focused_node_id: None,
             links: Vec::new(),
             nodes: Vec::new(),
             pending_node_selection_id: None,
@@ -284,13 +284,9 @@ impl GraphState {
                 .collect::<Vec<_>>();
         }
 
-        if let Some(focused_folder_node_id) = &self.focused_folder_node_id {
-            if !self
-                .nodes
-                .iter()
-                .any(|node| &node.id == focused_folder_node_id && node.node_kind == "folder")
-            {
-                self.focused_folder_node_id = None;
+        if let Some(focused_node_id) = &self.focused_node_id {
+            if !self.nodes.iter().any(|node| &node.id == focused_node_id) {
+                self.focused_node_id = None;
             }
         }
         if let Some(selected_node_id) = &self.selected_node_id {
@@ -305,9 +301,9 @@ impl GraphState {
         }
     }
 
-    pub fn apply_selection(&mut self, node_id: Option<String>, preserve_folder_focus_on_non_folder: bool) -> Option<String> {
+    pub fn apply_selection(&mut self, node_id: Option<String>, preserve_node_focus_on_non_folder: bool) -> Option<String> {
         let Some(node_id_value) = node_id else {
-            self.focused_folder_node_id = None;
+            self.focused_node_id = None;
             self.selected_node_id = None;
             self.hovered_node_id = None;
             return None;
@@ -321,28 +317,25 @@ impl GraphState {
             .map(|node| node.node_kind.clone());
 
         let Some(node_kind_value) = node_kind else {
-            self.focused_folder_node_id = None;
+            self.focused_node_id = None;
             self.selected_node_id = None;
             self.hovered_node_id = None;
             return None;
         };
 
-        if node_kind_value == "folder" {
-            if self.focused_folder_node_id.as_deref() == Some(node_id_value.as_str()) {
-                self.focused_folder_node_id = None;
-                self.selected_node_id = None;
-                self.hovered_node_id = None;
-                return None;
-            }
-
-            self.focused_folder_node_id = Some(node_id_value.clone());
-            self.selected_node_id = Some(node_id_value);
-        } else {
-            if !preserve_folder_focus_on_non_folder {
-                self.focused_folder_node_id = None;
-            }
-            self.selected_node_id = Some(node_id_value);
+        if self.focused_node_id.as_deref() == Some(node_id_value.as_str()) {
+            self.focused_node_id = None;
+            self.selected_node_id = None;
+            self.hovered_node_id = None;
+            return None;
         }
+
+        let _ = node_kind_value;
+        if !preserve_node_focus_on_non_folder {
+            self.focused_node_id = None;
+        }
+        self.focused_node_id = Some(node_id_value.clone());
+        self.selected_node_id = Some(node_id_value);
 
         if let Some(renderable_node_ids) = self.renderable_node_ids() {
             if let Some(hovered_node_id) = &self.hovered_node_id {
@@ -355,9 +348,9 @@ impl GraphState {
         self.selected_node_id.clone()
     }
 
-    pub fn sync_selection(&mut self, node_id: Option<String>, preserve_folder_focus_on_non_folder: bool) -> Option<String> {
+    pub fn sync_selection(&mut self, node_id: Option<String>, preserve_node_focus_on_non_folder: bool) -> Option<String> {
         let Some(node_id_value) = node_id else {
-            self.focused_folder_node_id = None;
+            self.focused_node_id = None;
             self.selected_node_id = None;
             self.hovered_node_id = None;
             return None;
@@ -371,21 +364,18 @@ impl GraphState {
             .map(|node| node.node_kind.clone());
 
         let Some(node_kind_value) = node_kind else {
-            self.focused_folder_node_id = None;
+            self.focused_node_id = None;
             self.selected_node_id = None;
             self.hovered_node_id = None;
             return None;
         };
 
-        if node_kind_value == "folder" {
-            self.focused_folder_node_id = Some(node_id_value.clone());
-            self.selected_node_id = Some(node_id_value);
-        } else {
-            if !preserve_folder_focus_on_non_folder {
-                self.focused_folder_node_id = None;
-            }
-            self.selected_node_id = Some(node_id_value);
+        let _ = node_kind_value;
+        if !preserve_node_focus_on_non_folder {
+            self.focused_node_id = None;
         }
+        self.focused_node_id = Some(node_id_value.clone());
+        self.selected_node_id = Some(node_id_value);
 
         if let Some(renderable_node_ids) = self.renderable_node_ids() {
             if let Some(hovered_node_id) = &self.hovered_node_id {
@@ -399,18 +389,14 @@ impl GraphState {
     }
 
     pub fn renderable_node_ids(&self) -> Option<std::collections::HashSet<String>> {
-        let focused_folder_node_id = self.focused_folder_node_id.as_ref()?;
-        if !self
-            .nodes
-            .iter()
-            .any(|node| &node.id == focused_folder_node_id && node.node_kind == "folder")
-        {
+        let focused_node_id = self.focused_node_id.as_ref()?;
+        if !self.nodes.iter().any(|node| &node.id == focused_node_id) {
             return None;
         }
 
-        let mut node_ids = std::collections::HashSet::from([focused_folder_node_id.clone()]);
+        let mut node_ids = std::collections::HashSet::from([focused_node_id.clone()]);
         for link in &self.links {
-            if &link.source == focused_folder_node_id || &link.target == focused_folder_node_id {
+            if &link.source == focused_node_id || &link.target == focused_node_id {
                 node_ids.insert(link.source.clone());
                 node_ids.insert(link.target.clone());
             }
