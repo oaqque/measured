@@ -26,12 +26,17 @@ export function useGraphWasm() {
     const load = async () => {
       try {
         const module = await import("@/features/graph/wasm/loader");
-        if (cancelled || typeof module.createGraphEngine !== "function") {
+        if (cancelled || typeof module.loadGraphEngineModule !== "function") {
           return;
         }
 
-        const nextCreateEngine = module.createGraphEngine as GraphEngineFactory;
-        const nextUsingFallback = module.usingFallback ?? false;
+        const loaded = await module.loadGraphEngineModule();
+        if (cancelled) {
+          return;
+        }
+
+        const nextCreateEngine = loaded.createEngine as GraphEngineFactory;
+        const nextUsingFallback = loaded.usingFallback ?? false;
         setState((current) => {
           if (
             current.ready &&

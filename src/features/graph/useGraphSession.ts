@@ -43,6 +43,8 @@ export function useGraphSession(initialGraphData: NoteGraphData) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [showAuthoredOnly, setShowAuthoredOnly] = useState(readStoredAuthoredOnly());
   const eventSourceRef = useRef<EventSource | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
+  const sessionReadyRef = useRef<Promise<void> | null>(null);
   const graphData = initialGraphData;
 
   useEffect(() => {
@@ -96,6 +98,9 @@ export function useGraphSession(initialGraphData: NoteGraphData) {
   useEffect(() => {
     return () => {
       eventSourceRef.current?.close();
+      eventSourceRef.current = null;
+      sessionReadyRef.current = null;
+      sessionIdRef.current = null;
     };
   }, []);
 
@@ -166,8 +171,15 @@ export function useGraphSession(initialGraphData: NoteGraphData) {
   };
 
   async function ensureSession() {
-    if (sessionId) {
-      return sessionId;
+    if (sessionIdRef.current) {
+      if (sessionReadyRef.current) {
+        try {
+          await sessionReadyRef.current;
+        } catch {
+          return null;
+        }
+      }
+      return sessionIdRef.current;
     }
 
     const response = await fetch("/api/graph-chat/session", {
@@ -182,8 +194,16 @@ export function useGraphSession(initialGraphData: NoteGraphData) {
     }
 
     const payload = (await response.json()) as SessionResponse;
+    sessionIdRef.current = payload.sessionId;
     setSessionId(payload.sessionId);
-    openEventSource(payload.sessionId);
+    sessionReadyRef.current = openEventSource(payload.sessionId);
+    try {
+      await sessionReadyRef.current;
+    } catch {
+      sessionIdRef.current = null;
+      setSessionId(null);
+      return null;
+    }
     return payload.sessionId;
   }
 
@@ -191,6 +211,28 @@ export function useGraphSession(initialGraphData: NoteGraphData) {
     eventSourceRef.current?.close();
     const nextSource = new EventSource(`/api/graph-chat/session/${nextSessionId}/events`);
     eventSourceRef.current = nextSource;
+    let opened = false;
+    const ready = new Promise<void>((resolve, reject) => {
+      nextSource.onopen = () => {
+        opened = true;
+        resolve();
+      };
+      nextSource.onerror = () => {
+        setBackendStatus("unavailable");
+        setBackendLabel("Lost connection to local Codex backend");
+        setBusy(false);
+        setChatEntries((current) =>
+          appendSystemMessage(current, "Connection lost", "Lost connection to local Codex backend.", "failed"),
+        );
+        nextSource.close();
+        eventSourceRef.current = null;
+        sessionIdRef.current = null;
+        sessionReadyRef.current = null;
+        if (!opened) {
+          reject(new Error("Unable to connect to Codex chat event stream."));
+        }
+      };
+    });
     nextSource.onmessage = (event) => {
       const payload = JSON.parse(event.data) as SessionEventMessage;
 
@@ -235,16 +277,7 @@ export function useGraphSession(initialGraphData: NoteGraphData) {
         );
       }
     };
-
-    nextSource.onerror = () => {
-      setBackendStatus("unavailable");
-      setBackendLabel("Lost connection to local Codex backend");
-      setBusy(false);
-      setChatEntries((current) =>
-        appendSystemMessage(current, "Connection lost", "Lost connection to local Codex backend.", "failed"),
-      );
-      nextSource.close();
-    };
+    return ready;
   }
 }
 

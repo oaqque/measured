@@ -101,6 +101,7 @@ export function GraphCanvas({
   const touchGestureRef = useRef<TouchGestureState | null>(null);
   const { createEngine, error, usingFallback } = useGraphWasm();
   const onSelectNodeRef = useRef(onSelectNode);
+  const drawRef = useRef<((context: CanvasRenderingContext2D, width: number, height: number) => void) | null>(null);
   const markDirty = (reason: string) => {
     pendingDrawReasonsRef.current.add(reason);
     needsDrawRef.current = true;
@@ -290,6 +291,11 @@ export function GraphCanvas({
   );
 
   useEffect(() => {
+    drawRef.current = draw;
+    markDirty("draw-props");
+  }, [draw]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas) {
@@ -396,7 +402,7 @@ export function GraphCanvas({
         if (moved) {
           pendingDrawReasonsRef.current.add("layout");
         }
-        draw(context, logicalSizeRef.current.width, logicalSizeRef.current.height);
+        drawRef.current?.(context, logicalSizeRef.current.width, logicalSizeRef.current.height);
         needsDrawRef.current = false;
       }
       frameRef.current = window.requestAnimationFrame(frame);
@@ -651,7 +657,7 @@ export function GraphCanvas({
       engineRef.current = null;
       graphTelemetry.recordEngineDestroy();
     };
-  }, [createEngine, data, draw]);
+  }, [createEngine, data]);
 
   useEffect(() => {
     const engine = engineRef.current;
