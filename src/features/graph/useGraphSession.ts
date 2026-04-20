@@ -1,7 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { parseGraphChatTurnResult } from "@/lib/graph/chat-schema";
-import type { GraphClusterMode, GraphOp, NoteGraphData } from "@/lib/graph/schema";
-import { applyGraphOps, getPersistentGraphOps } from "@/features/graph/graph-ops";
+import { useEffect, useRef, useState } from "react";
+import {
+  appendLocalUserMessage,
+  appendSystemMessage,
+  applyGraphChatRpcEvent,
+  type GraphChatEntry,
+  type GraphChatRpcEvent,
+} from "@/features/graph/chat-items";
+import type { GraphClusterMode, NoteGraphData } from "@/lib/graph/schema";
 import { graphTelemetry } from "@/features/graph/telemetry";
 
 type BackendStatus = "checking" | "ready" | "unavailable";
@@ -16,33 +21,29 @@ interface SessionResponse {
   sessionId: string;
 }
 
-interface PersistOpsResponse {
-  ok: boolean;
-  graph: NoteGraphData;
-}
-
 interface SessionEventMessage {
-  type: "status" | "delta" | "turnResult" | "error";
+  type: "status" | "rpcEvent" | "error";
+  scope?: "connection" | "session";
   text?: string;
-  payload?: string;
+  method?: string;
+  params?: Record<string, unknown>;
+  requestId?: number | null;
 }
 
 const CLUSTER_MODE_KEY = "measured.noteGraph.clusterMode.v2";
 const AUTHORED_ONLY_KEY = "measured.noteGraph.authoredOnly";
 
 export function useGraphSession(initialGraphData: NoteGraphData) {
-  const [assistantText, setAssistantText] = useState<string | null>(null);
+  const [chatEntries, setChatEntries] = useState<GraphChatEntry[]>([]);
   const [backendLabel, setBackendLabel] = useState("Checking local Codex backend...");
   const [backendStatus, setBackendStatus] = useState<BackendStatus>("checking");
   const [busy, setBusy] = useState(false);
   const [clusterMode, setClusterMode] = useState<GraphClusterMode>(() => readStoredClusterMode());
-  const [graphData, setGraphData] = useState(initialGraphData);
   const [paused, setPaused] = useState(false);
-  const [pendingOps, setPendingOps] = useState<GraphOp[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [showAuthoredOnly, setShowAuthoredOnly] = useState(readStoredAuthoredOnly());
-  const [streamingText, setStreamingText] = useState("");
   const eventSourceRef = useRef<EventSource | null>(null);
+  const graphData = initialGraphData;
 
   useEffect(() => {
     window.localStorage.setItem(CLUSTER_MODE_KEY, clusterMode);
@@ -71,8 +72,8 @@ export function useGraphSession(initialGraphData: NoteGraphData) {
         setBackendLabel(
           payload.ok
             ? payload.authenticated
-              ? "Codex graph backend connected"
-              : "Codex graph backend needs authentication"
+              ? "Codex backend connected"
+              : "Codex backend needs authentication"
             : payload.backend || "Local Codex backend unavailable",
         );
       } catch (error) {
@@ -98,8 +99,6 @@ export function useGraphSession(initialGraphData: NoteGraphData) {
     };
   }, []);
 
-  const pendingPersistentOps = useMemo(() => getPersistentGraphOps(pendingOps), [pendingOps]);
-
   const sendMessage = async (message: string) => {
     if (backendStatus !== "ready") {
       return;
@@ -111,25 +110,31 @@ export function useGraphSession(initialGraphData: NoteGraphData) {
     }
 
     setBusy(true);
-    setStreamingText("");
-    setAssistantText(null);
-    setPendingOps([]);
+    setChatEntries((current) => appendLocalUserMessage(current, message));
     graphTelemetry.recordChatTurnStart();
 
-    await fetch(`/api/graph-chat/session/${ensuredSessionId}/message`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        message,
-        graphContext: {
-          clusterMode,
-          nodeCount: graphData.nodes.length,
-          linkCount: graphData.links.length,
-          authoredLinkCount: graphData.links.filter((link) => link.sourceType === "authored").length,
-          selectedNodeSlug: null,
-        },
-      }),
-    });
+    try {
+      const response = await fetch(`/api/graph-chat/session/${ensuredSessionId}/message`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Unable to send graph chat message (${response.status})`);
+      }
+    } catch (error) {
+      graphTelemetry.recordChatError(error instanceof Error ? error.message : "The graph chat request failed.");
+      setBusy(false);
+      setChatEntries((current) =>
+        appendSystemMessage(
+          current,
+          "Send failed",
+          error instanceof Error ? error.message : "The graph chat request failed.",
+          "failed",
+        ),
+      );
+    }
   };
 
   const interrupt = async () => {
@@ -141,65 +146,21 @@ export function useGraphSession(initialGraphData: NoteGraphData) {
       method: "POST",
     });
     setBusy(false);
-  };
-
-  const applyPending = async () => {
-    if (pendingPersistentOps.length === 0) {
-      if (pendingOps.length > 0) {
-        const applied = applyGraphOps(graphData, pendingOps);
-        setGraphData(applied.data);
-        if (applied.clusterMode) {
-          setClusterMode(applied.clusterMode);
-        }
-        setPendingOps([]);
-      }
-      return;
-    }
-
-    const response = await fetch("/api/graph-chat/graph/ops/apply", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ops: pendingPersistentOps }),
-    });
-    if (!response.ok) {
-      graphTelemetry.recordPersistResult(pendingPersistentOps.length, false);
-      return;
-    }
-
-    const payload = (await response.json()) as PersistOpsResponse;
-    if (payload.ok) {
-      graphTelemetry.recordPersistResult(pendingPersistentOps.length, true);
-      setGraphData(payload.graph);
-      const persistentOpsSet = new Set<GraphOp>(pendingPersistentOps);
-      const nonPersistentOps = pendingOps.filter((op) => !persistentOpsSet.has(op));
-      if (nonPersistentOps.length > 0) {
-        const applied = applyGraphOps(payload.graph, nonPersistentOps);
-        setGraphData(applied.data);
-        if (applied.clusterMode) {
-          setClusterMode(applied.clusterMode);
-        }
-      }
-      setPendingOps([]);
-    }
+    setChatEntries((current) => appendSystemMessage(current, "Turn interrupted", "Interrupted locally.", "interrupted"));
   };
 
   return {
-    assistantText,
+    chatEntries,
     backendLabel,
     backendReady: backendStatus === "ready",
     busy,
     clusterMode,
     graphData,
     paused,
-    pendingOps,
-    pendingPersistentOps,
     setClusterMode,
-    setGraphData,
     setPaused,
     setShowAuthoredOnly,
     showAuthoredOnly,
-    streamingText,
-    applyPending,
     interrupt,
     sendMessage,
   };
@@ -216,7 +177,7 @@ export function useGraphSession(initialGraphData: NoteGraphData) {
     });
     if (!response.ok) {
       setBackendStatus("unavailable");
-      setBackendLabel(`Unable to create Codex graph session (${response.status})`);
+      setBackendLabel(`Unable to create Codex chat session (${response.status})`);
       return null;
     }
 
@@ -234,51 +195,33 @@ export function useGraphSession(initialGraphData: NoteGraphData) {
       const payload = JSON.parse(event.data) as SessionEventMessage;
 
       if (payload.type === "status") {
-        if (payload.text) {
+        if (payload.text && payload.scope !== "connection") {
           setBackendLabel(payload.text);
         }
         return;
       }
 
-      if (payload.type === "delta") {
-        setStreamingText((current) => current + (payload.text ?? ""));
-        return;
-      }
-
-      if (payload.type === "turnResult" && payload.payload) {
-        const result = parseGraphChatTurnResult(payload.payload);
-        setBusy(false);
-        if (!result) {
-          graphTelemetry.recordChatError("turnResult payload was not valid JSON");
-          setAssistantText(payload.payload);
-          setStreamingText("");
-          return;
-        }
-
-        graphTelemetry.recordChatTurnComplete();
-        setAssistantText(result.assistantText);
-        setStreamingText("");
-
-        const immediateOps = result.ops.filter(isImmediateGraphOp);
-        if (immediateOps.length > 0) {
-          const applied = applyGraphOps(graphData, immediateOps);
-          setGraphData(applied.data);
-          if (applied.clusterMode) {
-            setClusterMode(applied.clusterMode);
-          }
-        }
-
-        const immediateOpsSet = new Set<GraphOp>(immediateOps);
-        const deferredOps = result.ops.filter((op) => !immediateOpsSet.has(op));
-        if (deferredOps.length > 0) {
-          if (result.needsConfirmation) {
-            setPendingOps(deferredOps);
-          } else {
-            const applied = applyGraphOps(graphData, deferredOps);
-            setGraphData(applied.data);
-            if (applied.clusterMode) {
-              setClusterMode(applied.clusterMode);
-            }
+      if (payload.type === "rpcEvent" && payload.method && payload.params) {
+        const nextEvent: GraphChatRpcEvent = {
+          method: payload.method,
+          params: payload.params,
+          requestId: payload.requestId ?? null,
+        };
+        setChatEntries((current) => applyGraphChatRpcEvent(current, nextEvent));
+        if (payload.method === "turn/completed") {
+          const turn = payload.params.turn;
+          const status =
+            typeof turn === "object" &&
+            turn !== null &&
+            "status" in turn &&
+            typeof turn.status === "string"
+              ? turn.status
+              : null;
+          setBusy(false);
+          if (status === "completed") {
+            graphTelemetry.recordChatTurnComplete();
+          } else if (status === "failed") {
+            graphTelemetry.recordChatError("The Codex chat turn failed.");
           }
         }
         return;
@@ -287,14 +230,19 @@ export function useGraphSession(initialGraphData: NoteGraphData) {
       if (payload.type === "error") {
         graphTelemetry.recordChatError(payload.text ?? "The graph chat request failed.");
         setBusy(false);
-        setStreamingText("");
-        setAssistantText(payload.text ?? "The graph chat request failed.");
+        setChatEntries((current) =>
+          appendSystemMessage(current, "Chat error", payload.text ?? "The graph chat request failed.", "failed"),
+        );
       }
     };
 
     nextSource.onerror = () => {
       setBackendStatus("unavailable");
       setBackendLabel("Lost connection to local Codex backend");
+      setBusy(false);
+      setChatEntries((current) =>
+        appendSystemMessage(current, "Connection lost", "Lost connection to local Codex backend.", "failed"),
+      );
       nextSource.close();
     };
   }
@@ -325,8 +273,4 @@ function readStoredAuthoredOnly() {
   }
 
   return window.localStorage.getItem(AUTHORED_ONLY_KEY) === "true";
-}
-
-function isImmediateGraphOp(op: GraphOp): op is Extract<GraphOp, { op: "focusNode" | "setClusterMode" | "fitView" }> {
-  return op.op === "focusNode" || op.op === "setClusterMode" || op.op === "fitView";
 }

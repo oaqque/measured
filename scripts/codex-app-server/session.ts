@@ -1,9 +1,7 @@
 import type { ServerResponse } from "node:http";
 import { CodexJsonRpcClient } from "./rpc";
-import { buildGraphOutputSchema, buildGraphTurnInput } from "./graph-prompts";
 import type {
   CodexAccountReadResult,
-  GraphTurnContext,
   JsonRpcEnvelope,
   SessionEvent,
   ThreadStartResult,
@@ -13,7 +11,6 @@ import type {
 interface GraphSessionState {
   activeTurnId: string | null;
   eventClients: Set<ServerResponse>;
-  textBuffer: string;
   threadId: string;
 }
 
@@ -47,7 +44,6 @@ export class CodexGraphSessionManager {
     this.sessions.set(sessionId, {
       activeTurnId: null,
       eventClients: new Set(),
-      textBuffer: "",
       threadId: thread.thread.id,
     });
 
@@ -67,16 +63,20 @@ export class CodexGraphSessionManager {
     return true;
   }
 
-  async startTurn(sessionId: string, message: string, graphContext: GraphTurnContext) {
+  async startTurn(sessionId: string, message: string) {
     const session = this.sessions.get(sessionId);
     if (!session) {
-      throw new Error(`Unknown graph session: ${sessionId}`);
+      throw new Error(`Unknown chat session: ${sessionId}`);
     }
 
-    session.textBuffer = "";
     const result = await this.rpc.request<TurnStartResult>("turn/start", {
       threadId: session.threadId,
-      input: buildGraphTurnInput(message, graphContext),
+      input: [
+        {
+          type: "text",
+          text: message,
+        },
+      ],
       cwd: this.cwd,
       approvalPolicy: "never",
       sandboxPolicy: {
@@ -88,14 +88,9 @@ export class CodexGraphSessionManager {
       model: "gpt-5.4-mini",
       effort: "low",
       summary: "concise",
-      outputSchema: buildGraphOutputSchema(),
     });
 
     session.activeTurnId = result.turn.id;
-    this.broadcast(sessionId, {
-      type: "status",
-      text: "Codex is thinking about the graph...",
-    });
   }
 
   interrupt(sessionId: string) {
@@ -105,11 +100,6 @@ export class CodexGraphSessionManager {
     }
 
     session.activeTurnId = null;
-    session.textBuffer = "";
-    this.broadcast(sessionId, {
-      type: "status",
-      text: "Graph turn interrupted locally.",
-    });
   }
 
   close() {
@@ -140,76 +130,26 @@ export class CodexGraphSessionManager {
       return;
     }
 
-    if (message.method === "item/agentMessage/delta") {
-      const turnId = typeof message.params.turnId === "string" ? message.params.turnId : null;
-      const delta = typeof message.params.delta === "string" ? message.params.delta : "";
-      if (!turnId || !delta) {
-        return;
-      }
-
-      const entry = this.findSessionByTurnId(turnId);
-      if (!entry) {
-        return;
-      }
-
-      entry.session.textBuffer += delta;
-      this.broadcast(entry.sessionId, { type: "delta", text: delta });
+    const entry = this.findSessionForMessage(message);
+    if (!entry) {
       return;
     }
 
     if (message.method === "turn/completed") {
       const turn = message.params.turn;
-      const threadId = typeof message.params.threadId === "string" ? message.params.threadId : null;
-      if (!threadId || !isTurnPayload(turn)) {
+      const turnId = getTurnId(turn);
+      if (!isTurnPayload(turn) || !entry.session.activeTurnId || !turnId || entry.session.activeTurnId !== turnId) {
         return;
       }
-
-      const entry = this.findSessionByThreadId(threadId);
-      if (!entry) {
-        return;
-      }
-
-      if (turn.status === "completed") {
-        this.broadcast(entry.sessionId, {
-          type: "turnResult",
-          payload: entry.session.textBuffer,
-        });
-      } else {
-        this.broadcast(entry.sessionId, {
-          type: "error",
-          text: turn.error?.message ?? "The Codex graph turn failed.",
-        });
-      }
-
       entry.session.activeTurnId = null;
-      entry.session.textBuffer = "";
-      return;
     }
 
-    if (message.method === "error") {
-      const threadId = typeof message.params.threadId === "string" ? message.params.threadId : null;
-      const errorMessage = message.params.error;
-      if (!threadId) {
-        return;
-      }
-
-      const entry = this.findSessionByThreadId(threadId);
-      if (!entry) {
-        return;
-      }
-
-      const text =
-        typeof errorMessage === "object" &&
-        errorMessage !== null &&
-        "message" in errorMessage &&
-        typeof errorMessage.message === "string"
-          ? errorMessage.message
-          : "The Codex graph request failed.";
-      this.broadcast(entry.sessionId, {
-        type: "error",
-        text,
-      });
-    }
+    this.broadcast(entry.sessionId, {
+      type: "rpcEvent",
+      method: message.method,
+      params: message.params,
+      requestId: typeof message.id === "number" ? message.id : null,
+    });
   }
 
   private findSessionByTurnId(turnId: string) {
@@ -232,6 +172,23 @@ export class CodexGraphSessionManager {
     return null;
   }
 
+  private findSessionForMessage(message: JsonRpcEnvelope) {
+    const turnId = extractTurnId(message.params);
+    if (turnId) {
+      const turnEntry = this.findSessionByTurnId(turnId);
+      if (turnEntry) {
+        return turnEntry;
+      }
+    }
+
+    const threadId = extractThreadId(message.params);
+    if (!threadId) {
+      return null;
+    }
+
+    return this.findSessionByThreadId(threadId);
+  }
+
   private broadcast(sessionId: string, event: SessionEvent) {
     const session = this.sessions.get(sessionId);
     if (!session) {
@@ -247,4 +204,32 @@ export class CodexGraphSessionManager {
 
 function isTurnPayload(value: unknown): value is { status: string; error?: { message?: string } | null } {
   return typeof value === "object" && value !== null && "status" in value;
+}
+
+function getTurnId(value: unknown) {
+  if (typeof value !== "object" || value === null || !("id" in value)) {
+    return null;
+  }
+
+  return typeof value.id === "string" ? value.id : null;
+}
+
+function extractTurnId(params: Record<string, unknown> | undefined) {
+  if (!params) {
+    return null;
+  }
+
+  if (typeof params.turnId === "string") {
+    return params.turnId;
+  }
+
+  return getTurnId(params.turn);
+}
+
+function extractThreadId(params: Record<string, unknown> | undefined) {
+  if (!params) {
+    return null;
+  }
+
+  return typeof params.threadId === "string" ? params.threadId : null;
 }

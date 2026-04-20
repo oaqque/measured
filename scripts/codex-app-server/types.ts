@@ -31,16 +31,11 @@ export interface TurnStartResult {
   };
 }
 
-export interface GraphTurnContext {
-  authoredLinkCount: number;
-  clusterMode: string;
-  linkCount: number;
-  nodeCount: number;
-  selectedNodeSlug: string | null;
-}
-
 export interface SessionEvent {
-  type: "status" | "delta" | "turnResult" | "error";
+  type: "status" | "rpcEvent" | "error";
+  scope?: "connection" | "session";
   text?: string;
-  payload?: string;
+  method?: string;
+  params?: Record<string, unknown>;
+  requestId?: number | null;
 }

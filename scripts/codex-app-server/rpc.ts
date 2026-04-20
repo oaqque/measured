@@ -28,6 +28,13 @@ export class CodexJsonRpcClient {
       }
 
       const message = JSON.parse(line) as JsonRpcEnvelope;
+      if (message.method) {
+        for (const handler of this.notificationHandlers) {
+          handler(message);
+        }
+        return;
+      }
+
       if (typeof message.id === "number") {
         const pending = this.pendingRequests.get(message.id);
         if (!pending) {
@@ -44,9 +51,6 @@ export class CodexJsonRpcClient {
         return;
       }
 
-      for (const handler of this.notificationHandlers) {
-        handler(message);
-      }
     });
 
     this.child.stderr.on("data", () => {

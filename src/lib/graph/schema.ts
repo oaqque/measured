@@ -131,40 +131,6 @@ export interface GraphSnapshot {
   }>;
 }
 
-export type GraphOp =
-  | {
-      op: "createLink";
-      sourceSlug: string;
-      targetSlug: string;
-      kind: GraphLinkKind | string;
-      label?: string | null;
-      strength?: number;
-    }
-  | {
-      op: "removeLink";
-      linkId?: string;
-      sourceSlug?: string;
-      targetSlug?: string;
-      kind?: GraphLinkKind | string;
-    }
-  | {
-      op: "focusNode";
-      slug: string;
-    }
-  | {
-      op: "setClusterMode";
-      mode: GraphClusterMode;
-    }
-  | {
-      op: "fitView";
-    };
-
-export interface GraphChatTurnResult {
-  assistantText: string;
-  ops: GraphOp[];
-  needsConfirmation: boolean;
-}
-
 export interface GraphInteractionEvent {
   type: "hoverChanged" | "selectionChanged" | "viewportChanged" | "dragStateChanged";
   nodeId?: string | null;

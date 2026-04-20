@@ -43,20 +43,17 @@ export function GraphView({
   });
   const previousDetailOpenRef = useRef(Boolean(noteOverlay));
   const {
-    assistantText,
+    chatEntries,
     backendLabel,
     backendReady,
     busy,
     clusterMode,
     graphData,
     paused,
-    pendingPersistentOps,
     setClusterMode,
     setPaused,
     setShowAuthoredOnly,
     showAuthoredOnly,
-    streamingText,
-    applyPending,
     interrupt,
     sendMessage,
   } = useGraphSession(initialGraphData);
@@ -153,14 +150,11 @@ export function GraphView({
 
         {backendReady ? (
           <GraphChatBar
-            assistantText={assistantText}
             backendLabel={backendLabel}
             busy={busy}
+            entries={chatEntries}
             connected={backendReady}
             inputDisabled={!backendReady}
-            pendingOps={pendingPersistentOps}
-            streamingText={streamingText}
-            onApplyPendingOps={applyPending}
             onInterrupt={interrupt}
             onSendMessage={sendMessage}
           />
