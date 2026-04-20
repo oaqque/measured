@@ -54,7 +54,7 @@ const server = createServer(async (request, response) => {
 
     const interruptMatch = url.pathname.match(/^\/api\/graph-chat\/session\/([^/]+)\/interrupt$/u);
     if (request.method === "POST" && interruptMatch) {
-      manager.interrupt(decodeURIComponent(interruptMatch[1]));
+      await manager.interrupt(decodeURIComponent(interruptMatch[1]));
       return json(response, 202, { ok: true });
     }
 

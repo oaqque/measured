@@ -13,6 +13,7 @@ export class CodexJsonRpcClient {
   private readonly notificationHandlers = new Set<(message: JsonRpcEnvelope) => void>();
   private readonly pendingRequests = new Map<number, PendingRequest>();
   private nextId = 1;
+  private processError: Error | null = null;
 
   constructor(cwd: string) {
     this.child = spawn("codex", ["app-server"], {
@@ -53,12 +54,25 @@ export class CodexJsonRpcClient {
 
     });
 
+    this.child.on("error", (error) => {
+      this.processError = error instanceof Error ? error : new Error(String(error));
+      for (const [id, pending] of this.pendingRequests) {
+        clearTimeout(pending.timer);
+        pending.reject(this.processError);
+        this.pendingRequests.delete(id);
+      }
+    });
+
     this.child.stderr.on("data", () => {
       return;
     });
   }
 
   async request<TResult>(method: string, params: Record<string, unknown>, timeoutMs = 60_000) {
+    if (this.processError) {
+      throw this.processError;
+    }
+
     const id = this.nextId;
     this.nextId += 1;
 
@@ -86,6 +100,10 @@ export class CodexJsonRpcClient {
   }
 
   notify(method: string, params: Record<string, unknown>) {
+    if (this.processError) {
+      return;
+    }
+
     this.child.stdin.write(
       `${JSON.stringify({
         jsonrpc: "2.0",

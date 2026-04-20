@@ -29,13 +29,21 @@ export class CodexGraphSessionManager {
   }
 
   async health() {
-    await this.ensureInitialized();
-    const account = await this.rpc.request<CodexAccountReadResult>("account/read", {});
-    return {
-      ok: Boolean(account.account),
-      authenticated: Boolean(account.account),
-      backend: account.account ? `Connected as ${account.account.email ?? account.account.type}` : "Codex app-server is not authenticated.",
-    };
+    try {
+      await this.ensureInitialized();
+      const account = await this.rpc.request<CodexAccountReadResult>("account/read", {});
+      return {
+        ok: Boolean(account.account),
+        authenticated: Boolean(account.account),
+        backend: account.account ? `Connected as ${account.account.email ?? account.account.type}` : "Codex app-server is not authenticated.",
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        authenticated: false,
+        backend: error instanceof Error ? error.message : "Codex app-server unavailable.",
+      };
+    }
   }
 
   async createSession(sessionId: string) {
@@ -93,12 +101,16 @@ export class CodexGraphSessionManager {
     session.activeTurnId = result.turn.id;
   }
 
-  interrupt(sessionId: string) {
+  async interrupt(sessionId: string) {
     const session = this.sessions.get(sessionId);
-    if (!session) {
+    if (!session || !session.activeTurnId) {
       return;
     }
 
+    await this.rpc.request("turn/interrupt", {
+      threadId: session.threadId,
+      turnId: session.activeTurnId,
+    });
     session.activeTurnId = null;
   }
 
@@ -179,6 +191,8 @@ export class CodexGraphSessionManager {
       if (turnEntry) {
         return turnEntry;
       }
+
+      return null;
     }
 
     const threadId = extractThreadId(message.params);

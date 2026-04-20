@@ -329,7 +329,7 @@ function createEntryFromItem(item: unknown, status: string): GraphChatEntry | nu
         ...base,
         kind: "assistant",
         title: "Codex",
-        body: extractMessageText(record.content),
+        body: typeof record.text === "string" ? record.text : extractMessageText(record.content),
         details: compact([
           typeof record.phase === "string" ? `phase: ${record.phase}` : null,
         ]),
@@ -370,7 +370,7 @@ function createEntryFromItem(item: unknown, status: string): GraphChatEntry | nu
           typeof record.exitCode === "number" ? `exit ${record.exitCode}` : null,
         ]),
         itemType: record.type,
-        output: typeof record.output === "string" ? record.output : null,
+        output: getCommandExecutionOutput(record),
         raw: stringify(record),
       };
     case "mcpToolCall":
@@ -594,6 +594,18 @@ function formatTokenUsage(params: Record<string, unknown>) {
     typeof record.outputTokens === "number" ? `output ${record.outputTokens}` : null,
     typeof record.totalTokens === "number" ? `total ${record.totalTokens}` : null,
   ]).join(" · ");
+}
+
+function getCommandExecutionOutput(record: Record<string, unknown>) {
+  if (typeof record.aggregatedOutput === "string" && record.aggregatedOutput.length > 0) {
+    return record.aggregatedOutput;
+  }
+
+  if (typeof record.output === "string" && record.output.length > 0) {
+    return record.output;
+  }
+
+  return null;
 }
 
 function extractErrorMessage(value: unknown) {
