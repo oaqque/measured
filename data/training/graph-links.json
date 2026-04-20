@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "links": [
+    {
+      "sourceSlug": "2026-04-01-10-km-threshold-run",
+      "targetSlug": "2026-04-21-10-km-threshold-run",
+      "kind": "progression",
+      "weight": 1,
+      "label": "threshold session progression"
+    },
+    {
+      "sourceSlug": "2026-04-09-10-km-steady-run",
+      "targetSlug": "2026-04-23-10-km-steady-run",
+      "kind": "progression",
+      "weight": 1,
+      "label": "steady run progression"
+    },
+    {
+      "sourceSlug": "2026-04-28-8-km-sharp-run",
+      "targetSlug": "2026-05-03-hoka-runaway-sydney-half-marathon",
+      "kind": "taper",
+      "weight": 0.82,
+      "label": "race sharpening"
+    },
+    {
+      "sourceSlug": "2026-05-03-hoka-runaway-sydney-half-marathon",
+      "targetSlug": "2026-06-21-parramatta-half-marathon",
+      "kind": "goalBridge",
+      "weight": 0.68,
+      "label": "half marathon progression"
+    },
+    {
+      "sourceSlug": "2026-06-21-parramatta-half-marathon",
+      "targetSlug": "2026-08-30-sydney-marathon",
+      "kind": "goalBridge",
+      "weight": 0.62,
+      "label": "marathon build bridge"
+    }
+  ]
+}

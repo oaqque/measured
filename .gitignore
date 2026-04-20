@@ -4,6 +4,7 @@ dist/
 .vercel/
 *.tsbuildinfo
 /src/generated/workouts.json
+/src/generated/note-graph.json
 /public/generated/workout-source-details.json
 /public/generated/workout-measurements/
 /public/generated/workout-routes/
@@ -12,3 +13,4 @@ dist/
 .vercel
 apps/apple-health-bridge/build/
 apps/apple-health-bridge/AppleHealthBridge.xcodeproj/
+apps/note-graph-wasm/target/

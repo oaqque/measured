@@ -9,16 +9,16 @@ import {
   type ReactNode,
 } from "react";
 import {
+  ArrowLeft,
   CalendarDays,
   FileText,
   Github,
   GripVertical,
-  HeartPulse,
   History,
   Menu,
   NotebookText,
+  Orbit,
   Trophy,
-  Zap,
 } from "lucide-react";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarView } from "@/features/calendar/CalendarView";
 import { DEFAULT_EVENT_TYPES } from "@/features/calendar/calendarMeta";
 import { useMediaQuery } from "@/features/calendar/useMediaQuery";
+import { GraphView } from "@/features/graph/GraphView";
+import { createGraphDocumentNodeId } from "@/lib/graph/ids";
+import { formatGraphSourcePathLabel } from "@/lib/graph/labels";
+import { noteGraph } from "@/lib/graph/load";
 import { getTodayDateKey, parseDateKey, resolveDefaultFocusDate } from "@/lib/calendar";
 import {
   allChangelogEntries,
@@ -48,7 +52,7 @@ import {
 import type { ChangelogEntry, GoalNote, WorkoutFilters } from "@/lib/workouts/schema";
 import { cn } from "@/lib/utils";
 
-type View = "welcome" | "goals" | "heart-rate" | "morning-mobility" | "plan" | "calendar";
+type View = "welcome" | "goals" | "heart-rate" | "morning-mobility" | "plan" | "calendar" | "graph";
 type WorkoutStatus = WorkoutFilters["status"];
 type AppRoute = {
   view: View;
@@ -65,6 +69,8 @@ export default function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [calendarFocusDateState, setCalendarFocusDate] = useState("");
+  const [graphFocusedNodeId, setGraphFocusedNodeId] = useState<string | null>(null);
+  const [graphOpenedNodeId, setGraphOpenedNodeId] = useState<string | null>(null);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(Boolean(selectedWorkoutSlug));
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(296);
   const [eventType, setEventType] = useState<WorkoutFilters["eventType"]>(DEFAULT_EVENT_TYPES);
@@ -85,6 +91,63 @@ export default function App() {
     [eventType, status],
   );
   const selectedWorkout = selectedWorkoutSlug ? getWorkoutBySlug(selectedWorkoutSlug) : null;
+  const graphDocumentsById = useMemo(() => {
+    const documents = new Map<
+      string,
+      {
+        body: string;
+        date: string | null;
+        eyebrow: string;
+        sourcePath: string;
+        title: string;
+      }
+    >();
+
+    const addDocument = (
+      sourcePath: string,
+      title: string,
+      body: string,
+      eyebrow: string,
+      date: string | null = null,
+    ) => {
+      documents.set(createGraphDocumentNodeId(sourcePath), {
+        body,
+        date,
+        eyebrow,
+        sourcePath,
+        title,
+      });
+    };
+
+    addDocument(welcomeDocument.sourcePath, welcomeDocument.title, welcomeDocument.body, "Welcome");
+    addDocument(goalsDocument.sourcePath, goalsDocument.title, goalsDocument.body, "Goals");
+    addDocument(heartRateDocument.sourcePath, heartRateDocument.title, heartRateDocument.body, "Metaanalysis");
+    addDocument(morningMobilityDocument.sourcePath, morningMobilityDocument.title, morningMobilityDocument.body, "Metaanalysis");
+    addDocument(trainingPlan.sourcePath, trainingPlan.title, trainingPlan.body, "Plan");
+
+    for (const goal of allGoalNotes) {
+      addDocument(goal.sourcePath, goal.title, goal.body, "Goal", goal.date);
+    }
+
+    for (const entry of allChangelogEntries) {
+      addDocument(entry.sourcePath, entry.title, entry.body, "Changelog", entry.date);
+    }
+
+    return documents;
+  }, []);
+  const graphDocumentIdByPath = useMemo(() => {
+    const ids = new Map<string, string>();
+    for (const id of graphDocumentsById.keys()) {
+      const sourcePath = id.slice("doc:".length);
+      ids.set(sourcePath, id);
+    }
+
+    ids.set("HEART_RATE.md", createGraphDocumentNodeId(heartRateDocument.sourcePath));
+    ids.set("MORNING_MOBILITY.md", createGraphDocumentNodeId(morningMobilityDocument.sourcePath));
+    return ids;
+  }, [graphDocumentsById]);
+  const selectedGraphWorkout = graphOpenedNodeId ? getWorkoutBySlug(graphOpenedNodeId) : null;
+  const selectedGraphDocument = graphOpenedNodeId ? graphDocumentsById.get(graphOpenedNodeId) ?? null : null;
   const welcomeChanges = useMemo(
     () => getChangelogEntriesForFile(welcomeDocument.sourcePath),
     [],
@@ -113,6 +176,14 @@ export default function App() {
       return selectedWorkout.sourcePath;
     }
 
+    if (selectedGraphWorkout) {
+      return selectedGraphWorkout.sourcePath;
+    }
+
+    if (selectedGraphDocument) {
+      return selectedGraphDocument.sourcePath;
+    }
+
     if (view === "welcome") {
       return welcomeDocument.sourcePath;
     }
@@ -134,7 +205,7 @@ export default function App() {
     }
 
     return null;
-  }, [selectedWorkout, view]);
+  }, [selectedGraphDocument, selectedGraphWorkout, selectedWorkout, view]);
   const completedWorkoutCount = useMemo(
     () => allWorkouts.filter((workout) => workout.completed !== null).length,
     [],
@@ -244,6 +315,25 @@ export default function App() {
     openWorkout(slug, false);
   };
 
+  const focusNodeFromGraph = (nodeId: string | null) => {
+    setGraphFocusedNodeId(nodeId);
+    if (!nodeId) {
+      setGraphOpenedNodeId(null);
+    }
+  };
+
+  const openFocusedNodeFromGraph = () => {
+    if (!graphFocusedNodeId) {
+      return;
+    }
+
+    if (!graphDocumentsById.has(graphFocusedNodeId) && !getWorkoutBySlug(graphFocusedNodeId)) {
+      return;
+    }
+
+    setGraphOpenedNodeId(graphFocusedNodeId);
+  };
+
   const handleDetailPanelOpenChange = (open: boolean) => {
     if (!open && selectedWorkoutSlug) {
       setRightSidebarOpen(false);
@@ -300,6 +390,11 @@ export default function App() {
       return true;
     }
 
+    if (normalizedHref === "graph" || normalizedHref === "/graph") {
+      navigateToView("graph");
+      return true;
+    }
+
     if (normalizedHref === "notes" || normalizedHref === "notes/") {
       navigateToView("calendar");
       return true;
@@ -316,6 +411,25 @@ export default function App() {
 
   const handleChangelogLink = (href: string) => {
     setChangelogOpen(false);
+    return handleMarkdownLink(href);
+  };
+
+  const handleGraphMarkdownLink = (href: string) => {
+    const normalizedHref = normalizeInternalHref(href);
+    const documentId = graphDocumentIdByPath.get(normalizedHref);
+    if (documentId) {
+      setGraphFocusedNodeId(documentId);
+      setGraphOpenedNodeId(documentId);
+      return true;
+    }
+
+    const slug = workoutHrefToSlug(normalizedHref);
+    if (slug) {
+      setGraphFocusedNodeId(slug);
+      setGraphOpenedNodeId(slug);
+      return true;
+    }
+
     return handleMarkdownLink(href);
   };
 
@@ -455,6 +569,39 @@ export default function App() {
                     </div>
                   ) : null}
                 </>
+              ) : view === "graph" ? (
+                <div className="h-full min-h-0 overflow-hidden">
+                  <GraphView
+                    initialGraphData={noteGraph}
+                    noteOverlay={
+                      selectedGraphWorkout ? (
+                        <Suspense fallback={<WorkoutNotePaneSkeleton />}>
+                          <LazyWorkoutNotePane
+                            key={selectedGraphWorkout.slug}
+                            backLabel="Close note"
+                            workout={selectedGraphWorkout}
+                            onBack={() => setGraphOpenedNodeId(null)}
+                            onLinkClick={handleGraphMarkdownLink}
+                          />
+                        </Suspense>
+                      ) : selectedGraphDocument ? (
+                        <GraphDocumentOverlay
+                          body={selectedGraphDocument.body}
+                          date={selectedGraphDocument.date}
+                          eyebrow={selectedGraphDocument.eyebrow}
+                          sourcePath={selectedGraphDocument.sourcePath}
+                          title={selectedGraphDocument.title}
+                          onBack={() => setGraphOpenedNodeId(null)}
+                          onLinkClick={handleGraphMarkdownLink}
+                        />
+                      ) : null
+                    }
+                    selectedNodeId={graphFocusedNodeId}
+                    onCloseSelection={() => setGraphOpenedNodeId(null)}
+                    onOpenSelectedNode={openFocusedNodeFromGraph}
+                    onSelectNode={focusNodeFromGraph}
+                  />
+                </div>
               ) : view === "welcome" ? (
                 <div className="app-scroll-pane h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
                   <MarkdownPage
@@ -559,22 +706,16 @@ function SidebarContent({
           onClick={() => onNavigate("plan")}
         />
         <SidebarNavButton
-          active={view === "heart-rate"}
-          icon={<HeartPulse className="size-4" />}
-          label="Heart Rate"
-          onClick={() => onNavigate("heart-rate")}
-        />
-        <SidebarNavButton
-          active={view === "morning-mobility"}
-          icon={<Zap className="size-4" />}
-          label="Morning Mobility"
-          onClick={() => onNavigate("morning-mobility")}
-        />
-        <SidebarNavButton
           active={view === "calendar"}
           icon={<CalendarDays className="size-4" />}
           label="Calendar"
           onClick={() => onNavigate("calendar")}
+        />
+        <SidebarNavButton
+          active={view === "graph"}
+          icon={<Orbit className="size-4" />}
+          label="Graph"
+          onClick={() => onNavigate("graph")}
         />
       </nav>
 
@@ -625,6 +766,56 @@ function MarkdownPage({
           title="Applies here"
         />
       ) : null}
+    </div>
+  );
+}
+
+function GraphDocumentOverlay({
+  body,
+  date,
+  eyebrow,
+  sourcePath,
+  title,
+  onBack,
+  onLinkClick,
+}: {
+  body: string;
+  date: string | null;
+  eyebrow: string;
+  sourcePath: string;
+  title: string;
+  onBack: () => void;
+  onLinkClick?: (href: string) => boolean;
+}) {
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="mb-4 border-b border-foreground/10 pb-4">
+        <Button
+          aria-label="Close note"
+          className="size-9 rounded-[0.35rem] p-0"
+          type="button"
+          variant="secondary"
+          onClick={onBack}
+        >
+          <ArrowLeft className="size-4" />
+          <span className="sr-only">Close note</span>
+        </Button>
+      </div>
+
+      <div className="app-scroll-pane min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-[80rem]">
+          <section className="border-b border-foreground/10 pb-4">
+            <p className="eyebrow">{eyebrow}</p>
+            <h2 className="mt-2 text-2xl font-black">{title}</h2>
+            {date ? <p className="mt-1 text-sm text-muted-foreground">{formatDisplayDate(date)}</p> : null}
+            <p className="mt-3 text-xs font-medium text-muted-foreground">{formatGraphSourcePathLabel(sourcePath)}</p>
+          </section>
+
+          <div className="markdown-prose mt-6">
+            <MarkdownContent content={body} onLinkClick={onLinkClick} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1088,6 +1279,10 @@ function getRouteFromPath(pathname: string): AppRoute {
     return { view: "calendar", noteSlug: null };
   }
 
+  if (normalizedPath === "/graph") {
+    return { view: "graph", noteSlug: null };
+  }
+
   if (normalizedPath === "/goals") {
     return { view: "goals", noteSlug: null };
   }
@@ -1114,6 +1309,10 @@ function getPathFromRoute(route: AppRoute) {
 
   if (route.view === "calendar") {
     return "/calendar";
+  }
+
+  if (route.view === "graph") {
+    return "/graph";
   }
 
   if (route.view === "goals") {
@@ -1166,6 +1365,10 @@ function formatViewLabel(view: View) {
 
   if (view === "calendar") {
     return "Calendar";
+  }
+
+  if (view === "graph") {
+    return "Graph";
   }
 
   return "Welcome";
@@ -1238,46 +1441,7 @@ function formatAffectedFileLabel(sourcePath: string) {
     return "README.md";
   }
 
-  if (sourcePath === "PLAN.md") {
-    return "PLAN.md";
-  }
-
-  if (sourcePath === "WELCOME.md") {
-    return "WELCOME.md";
-  }
-
-  if (sourcePath === "GOALS.md") {
-    return "GOALS.md";
-  }
-
-  if (sourcePath === "HEART_RATE.md" || sourcePath === "metaanalysis/HEART_RATE.md") {
-    return "HEART_RATE.md";
-  }
-
-  if (
-    sourcePath === "MORNING_MOBILITY.md" ||
-    sourcePath === "metaanalysis/MORNING_MOBILITY.md"
-  ) {
-    return "MORNING_MOBILITY.md";
-  }
-
-  if (sourcePath.startsWith("metaanalysis/")) {
-    return sourcePath.slice("metaanalysis/".length).replace(/\.md$/u, "");
-  }
-
-  if (sourcePath.startsWith("goals/")) {
-    return sourcePath.slice("goals/".length).replace(/\.md$/u, "");
-  }
-
-  if (sourcePath.startsWith("notes/")) {
-    return sourcePath.slice("notes/".length).replace(/\.md$/u, "");
-  }
-
-  if (sourcePath.startsWith("changelog/")) {
-    return sourcePath.slice("changelog/".length).replace(/\.md$/u, "");
-  }
-
-  return sourcePath.replace(/\.md$/u, "");
+  return formatGraphSourcePathLabel(sourcePath);
 }
 
 function workoutHrefToSlug(href: string) {
