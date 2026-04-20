@@ -486,40 +486,27 @@ export default function App() {
                 </>
               ) : view === "graph" ? (
                 <div className="h-full overflow-hidden px-4 py-3 md:px-6 md:py-8 lg:px-10 lg:py-10">
-                  {selectedGraphWorkout && !isDesktop ? (
-                    <div className="app-scroll-pane h-full overflow-y-auto">
-                      <Suspense fallback={<WorkoutNotePaneSkeleton />}>
-                        <LazyWorkoutNotePane
-                          key={selectedGraphWorkout.slug}
-                          workout={selectedGraphWorkout}
-                          onBack={() => setGraphSelectedWorkoutSlug(null)}
-                          onLinkClick={handleGraphMarkdownLink}
-                        />
-                      </Suspense>
-                    </div>
-                  ) : (
-                    <div className={cn("grid h-full min-h-0 min-w-0 gap-6", selectedGraphWorkout && isDesktop ? "lg:grid-cols-[minmax(0,1fr)_minmax(24rem,32rem)]" : "")}>
-                      <div className="min-h-0 min-w-0 overflow-hidden">
-                        <GraphView
-                          initialGraphData={noteGraph}
-                          selectedWorkoutSlug={graphSelectedWorkoutSlug}
-                          onSelectWorkout={openWorkoutFromGraph}
-                        />
-                      </div>
-                      {selectedGraphWorkout && isDesktop ? (
-                        <div className="app-scroll-pane min-h-0 overflow-y-auto rounded-[2rem] border border-foreground/10 bg-background/72 p-6 backdrop-blur">
+                  <div className="h-full min-h-0 min-w-0 overflow-hidden">
+                    <GraphView
+                      initialGraphData={noteGraph}
+                      noteOverlay={
+                        selectedGraphWorkout ? (
                           <Suspense fallback={<WorkoutNotePaneSkeleton />}>
                             <LazyWorkoutNotePane
                               key={selectedGraphWorkout.slug}
+                              backLabel="Close note"
                               workout={selectedGraphWorkout}
                               onBack={() => setGraphSelectedWorkoutSlug(null)}
                               onLinkClick={handleGraphMarkdownLink}
                             />
                           </Suspense>
-                        </div>
-                      ) : null}
-                    </div>
-                  )}
+                        ) : null
+                      }
+                      selectedWorkoutSlug={graphSelectedWorkoutSlug}
+                      onCloseWorkout={() => setGraphSelectedWorkoutSlug(null)}
+                      onSelectWorkout={openWorkoutFromGraph}
+                    />
+                  </div>
                 </div>
               ) : view === "welcome" ? (
                 <div className="app-scroll-pane h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">

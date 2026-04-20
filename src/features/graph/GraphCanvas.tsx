@@ -14,12 +14,33 @@ const EVENT_TYPE_COLORS = {
 
 const DEFAULT_CLUSTER_MODE: GraphClusterMode = "eventType";
 
+function getClusterValue(node: NoteGraphData["nodes"][number], clusterMode: GraphClusterMode) {
+  if (clusterMode === "eventType") {
+    return node.clusters.eventType;
+  }
+
+  if (clusterMode === "status") {
+    return node.clusters.status;
+  }
+
+  if (clusterMode === "month") {
+    return node.clusters.month;
+  }
+
+  if (clusterMode === "trainingBlock") {
+    return node.clusters.trainingBlock;
+  }
+
+  return null;
+}
+
 export function GraphCanvas({
   clusterMode,
   data,
   fitRequestVersion,
   paused,
   selectedSlug,
+  showAllLabels,
   showAuthoredOnly,
   onSelectSlug,
 }: {
@@ -28,6 +49,7 @@ export function GraphCanvas({
   fitRequestVersion: number;
   paused: boolean;
   selectedSlug: string | null;
+  showAllLabels: boolean;
   showAuthoredOnly: boolean;
   onSelectSlug: (slug: string | null) => void;
 }) {
@@ -58,6 +80,28 @@ export function GraphCanvas({
   useEffect(() => {
     onSelectSlugRef.current = onSelectSlug;
   }, [onSelectSlug]);
+
+  const clusterLabelByKey = useMemo(
+    () => new Map(data.clusters.map((cluster) => [`${cluster.mode}:${cluster.key}`, cluster.label])),
+    [data.clusters],
+  );
+  const activeClusterLabelByNodeId = useMemo(() => {
+    const labels = new Map<string, string>();
+    if (clusterMode === "none") {
+      return labels;
+    }
+
+    for (const node of data.nodes) {
+      const clusterKey = getClusterValue(node, clusterMode);
+      if (!clusterKey) {
+        continue;
+      }
+
+      labels.set(node.id, clusterLabelByKey.get(`${clusterMode}:${clusterKey}`) ?? clusterKey);
+    }
+
+    return labels;
+  }, [clusterLabelByKey, clusterMode, data.nodes]);
 
   const draw = useMemo(
     () => (context: CanvasRenderingContext2D, width: number, height: number) => {
@@ -90,6 +134,9 @@ export function GraphCanvas({
         context.stroke();
       }
 
+      const hoveredNode =
+        snapshot.hoveredNodeId !== null ? snapshot.nodes.find((node) => node.id === snapshot.hoveredNodeId) ?? null : null;
+
       for (const node of snapshot.nodes) {
         const isSelected = snapshot.selectedNodeId === node.id;
         const isHovered = snapshot.hoveredNodeId === node.id;
@@ -106,11 +153,68 @@ export function GraphCanvas({
       }
 
       context.restore();
+
+      const drawNodeLabel = (node: (typeof snapshot.nodes)[number], label: string, emphasized: boolean) => {
+        const screenX = snapshot.viewport.x + node.x * snapshot.viewport.scale;
+        const screenY = snapshot.viewport.y + node.y * snapshot.viewport.scale;
+        const pillPaddingX = emphasized ? 10 : 8;
+        const pillHeight = emphasized ? 28 : 24;
+
+        context.save();
+        context.font = emphasized
+          ? '600 13px "Manrope Variable", ui-sans-serif, system-ui, sans-serif'
+          : '600 11px "Manrope Variable", ui-sans-serif, system-ui, sans-serif';
+        const textWidth = context.measureText(label).width;
+        const pillWidth = textWidth + pillPaddingX * 2;
+        const pillX = Math.min(Math.max(12, screenX - pillWidth / 2), Math.max(12, width - pillWidth - 12));
+        const pillY = Math.min(
+          Math.max(12, screenY - node.radius * snapshot.viewport.scale - (emphasized ? 42 : 34)),
+          Math.max(12, height - pillHeight - 12),
+        );
+
+        context.fillStyle = emphasized ? "rgba(244, 253, 255, 0.95)" : "rgba(244, 253, 255, 0.78)";
+        context.beginPath();
+        context.roundRect(pillX, pillY, pillWidth, pillHeight, emphasized ? 10 : 9);
+        context.fill();
+
+        context.strokeStyle = emphasized ? "rgba(29, 42, 109, 0.12)" : "rgba(29, 42, 109, 0.08)";
+        context.lineWidth = 1;
+        context.stroke();
+
+        context.fillStyle = emphasized ? "#162447" : "rgba(22, 36, 71, 0.84)";
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText(label, pillX + pillWidth / 2, pillY + pillHeight / 2 + 0.5);
+        context.restore();
+      };
+
+      if (showAllLabels && clusterMode !== "none") {
+        for (const node of snapshot.nodes) {
+          if (hoveredNode && node.id === hoveredNode.id) {
+            continue;
+          }
+
+          const label = activeClusterLabelByNodeId.get(node.id);
+          if (!label) {
+            continue;
+          }
+
+          drawNodeLabel(node, label, false);
+        }
+      }
+
+      if (hoveredNode && clusterMode !== "none") {
+        const hoverLabel = activeClusterLabelByNodeId.get(hoveredNode.id);
+        if (hoverLabel) {
+          drawNodeLabel(hoveredNode, hoverLabel, true);
+        }
+      }
+
       context.restore();
       graphTelemetry.recordDraw(performance.now() - drawStartedAt, Array.from(pendingDrawReasonsRef.current));
       pendingDrawReasonsRef.current.clear();
     },
-    [],
+    [activeClusterLabelByNodeId, clusterMode, showAllLabels],
   );
 
   useEffect(() => {

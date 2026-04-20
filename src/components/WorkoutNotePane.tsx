@@ -81,10 +81,12 @@ const STRAVA_MEASUREMENT_CARD_META: Record<
 };
 
 export default function WorkoutNotePane({
+  backLabel = "Back to calendar",
   workout,
   onBack,
   onLinkClick,
 }: {
+  backLabel?: string;
   workout: WorkoutNote;
   onBack: () => void;
   onLinkClick: (href: string) => boolean;
@@ -117,14 +119,14 @@ export default function WorkoutNotePane({
     <div className={cn("flex h-full min-h-0 flex-col", isClosing ? "motion-exit" : "motion-enter")}>
       <div className="mb-4 border-b border-foreground/10 pb-4">
         <Button
-          aria-label="Back to calendar"
+          aria-label={backLabel}
           className="size-9 rounded-[0.35rem] p-0"
           type="button"
           variant="secondary"
           onClick={handleBack}
         >
           <ArrowLeft className="size-4" />
-          <span className="sr-only">Back to calendar</span>
+          <span className="sr-only">{backLabel}</span>
         </Button>
       </div>
 

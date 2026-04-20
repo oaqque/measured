@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Focus, Pause, Play, SlidersHorizontal, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronUp, Focus, Pause, Play, SlidersHorizontal, Sparkles, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { GraphClusterMode } from "@/lib/graph/schema";
@@ -16,16 +16,20 @@ export function GraphToolbar({
   clusterMode,
   paused,
   showAuthoredOnly,
+  showAllLabels,
   onClusterModeChange,
   onFitView,
+  onToggleAllLabels,
   onToggleAuthoredOnly,
   onTogglePaused,
 }: {
   clusterMode: GraphClusterMode;
   paused: boolean;
   showAuthoredOnly: boolean;
+  showAllLabels: boolean;
   onClusterModeChange: (mode: GraphClusterMode) => void;
   onFitView: () => void;
+  onToggleAllLabels: () => void;
   onToggleAuthoredOnly: () => void;
   onTogglePaused: () => void;
 }) {
@@ -84,6 +88,17 @@ export function GraphToolbar({
             >
               <Focus className="size-4" />
               Fit
+            </Button>
+
+            <Button
+              className="col-span-2 h-10 rounded-[0.8rem] px-3"
+              size="sm"
+              type="button"
+              variant={showAllLabels ? "default" : "secondary"}
+              onClick={onToggleAllLabels}
+            >
+              <Type className="size-4" />
+              {showAllLabels ? "Labels on" : "Labels off"}
             </Button>
 
             <Button
