@@ -32,6 +32,100 @@ export function buildGraphTurnInput(message: string, context: GraphTurnContext) 
 }
 
 export function buildGraphOutputSchema() {
+  const createLinkOp = {
+    type: "object",
+    additionalProperties: false,
+    required: ["op", "sourceSlug", "targetSlug", "kind"],
+    properties: {
+      op: {
+        type: "string",
+        enum: ["createLink"],
+      },
+      sourceSlug: {
+        type: "string",
+      },
+      targetSlug: {
+        type: "string",
+      },
+      kind: {
+        type: "string",
+      },
+      label: {
+        type: ["string", "null"],
+      },
+      strength: {
+        type: "number",
+      },
+    },
+  } as const;
+
+  const removeLinkOp = {
+    type: "object",
+    additionalProperties: false,
+    required: ["op"],
+    properties: {
+      op: {
+        type: "string",
+        enum: ["removeLink"],
+      },
+      linkId: {
+        type: "string",
+      },
+      sourceSlug: {
+        type: "string",
+      },
+      targetSlug: {
+        type: "string",
+      },
+      kind: {
+        type: "string",
+      },
+    },
+  } as const;
+
+  const focusNodeOp = {
+    type: "object",
+    additionalProperties: false,
+    required: ["op", "slug"],
+    properties: {
+      op: {
+        type: "string",
+        enum: ["focusNode"],
+      },
+      slug: {
+        type: "string",
+      },
+    },
+  } as const;
+
+  const setClusterModeOp = {
+    type: "object",
+    additionalProperties: false,
+    required: ["op", "mode"],
+    properties: {
+      op: {
+        type: "string",
+        enum: ["setClusterMode"],
+      },
+      mode: {
+        type: "string",
+        enum: ["none", "eventType", "status", "month", "trainingBlock"],
+      },
+    },
+  } as const;
+
+  const fitViewOp = {
+    type: "object",
+    additionalProperties: false,
+    required: ["op"],
+    properties: {
+      op: {
+        type: "string",
+        enum: ["fitView"],
+      },
+    },
+  } as const;
+
   return {
     type: "object",
     additionalProperties: false,
@@ -46,9 +140,9 @@ export function buildGraphOutputSchema() {
       ops: {
         type: "array",
         items: {
-          type: "object",
+          anyOf: [createLinkOp, removeLinkOp, focusNodeOp, setClusterModeOp, fitViewOp],
         },
       },
     },
-  };
+  } as const;
 }

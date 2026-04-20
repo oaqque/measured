@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GraphCanvas } from "@/features/graph/GraphCanvas";
 import { GraphChatBar } from "@/features/graph/GraphChatBar";
 import { GraphTelemetryOverlay } from "@/features/graph/GraphTelemetryOverlay";
@@ -44,11 +44,6 @@ export function GraphView({
     sendMessage,
   } = useGraphSession(initialGraphData);
 
-  const visibleLinkCount = useMemo(
-    () => graphData.links.filter((link) => !showAuthoredOnly || link.sourceType === "authored").length,
-    [graphData.links, showAuthoredOnly],
-  );
-
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.shiftKey && event.key.toLowerCase() === "t") {
@@ -71,20 +66,8 @@ export function GraphView({
   }, [selectedWorkoutSlug]);
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col gap-4">
-      <GraphToolbar
-        clusterMode={clusterMode}
-        linkCount={visibleLinkCount}
-        nodeCount={graphData.nodes.length}
-        paused={paused}
-        showAuthoredOnly={showAuthoredOnly}
-        onClusterModeChange={setClusterMode}
-        onFitView={() => setFitRequestVersion((value) => value + 1)}
-        onToggleAuthoredOnly={() => setShowAuthoredOnly((value) => !value)}
-        onTogglePaused={() => setPaused((value) => !value)}
-      />
-
-      <div className="relative min-h-0 flex-1">
+    <div className="relative h-full min-h-0">
+      <div className="relative h-full min-h-0">
         <GraphCanvas
           clusterMode={clusterMode}
           data={graphData}
@@ -93,6 +76,16 @@ export function GraphView({
           selectedSlug={selectedWorkoutSlug}
           showAuthoredOnly={showAuthoredOnly}
           onSelectSlug={onSelectWorkout}
+        />
+
+        <GraphToolbar
+          clusterMode={clusterMode}
+          paused={paused}
+          showAuthoredOnly={showAuthoredOnly}
+          onClusterModeChange={setClusterMode}
+          onFitView={() => setFitRequestVersion((value) => value + 1)}
+          onToggleAuthoredOnly={() => setShowAuthoredOnly((value) => !value)}
+          onTogglePaused={() => setPaused((value) => !value)}
         />
 
         <GraphChatBar
