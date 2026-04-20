@@ -105,6 +105,12 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5176,
     allowedHosts: ["host.docker.internal", "willye.taile4213d.ts.net"],
+    proxy: {
+      "/api/graph-chat": {
+        target: "http://127.0.0.1:5177",
+        changeOrigin: true,
+      },
+    },
   },
   test: {
     environment: "jsdom",

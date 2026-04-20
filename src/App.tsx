@@ -17,6 +17,7 @@ import {
   History,
   Menu,
   NotebookText,
+  Orbit,
   Trophy,
   Zap,
 } from "lucide-react";
@@ -28,6 +29,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarView } from "@/features/calendar/CalendarView";
 import { DEFAULT_EVENT_TYPES } from "@/features/calendar/calendarMeta";
 import { useMediaQuery } from "@/features/calendar/useMediaQuery";
+import { GraphView } from "@/features/graph/GraphView";
+import { noteGraph } from "@/lib/graph/load";
 import { getTodayDateKey, parseDateKey, resolveDefaultFocusDate } from "@/lib/calendar";
 import {
   allChangelogEntries,
@@ -48,7 +51,7 @@ import {
 import type { ChangelogEntry, GoalNote, WorkoutFilters } from "@/lib/workouts/schema";
 import { cn } from "@/lib/utils";
 
-type View = "welcome" | "goals" | "heart-rate" | "morning-mobility" | "plan" | "calendar";
+type View = "welcome" | "goals" | "heart-rate" | "morning-mobility" | "plan" | "calendar" | "graph";
 type WorkoutStatus = WorkoutFilters["status"];
 type AppRoute = {
   view: View;
@@ -65,6 +68,7 @@ export default function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [calendarFocusDateState, setCalendarFocusDate] = useState("");
+  const [graphSelectedWorkoutSlug, setGraphSelectedWorkoutSlug] = useState<string | null>(null);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(Boolean(selectedWorkoutSlug));
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(296);
   const [eventType, setEventType] = useState<WorkoutFilters["eventType"]>(DEFAULT_EVENT_TYPES);
@@ -85,6 +89,7 @@ export default function App() {
     [eventType, status],
   );
   const selectedWorkout = selectedWorkoutSlug ? getWorkoutBySlug(selectedWorkoutSlug) : null;
+  const selectedGraphWorkout = graphSelectedWorkoutSlug ? getWorkoutBySlug(graphSelectedWorkoutSlug) : null;
   const welcomeChanges = useMemo(
     () => getChangelogEntriesForFile(welcomeDocument.sourcePath),
     [],
@@ -113,6 +118,10 @@ export default function App() {
       return selectedWorkout.sourcePath;
     }
 
+    if (selectedGraphWorkout) {
+      return selectedGraphWorkout.sourcePath;
+    }
+
     if (view === "welcome") {
       return welcomeDocument.sourcePath;
     }
@@ -134,7 +143,7 @@ export default function App() {
     }
 
     return null;
-  }, [selectedWorkout, view]);
+  }, [selectedGraphWorkout, selectedWorkout, view]);
   const completedWorkoutCount = useMemo(
     () => allWorkouts.filter((workout) => workout.completed !== null).length,
     [],
@@ -244,6 +253,10 @@ export default function App() {
     openWorkout(slug, false);
   };
 
+  const openWorkoutFromGraph = (slug: string | null) => {
+    setGraphSelectedWorkoutSlug(slug);
+  };
+
   const handleDetailPanelOpenChange = (open: boolean) => {
     if (!open && selectedWorkoutSlug) {
       setRightSidebarOpen(false);
@@ -300,6 +313,11 @@ export default function App() {
       return true;
     }
 
+    if (normalizedHref === "graph" || normalizedHref === "/graph") {
+      navigateToView("graph");
+      return true;
+    }
+
     if (normalizedHref === "notes" || normalizedHref === "notes/") {
       navigateToView("calendar");
       return true;
@@ -316,6 +334,17 @@ export default function App() {
 
   const handleChangelogLink = (href: string) => {
     setChangelogOpen(false);
+    return handleMarkdownLink(href);
+  };
+
+  const handleGraphMarkdownLink = (href: string) => {
+    const normalizedHref = normalizeInternalHref(href);
+    const slug = workoutHrefToSlug(normalizedHref);
+    if (slug) {
+      setGraphSelectedWorkoutSlug(slug);
+      return true;
+    }
+
     return handleMarkdownLink(href);
   };
 
@@ -455,6 +484,43 @@ export default function App() {
                     </div>
                   ) : null}
                 </>
+              ) : view === "graph" ? (
+                <div className="h-full overflow-hidden px-4 py-3 md:px-6 md:py-8 lg:px-10 lg:py-10">
+                  {selectedGraphWorkout && !isDesktop ? (
+                    <div className="app-scroll-pane h-full overflow-y-auto">
+                      <Suspense fallback={<WorkoutNotePaneSkeleton />}>
+                        <LazyWorkoutNotePane
+                          key={selectedGraphWorkout.slug}
+                          workout={selectedGraphWorkout}
+                          onBack={() => setGraphSelectedWorkoutSlug(null)}
+                          onLinkClick={handleGraphMarkdownLink}
+                        />
+                      </Suspense>
+                    </div>
+                  ) : (
+                    <div className={cn("grid h-full min-h-0 min-w-0 gap-6", selectedGraphWorkout && isDesktop ? "lg:grid-cols-[minmax(0,1fr)_minmax(24rem,32rem)]" : "")}>
+                      <div className="min-h-0 min-w-0 overflow-hidden">
+                        <GraphView
+                          initialGraphData={noteGraph}
+                          selectedWorkoutSlug={graphSelectedWorkoutSlug}
+                          onSelectWorkout={openWorkoutFromGraph}
+                        />
+                      </div>
+                      {selectedGraphWorkout && isDesktop ? (
+                        <div className="app-scroll-pane min-h-0 overflow-y-auto rounded-[2rem] border border-foreground/10 bg-background/72 p-6 backdrop-blur">
+                          <Suspense fallback={<WorkoutNotePaneSkeleton />}>
+                            <LazyWorkoutNotePane
+                              key={selectedGraphWorkout.slug}
+                              workout={selectedGraphWorkout}
+                              onBack={() => setGraphSelectedWorkoutSlug(null)}
+                              onLinkClick={handleGraphMarkdownLink}
+                            />
+                          </Suspense>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
               ) : view === "welcome" ? (
                 <div className="app-scroll-pane h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
                   <MarkdownPage
@@ -575,6 +641,12 @@ function SidebarContent({
           icon={<CalendarDays className="size-4" />}
           label="Calendar"
           onClick={() => onNavigate("calendar")}
+        />
+        <SidebarNavButton
+          active={view === "graph"}
+          icon={<Orbit className="size-4" />}
+          label="Graph"
+          onClick={() => onNavigate("graph")}
         />
       </nav>
 
@@ -1088,6 +1160,10 @@ function getRouteFromPath(pathname: string): AppRoute {
     return { view: "calendar", noteSlug: null };
   }
 
+  if (normalizedPath === "/graph") {
+    return { view: "graph", noteSlug: null };
+  }
+
   if (normalizedPath === "/goals") {
     return { view: "goals", noteSlug: null };
   }
@@ -1114,6 +1190,10 @@ function getPathFromRoute(route: AppRoute) {
 
   if (route.view === "calendar") {
     return "/calendar";
+  }
+
+  if (route.view === "graph") {
+    return "/graph";
   }
 
   if (route.view === "goals") {
@@ -1166,6 +1246,10 @@ function formatViewLabel(view: View) {
 
   if (view === "calendar") {
     return "Calendar";
+  }
+
+  if (view === "graph") {
+    return "Graph";
   }
 
   return "Welcome";

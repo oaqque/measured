@@ -196,6 +196,18 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  .graph-canvas {
+    background:
+      radial-gradient(circle at top left, color-mix(in srgb, var(--surface-hero) 50%, transparent) 0%, transparent 38%),
+      radial-gradient(circle at bottom right, color-mix(in srgb, var(--surface-panel-alt) 44%, transparent) 0%, transparent 32%),
+      linear-gradient(180deg, color-mix(in srgb, var(--background) 84%, white) 0%, color-mix(in srgb, var(--page) 92%, white) 100%);
+  }
+
+  .graph-canvas:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 6px;
+  }
+
   .leaflet-container {
     z-index: 0;
   }
