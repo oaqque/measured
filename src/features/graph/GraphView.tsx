@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { GraphCanvas } from "@/features/graph/GraphCanvas";
 import { GraphChatBar } from "@/features/graph/GraphChatBar";
+import { GraphSearch } from "@/features/graph/GraphSearch";
 import { GraphTelemetryOverlay } from "@/features/graph/GraphTelemetryOverlay";
+import { deriveGraphSearchState } from "@/features/graph/search";
 import { graphTelemetry } from "@/features/graph/telemetry";
 import { GraphToolbar } from "@/features/graph/GraphToolbar";
 import { useGraphSession } from "@/features/graph/useGraphSession";
@@ -27,6 +29,7 @@ export function GraphView({
   onSelectNode: (nodeId: string | null) => void;
 }) {
   const [fitRequestVersion, setFitRequestVersion] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
   const [showAllLabels, setShowAllLabels] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -57,10 +60,12 @@ export function GraphView({
     interrupt,
     sendMessage,
   } = useGraphSession(initialGraphData);
+  const searchState = useMemo(() => deriveGraphSearchState(graphData, searchQuery), [graphData, searchQuery]);
+  const filteredGraphData = searchState.filteredGraphData;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.shiftKey && event.key.toLowerCase() === "t") {
+      if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "t") {
         setTelemetryVisible((value) => !value);
       }
     };
@@ -100,12 +105,27 @@ export function GraphView({
     };
   }, [noteOverlay, onCloseSelection]);
 
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      return;
+    }
+
+    if (!selectedNodeId || searchState.visibleNodeIds.has(selectedNodeId)) {
+      return;
+    }
+
+    onSelectNode(null);
+    if (noteOverlay) {
+      onCloseSelection();
+    }
+  }, [noteOverlay, onCloseSelection, onSelectNode, searchQuery, searchState.visibleNodeIds, selectedNodeId]);
+
   const selectedNodeSummary = useMemo(() => {
     if (!selectedNodeId) {
       return null;
     }
 
-    const node = graphData.nodes.find((candidate) => candidate.id === selectedNodeId);
+    const node = filteredGraphData.nodes.find((candidate) => candidate.id === selectedNodeId);
     if (!node) {
       return null;
     }
@@ -118,14 +138,23 @@ export function GraphView({
           : node.title,
       nodeKind: node.nodeKind,
     };
-  }, [graphData.nodes, selectedNodeId]);
+  }, [filteredGraphData.nodes, selectedNodeId]);
+
+  const handleSearchQueryChange = (nextQuery: string) => {
+    if (nextQuery === searchQuery) {
+      return;
+    }
+
+    setSearchQuery(nextQuery);
+    setFitRequestVersion((value) => value + 1);
+  };
 
   return (
     <div className="relative h-full min-h-0">
       <div className="relative h-full min-h-0">
         <GraphCanvas
           clusterMode={clusterMode}
-          data={graphData}
+          data={filteredGraphData}
           fitRequestVersion={fitRequestVersion}
           paused={paused}
           selectedNodeId={selectedNodeId}
@@ -139,6 +168,14 @@ export function GraphView({
         <GraphToolbar
           clusterMode={clusterMode}
           paused={paused}
+          search={
+            <GraphSearch
+              query={searchQuery}
+              suggestions={searchState.suggestions}
+              onQueryChange={handleSearchQueryChange}
+              onSelectSuggestion={onSelectNode}
+            />
+          }
           showAllLabels={showAllLabels}
           showAuthoredOnly={showAuthoredOnly}
           onClusterModeChange={setClusterMode}

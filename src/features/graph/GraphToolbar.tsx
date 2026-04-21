@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ChevronDown, ChevronUp, Focus, Pause, Play, SlidersHorizontal, Sparkles, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ const CLUSTER_MODE_LABELS: Array<{ mode: GraphClusterMode; label: string }> = [
 export function GraphToolbar({
   clusterMode,
   paused,
+  search,
   showAuthoredOnly,
   showAllLabels,
   onClusterModeChange,
@@ -25,6 +26,7 @@ export function GraphToolbar({
 }: {
   clusterMode: GraphClusterMode;
   paused: boolean;
+  search?: ReactNode;
   showAuthoredOnly: boolean;
   showAllLabels: boolean;
   onClusterModeChange: (mode: GraphClusterMode) => void;
@@ -37,17 +39,21 @@ export function GraphToolbar({
 
   return (
     <div className="pointer-events-none absolute left-4 top-4 z-20 flex max-w-[calc(100%-6rem)] flex-col items-start gap-2">
-      <Button
-        aria-label={expanded ? "Collapse graph controls" : "Expand graph controls"}
-        className="pointer-events-auto h-11 rounded-[0.95rem] px-3 shadow-lg shadow-primary/10"
-        size="sm"
-        type="button"
-        variant="secondary"
-        onClick={() => setExpanded((value) => !value)}
-      >
-        <SlidersHorizontal className="size-4" />
-        {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-      </Button>
+      <div className="flex w-full items-start gap-2">
+        <Button
+          aria-label={expanded ? "Collapse graph controls" : "Expand graph controls"}
+          className="pointer-events-auto h-11 rounded-[0.95rem] px-3 shadow-lg shadow-primary/10"
+          size="sm"
+          type="button"
+          variant="secondary"
+          onClick={() => setExpanded((value) => !value)}
+        >
+          <SlidersHorizontal className="size-4" />
+          {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+        </Button>
+
+        {search}
+      </div>
 
       {expanded ? (
         <div className="pointer-events-auto w-[min(18rem,calc(100vw-7rem))] overflow-hidden rounded-[1.05rem] border border-foreground/10 bg-background/90 p-2.5 shadow-xl shadow-primary/10 backdrop-blur">
