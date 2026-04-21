@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "30 km Long Run with Fueling Practice",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-25",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "30 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 30 km long run with fueling practice\n- Settle around `6:00 /km` and keep the effort aerobic rather than turning this into a disguised progression run.\n- Start fueling early and practise the intake pattern you want for the marathon block.\n- Skip basketball. The point of the day is durable long-run volume, not stacking extra hard load."
+    }
+  ]
+}

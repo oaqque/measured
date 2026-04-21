@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "6 km Easy Aerobic Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-23",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "6 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 6 km easy aerobic run\n- This is no longer a steady day.\n- Keep the whole run genuinely easy so Saturday can carry the week's long aerobic load.\n- Finish feeling underdone rather than trying to squeeze extra quality into the middle of the week."
+    }
+  ]
+}
