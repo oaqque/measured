@@ -35,10 +35,24 @@ type WasmGraphModule = {
 export async function loadGraphEngineModule(): Promise<GraphModuleState> {
   const moduleUrl = new URL("./pkg/note_graph_wasm.js", import.meta.url);
   const wasmUrl = new URL("./pkg/note_graph_wasm_bg.wasm", import.meta.url);
-  const wasmModule = (await import(/* @vite-ignore */ moduleUrl.href)) as WasmGraphModule;
+  let wasmModule: WasmGraphModule;
+
+  try {
+    wasmModule = (await import(/* @vite-ignore */ moduleUrl.href)) as WasmGraphModule;
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Unable to load generated note graph WASM bundle (${moduleUrl.pathname}). Run 'pnpm run graph:build:wasm' before starting the app. Original error: ${reason}`,
+    );
+  }
 
   if (typeof wasmModule.default === "function") {
-    await wasmModule.default(wasmUrl);
+    try {
+      await wasmModule.default(wasmUrl);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      throw new Error(`Generated note graph WASM module failed to initialize (${wasmUrl.pathname}). ${reason}`);
+    }
   }
 
   if (typeof wasmModule.GraphEngine !== "function") {

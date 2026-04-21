@@ -3,6 +3,7 @@ import cliProgress from "cli-progress";
 
 const stages = [
   { label: "Build data", command: "pnpm", args: ["run", "build:data"] },
+  { label: "Build WASM graph", command: "pnpm", args: ["run", "graph:build:wasm"] },
   { label: "TypeScript", command: "pnpm", args: ["exec", "tsc", "-b"] },
   { label: "Vite bundle", command: "pnpm", args: ["exec", "vite", "build"] },
 ];

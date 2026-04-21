@@ -785,8 +785,15 @@ export function GraphCanvas({
         </div>
       ) : null}
       {error ? (
-        <div className="pointer-events-none absolute left-4 top-4 rounded-[0.9rem] bg-background/90 px-3 py-2 text-xs font-semibold text-muted-foreground backdrop-blur">
-          {usingFallback ? "Rust WASM unavailable, using fallback engine." : error}
+        <div className="pointer-events-none absolute right-4 top-4 max-w-[min(24rem,calc(100vw-2rem))] rounded-[0.9rem] bg-background/90 px-3 py-2 text-right text-xs font-semibold text-muted-foreground backdrop-blur">
+          {usingFallback ? (
+            <>
+              <div>Rust WASM unavailable, using fallback engine.</div>
+              <div className="mt-1 text-[11px] font-medium normal-case text-muted-foreground/90">{error}</div>
+            </>
+          ) : (
+            error
+          )}
         </div>
       ) : null}
     </div>

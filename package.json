@@ -23,7 +23,7 @@
     "vercel:link": "pnpm dlx vercel link",
     "deploy:vercel:preview": "pnpm dlx vercel build && pnpm dlx vercel deploy --prebuilt --archive=tgz",
     "deploy:vercel:prod": "pnpm dlx vercel build --prod && pnpm dlx vercel deploy --prebuilt --prod --archive=tgz",
-    "predev": "pnpm run build:data",
+    "predev": "pnpm run build:data && pnpm run graph:build:wasm",
     "pretypecheck": "pnpm run build:data",
     "pretest": "pnpm run build:data",
     "dev": "vite",
