@@ -4,13 +4,54 @@
   "allDay": true,
   "type": "single",
   "date": "2026-04-19",
-  "completed": false,
+  "completed": "2026-04-18T22:01:33.000Z",
   "eventType": "run",
   "expectedDistance": "10 km",
+  "stravaId": 18164098512,
+  "activityRefs": {
+    "strava": "18164098512",
+    "appleHealth": "CF1D348F-9B37-4C9D-B54C-513E141A691B"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- 10 km easy run\n- This is no longer a long-run day. Wednesday's `21.27 km` already covered the week's long aerobic stimulus.\n- Friday's `10.03 km` recovery run stayed controlled and you reported feeling really good afterward, so the full `10 km` is back on the table if Saturday does not change that read.\n- Keep the whole run gentle and flat-effort. Cap it at `8 km` only if the ankles start talking again or Saturday stops feeling like a cheap shakeout.\n- The goal is to finish the week with useful aerobic volume and still feel ready for next week's work."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This stayed on the planned Sunday, `2026-04-19`, but it did not land as the planned `10 km` easy aerobic closer. The completed run covered `5.370 km` in `24:27` moving time (`24:30` elapsed) with average HR `172.8` and max HR `185`, so it finished `4.630 km` short of plan and at a much higher cost than an easy end-of-week run.\n- Strava and Apple Health agree on the same session (`18164098512` / `CF1D348F-9B37-4C9D-B54C-513E141A691B`). The route stream shows a near-continuous run with only `3` brief stop segments, and the estimated pace shifted from about `4:37 /km` in the first half to `4:33 /km` in the second while average HR rose from `168.8 bpm` to `176.7 bpm`, so this read as a short fast test rather than a backed-off recovery jog.\n- Given your note about breaking in the Alphafly 3, the practical outcome is that the session became a shoe test instead of the low-cost `10 km` volume the plan was trying to preserve."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate consequence is that the week from `2026-04-13` to `2026-04-19` closed at `51.087 km` across `5` runs, below the reopened `56 to 60 km` target and without the extra easy kilometres Sunday was supposed to add.\n- That still leaves the week useful because Wednesday already supplied the `21.27 km` long aerobic stimulus and Friday added a controlled `10.03 km`, but the high heart-rate cost of this short run means Monday should stay genuinely easy and any extra hard load should be treated carefully."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- Long term, this does not damage the block by itself, but it also does not do the aerobic job the planned Sunday run was meant to do. The bigger build still depends on extending low-cost mileage, not just stacking short faster efforts on tired legs.\n- The useful signal is specific: testing race shoes in a short run can be worthwhile, but the half-marathon and marathon goals still depend on keeping novelty sessions from replacing the easy volume that makes higher weekly mileage repeatable."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- Breaking in Alphafly 3's. test run"
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `4:34 /km` across `5.370 km` in `24:27` moving time.\n- Estimated first-half pace was `4:37 /km` and second-half pace was `4:33 /km`, so the run slightly quickened rather than fading."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava summary HR came in at `172.8 bpm` average and `185 bpm` max, while Apple Health matched the same run at `172.0 bpm` average and `185 bpm` max.\n- Estimated half-split HR rose from `168.8 bpm` to `176.7 bpm` (+`7.9 bpm`), which is too expensive for something that was meant to stay easy."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `24:27` out of `24:30` elapsed (99.8%), so stoppage cost was negligible.\n- The route stream shows only `3` brief stop segments, which fits a continuous test run rather than a broken-up session."
+        }
+      ]
     }
   ]
 }
