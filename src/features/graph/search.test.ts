@@ -270,4 +270,69 @@ describe("deriveGraphSearchState", () => {
     expect(deriveGraphSearchState(graph, "tomorrow").directMatchNodeIds.has("tomorrow-run")).toBe(true);
     expect(deriveGraphSearchState(graph, "yesterday").directMatchNodeIds.has("yesterday-run")).toBe(true);
   });
+
+  it("matches relative week filters for this week", () => {
+    const graph: NoteGraphData = {
+      ...TEST_GRAPH,
+      nodes: [
+        ...TEST_GRAPH.nodes,
+        {
+          id: "week-later-run",
+          slug: "week-later-run",
+          nodeKind: "workout",
+          title: "Saturday Run",
+          date: "2026-04-11",
+          category: "run",
+          status: "planned",
+          sourcePath: "notes/saturday-run.md",
+          excerpt: null,
+          radius: 16,
+          x: 18,
+          y: 12,
+          clusters: {
+            eventType: "run",
+            month: "2026-04",
+            status: "planned",
+            trainingBlock: "block-a",
+          },
+          metrics: {
+            expectedDistanceKm: 10,
+            actualDistanceKm: null,
+          },
+        },
+        {
+          id: "next-week-run",
+          slug: "next-week-run",
+          nodeKind: "workout",
+          title: "Next Week Run",
+          date: "2026-04-13",
+          category: "run",
+          status: "planned",
+          sourcePath: "notes/next-week-run.md",
+          excerpt: null,
+          radius: 16,
+          x: 32,
+          y: 18,
+          clusters: {
+            eventType: "run",
+            month: "2026-04",
+            status: "planned",
+            trainingBlock: "block-a",
+          },
+          metrics: {
+            expectedDistanceKm: 10,
+            actualDistanceKm: null,
+          },
+        },
+      ],
+      links: TEST_GRAPH.links,
+      clusters: TEST_GRAPH.clusters,
+    };
+
+    const result = deriveGraphSearchState(graph, "this week");
+
+    expect(result.directMatchNodeIds.has("match")).toBe(true);
+    expect(result.directMatchNodeIds.has("week-later-run")).toBe(true);
+    expect(result.directMatchNodeIds.has("next-week-run")).toBe(false);
+  });
 });

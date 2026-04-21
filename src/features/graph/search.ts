@@ -1,4 +1,4 @@
-import { addDaysToDate, formatDateKey, getTodayDateKey, parseDateKey } from "@/lib/calendar";
+import { addDaysToDate, formatDateKey, getTodayDateKey, parseDateKey, startOfWeek } from "@/lib/calendar";
 import { graphFolderNodeIdToPath } from "@/lib/graph/ids";
 import { formatGraphFolderLabel, formatGraphSourcePathLabel } from "@/lib/graph/labels";
 import type { NoteGraphData, NoteGraphNode } from "@/lib/graph/schema";
@@ -202,28 +202,29 @@ function getRelativeDateAliases(date: string | null) {
     return [];
   }
 
+  const aliases: string[] = [];
   const diffDays = getDateDifferenceInDays(date, getTodayDateKey());
   if (diffDays === 0) {
-    return ["today"];
+    aliases.push("today");
   }
-
   if (diffDays === 1) {
-    return ["tomorrow"];
+    aliases.push("tomorrow");
   }
-
   if (diffDays === -1) {
-    return ["yesterday"];
+    aliases.push("yesterday");
   }
-
   if (diffDays === 2) {
-    return ["day after tomorrow"];
+    aliases.push("day after tomorrow");
   }
-
   if (diffDays === -2) {
-    return ["day before yesterday"];
+    aliases.push("day before yesterday");
   }
 
-  return [];
+  if (isDateInCurrentWeek(date)) {
+    aliases.push("this week");
+  }
+
+  return aliases;
 }
 
 function getDateDifferenceInDays(leftDateKey: string, rightDateKey: string) {
@@ -233,4 +234,12 @@ function getDateDifferenceInDays(leftDateKey: string, rightDateKey: string) {
   const normalizedRight = parseDateKey(formatDateKey(addDaysToDate(rightDate, 0)));
   const millisecondsPerDay = 24 * 60 * 60 * 1000;
   return Math.round((normalizedLeft.getTime() - normalizedRight.getTime()) / millisecondsPerDay);
+}
+
+function isDateInCurrentWeek(dateKey: string) {
+  const date = parseDateKey(dateKey);
+  const weekStart = startOfWeek(parseDateKey(getTodayDateKey()));
+  const weekEnd = addDaysToDate(weekStart, 6);
+  const normalizedDate = parseDateKey(formatDateKey(date));
+  return normalizedDate >= weekStart && normalizedDate <= weekEnd;
 }

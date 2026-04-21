@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import cliProgress from "cli-progress";
 import matter from "gray-matter";
+import { resolveWorkoutsSourceDir } from "./lib/workouts-source";
 import {
   getWorkoutNoteBaseName,
   hasImportedFromStravaSection,
@@ -44,7 +45,6 @@ const generatedWorkoutMeasurementsDir = path.resolve(rootDir, "public/generated/
 const generatedRouteStreamsDir = path.resolve(rootDir, "public/generated/workout-routes");
 const generatedWorkoutImagesDir = path.resolve(rootDir, "public/generated/workout-images");
 const legacyGeneratedRouteStreamsPath = path.resolve(rootDir, "public/generated/workout-route-streams.json");
-const defaultWorkoutsDir = path.resolve(rootDir, "data/training");
 const defaultCacheExportPaths: Record<WorkoutProvider, string> = {
   strava: path.resolve(rootDir, "vault/strava/cache-export.json"),
   appleHealth: path.resolve(rootDir, "vault/apple-health/cache-export.json"),
@@ -329,29 +329,11 @@ function createProgressTracker(totalSteps: number) {
 }
 
 async function resolveWorkoutsDir() {
-  const flagValue = getCliFlagValue("--source");
-  const configuredPath = flagValue ?? process.env.WORKOUTS_SOURCE_DIR ?? defaultWorkoutsDir;
-  const resolvedPath = path.resolve(rootDir, configuredPath);
-
-  try {
-    const stats = await fs.stat(resolvedPath);
-    if (!stats.isDirectory()) {
-      throw new Error(`Workout source path is not a directory: ${resolvedPath}`);
-    }
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(
-      [
-        `Unable to read workout source directory: ${resolvedPath}`,
-        "Set WORKOUTS_SOURCE_DIR=/absolute/path/to/workouts or run:",
-        "pnpm run build:data -- --source /absolute/path/to/workouts",
-        `Default fallback checked: ${defaultWorkoutsDir}`,
-        `Details: ${detail}`,
-      ].join("\n"),
-    );
-  }
-
-  return resolvedPath;
+  return resolveWorkoutsSourceDir({
+    args: process.argv.slice(2),
+    env: process.env,
+    rootDir,
+  });
 }
 
 async function readProviderCaches(
@@ -859,20 +841,6 @@ async function readChangelogEntries(changelogDir: string, rootPath: string): Pro
   return entries.sort((left, right) =>
     left.date === right.date ? right.slug.localeCompare(left.slug) : right.date.localeCompare(left.date),
   );
-}
-
-function getCliFlagValue(flag: string) {
-  const flagIndex = process.argv.findIndex((argument) => argument === flag);
-  if (flagIndex === -1) {
-    return null;
-  }
-
-  const nextValue = process.argv[flagIndex + 1];
-  if (!nextValue || nextValue.startsWith("--")) {
-    throw new Error(`${flag} requires a path value`);
-  }
-
-  return nextValue;
 }
 
 function buildPlanDocument(fileContent: string, sourcePath: string): PlanDocument {

@@ -89,21 +89,26 @@ export function GraphView({
   }, [showAllLabels]);
 
   useEffect(() => {
-    if (!noteOverlay) {
+    if (!selectedNodeId && !noteOverlay) {
       return;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      if (noteOverlay) {
         onCloseSelection();
       }
+      onSelectNode(null);
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [noteOverlay, onCloseSelection]);
+  }, [noteOverlay, onCloseSelection, onSelectNode, selectedNodeId]);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
