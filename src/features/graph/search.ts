@@ -6,8 +6,9 @@ import type { NoteGraphData, NoteGraphNode } from "@/lib/graph/schema";
 export interface GraphSearchSuggestion {
   description: string;
   label: string;
-  matchKind: "direct" | "neighbor";
-  nodeId: string;
+  matchKind: "direct" | "filter" | "neighbor";
+  nodeId: string | null;
+  query: string | null;
 }
 
 export interface GraphSearchState {
@@ -20,9 +21,16 @@ export interface GraphSearchState {
 interface SearchableNode {
   dateAliases: string[];
   date: string | null;
+  filterAliases: SearchFilterAlias[];
   label: string;
   node: NoteGraphNode;
   searchableText: string;
+}
+
+interface SearchFilterAlias {
+  description: string;
+  label: string;
+  value: string;
 }
 
 export function deriveGraphSearchState(data: NoteGraphData, rawQuery: string): GraphSearchState {
@@ -37,6 +45,7 @@ export function deriveGraphSearchState(data: NoteGraphData, rawQuery: string): G
   }
 
   const searchableNodes = data.nodes.map((node) => buildSearchableNode(node));
+  const filterSuggestions = getFilterSuggestions(searchableNodes, query);
   const directMatches = searchableNodes
     .filter((entry) => matchesSearchQuery(entry.searchableText, query))
     .sort((left, right) => compareDirectMatches(left, right, query));
@@ -65,6 +74,7 @@ export function deriveGraphSearchState(data: NoteGraphData, rawQuery: string): G
     .filter((cluster) => cluster.nodeIds.length > 0);
 
   const suggestions = [
+    ...filterSuggestions,
     ...directMatches.map((entry) => createSuggestion(entry, "direct")),
     ...searchableNodes
       .filter((entry) => visibleNodeIds.has(entry.node.id) && !directMatchNodeIds.has(entry.node.id))
@@ -88,10 +98,23 @@ export function deriveGraphSearchState(data: NoteGraphData, rawQuery: string): G
 function buildSearchableNode(node: NoteGraphNode): SearchableNode {
   const label = getNodeSearchLabel(node);
   const dateAliases = getRelativeDateAliases(node.date);
-  const searchFields = [label, node.title, node.slug, node.sourcePath, node.date, ...dateAliases].filter(Boolean);
+  const categoryAliases = getCategoryAliases(node);
+  const filterAliases = [...getRelativeDateFilterAliases(node.date), ...getCategoryFilterAliases(node)];
+  const searchFields = [
+    label,
+    node.title,
+    node.slug,
+    node.sourcePath,
+    node.date,
+    node.category,
+    ...categoryAliases,
+    ...dateAliases,
+    ...filterAliases.map((alias) => alias.value),
+  ].filter(Boolean);
   return {
     dateAliases,
     date: node.date,
+    filterAliases,
     label,
     node,
     searchableText: normalizeGraphSearchText(searchFields.join(" ")),
@@ -104,7 +127,30 @@ function createSuggestion(entry: SearchableNode, matchKind: "direct" | "neighbor
     label: entry.label,
     matchKind,
     nodeId: entry.node.id,
+    query: null,
   };
+}
+
+function getFilterSuggestions(searchableNodes: SearchableNode[], query: string): GraphSearchSuggestion[] {
+  const suggestions = new Map<string, GraphSearchSuggestion>();
+
+  for (const entry of searchableNodes) {
+    for (const alias of entry.filterAliases) {
+      if (alias.value !== query || suggestions.has(alias.value)) {
+        continue;
+      }
+
+      suggestions.set(alias.value, {
+        description: alias.description,
+        label: alias.label,
+        matchKind: "filter",
+        nodeId: null,
+        query: alias.label,
+      });
+    }
+  }
+
+  return Array.from(suggestions.values()).sort((left, right) => left.label.localeCompare(right.label));
 }
 
 function compareDirectMatches(left: SearchableNode, right: SearchableNode, query: string) {
@@ -198,30 +244,34 @@ function normalizeGraphSearchText(value: string) {
 }
 
 function getRelativeDateAliases(date: string | null) {
+  return getRelativeDateFilterAliases(date).map((alias) => alias.value);
+}
+
+function getRelativeDateFilterAliases(date: string | null) {
   if (!date) {
     return [];
   }
 
-  const aliases: string[] = [];
+  const aliases: SearchFilterAlias[] = [];
   const diffDays = getDateDifferenceInDays(date, getTodayDateKey());
   if (diffDays === 0) {
-    aliases.push("today");
+    aliases.push(createFilterAlias("Today", "Relative Day"));
   }
   if (diffDays === 1) {
-    aliases.push("tomorrow");
+    aliases.push(createFilterAlias("Tomorrow", "Relative Day"));
   }
   if (diffDays === -1) {
-    aliases.push("yesterday");
+    aliases.push(createFilterAlias("Yesterday", "Relative Day"));
   }
   if (diffDays === 2) {
-    aliases.push("day after tomorrow");
+    aliases.push(createFilterAlias("Day After Tomorrow", "Relative Day"));
   }
   if (diffDays === -2) {
-    aliases.push("day before yesterday");
+    aliases.push(createFilterAlias("Day Before Yesterday", "Relative Day"));
   }
 
   if (isDateInCurrentWeek(date)) {
-    aliases.push("this week");
+    aliases.push(createFilterAlias("This Week", "Relative Week"));
   }
 
   return aliases;
@@ -242,4 +292,48 @@ function isDateInCurrentWeek(dateKey: string) {
   const weekEnd = addDaysToDate(weekStart, 6);
   const normalizedDate = parseDateKey(formatDateKey(date));
   return normalizedDate >= weekStart && normalizedDate <= weekEnd;
+}
+
+function getCategoryAliases(node: NoteGraphNode) {
+  return getCategoryFilterAliases(node).map((alias) => alias.value);
+}
+
+function getCategoryFilterAliases(node: NoteGraphNode) {
+  const aliases = new Set<string>();
+
+  aliases.add(node.category);
+  aliases.add(node.clusters.eventType);
+
+  if (node.category === "metaanalysis") {
+    aliases.add("meta analysis");
+  }
+
+  if (node.category === "goals") {
+    aliases.add("goal");
+  }
+
+  if (node.category === "goal") {
+    aliases.add("goals");
+  }
+
+  return Array.from(aliases)
+    .map((alias) => normalizeGraphSearchText(alias))
+    .filter(Boolean)
+    .map((alias) => ({
+      description: "Filter • Category",
+      label: formatFilterLabel(alias),
+      value: alias,
+    }));
+}
+
+function createFilterAlias(label: string, kind: string): SearchFilterAlias {
+  return {
+    description: `Filter • ${kind}`,
+    label,
+    value: normalizeGraphSearchText(label),
+  };
+}
+
+function formatFilterLabel(value: string) {
+  return value.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase());
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { GraphCanvas } from "@/features/graph/GraphCanvas";
 import { GraphChatBar } from "@/features/graph/GraphChatBar";
 import { GraphSearch } from "@/features/graph/GraphSearch";
+import type { GraphSearchSuggestion } from "@/features/graph/search";
 import { GraphTelemetryOverlay } from "@/features/graph/GraphTelemetryOverlay";
 import { deriveGraphSearchState } from "@/features/graph/search";
 import { graphTelemetry } from "@/features/graph/telemetry";
@@ -154,6 +155,19 @@ export function GraphView({
     setFitRequestVersion((value) => value + 1);
   };
 
+  const handleSearchSuggestionSelect = (suggestion: GraphSearchSuggestion) => {
+    if (suggestion.matchKind === "filter") {
+      handleSearchQueryChange(suggestion.query ?? suggestion.label);
+      onSelectNode(null);
+      if (noteOverlay) {
+        onCloseSelection();
+      }
+      return;
+    }
+
+    onSelectNode(suggestion.nodeId);
+  };
+
   return (
     <div className="relative h-full min-h-0">
       <div className="relative h-full min-h-0">
@@ -178,7 +192,7 @@ export function GraphView({
               query={searchQuery}
               suggestions={searchState.suggestions}
               onQueryChange={handleSearchQueryChange}
-              onSelectSuggestion={onSelectNode}
+              onSelectSuggestion={handleSearchSuggestionSelect}
             />
           }
           showAllLabels={showAllLabels}

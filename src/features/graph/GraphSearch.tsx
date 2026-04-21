@@ -15,7 +15,7 @@ export function GraphSearch({
   query: string;
   suggestions: GraphSearchSuggestion[];
   onQueryChange: (query: string) => void;
-  onSelectSuggestion: (nodeId: string) => void;
+  onSelectSuggestion: (suggestion: GraphSearchSuggestion) => void;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [focused, setFocused] = useState(false);
@@ -25,6 +25,8 @@ export function GraphSearch({
   const visibleSuggestions = suggestions.slice(0, MAX_VISIBLE_SUGGESTIONS);
   const expanded = focused || trimmedQuery.length > 0;
   const open = focused && trimmedQuery.length > 0;
+  const shortcutKeyClassName =
+    "inline-flex h-6 min-w-6 items-center justify-center rounded-md border border-foreground/10 bg-background px-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground shadow-sm";
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -54,8 +56,8 @@ export function GraphSearch({
     inputRef.current?.focus();
   }, [focused]);
 
-  const handleSuggestionSelect = (nodeId: string) => {
-    onSelectSuggestion(nodeId);
+  const handleSuggestionSelect = (suggestion: GraphSearchSuggestion) => {
+    onSelectSuggestion(suggestion);
     setFocused(false);
   };
 
@@ -124,7 +126,7 @@ export function GraphSearch({
                 }
 
                 event.preventDefault();
-                handleSuggestionSelect(suggestion.nodeId);
+                handleSuggestionSelect(suggestion);
               }
             }}
           />
@@ -147,20 +149,30 @@ export function GraphSearch({
       ) : (
         <button
           aria-label="Open graph search"
-          className="inline-flex size-11 items-center justify-center rounded-[0.95rem] border border-foreground/10 bg-background/92 text-muted-foreground shadow-lg shadow-primary/10 backdrop-blur transition-colors hover:text-foreground"
+          className="inline-flex h-11 items-center gap-2 rounded-[0.95rem] border border-foreground/10 bg-background/92 px-3 text-muted-foreground shadow-lg shadow-primary/10 backdrop-blur transition-colors hover:text-foreground"
           type="button"
           onClick={() => setFocused(true)}
         >
           <Search className="size-4" />
+          <span className="inline-flex items-center gap-1">
+            <kbd aria-label="Command" className={shortcutKeyClassName}>
+              ⌘
+            </kbd>
+            <span className="text-xs text-muted-foreground">+</span>
+            <kbd className={shortcutKeyClassName}>K</kbd>
+          </span>
         </button>
       )}
 
-      {open ? (
+      {expanded ? (
         <div className="absolute left-0 top-[calc(100%+0.5rem)] z-30 w-full overflow-hidden rounded-[1rem] border border-foreground/10 bg-background/96 shadow-xl shadow-primary/10 backdrop-blur">
-          {visibleSuggestions.length > 0 ? (
+          <div className="border-b border-foreground/10 px-3 py-2.5 text-xs text-muted-foreground">
+            i.e. "This Week", "Race", "Long Run" etc.
+          </div>
+          {open && visibleSuggestions.length > 0 ? (
             <ul className="max-h-80 overflow-y-auto p-1.5">
               {visibleSuggestions.map((suggestion, index) => (
-                <li key={`${suggestion.matchKind}:${suggestion.nodeId}`}>
+                <li key={`${suggestion.matchKind}:${suggestion.nodeId ?? suggestion.query ?? suggestion.label}`}>
                   <button
                     className={cn(
                       "flex w-full items-center justify-between gap-3 rounded-[0.8rem] px-3 py-2 text-left transition-colors",
@@ -169,7 +181,7 @@ export function GraphSearch({
                     type="button"
                     onMouseDown={(event) => event.preventDefault()}
                     onMouseEnter={() => setActiveIndex(index)}
-                    onClick={() => handleSuggestionSelect(suggestion.nodeId)}
+                    onClick={() => handleSuggestionSelect(suggestion)}
                   >
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold text-foreground">{suggestion.label}</span>
@@ -180,18 +192,24 @@ export function GraphSearch({
                         "shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em]",
                         suggestion.matchKind === "direct"
                           ? "bg-primary/12 text-primary"
-                          : "bg-surface-elevated text-muted-foreground",
+                          : suggestion.matchKind === "filter"
+                            ? "bg-foreground/8 text-foreground"
+                            : "bg-surface-elevated text-muted-foreground",
                       )}
                     >
-                      {suggestion.matchKind === "direct" ? "Match" : "Connected"}
+                      {suggestion.matchKind === "direct"
+                        ? "Match"
+                        : suggestion.matchKind === "filter"
+                          ? "Filter"
+                          : "Connected"}
                     </span>
                   </button>
                 </li>
               ))}
             </ul>
-          ) : (
+          ) : open ? (
             <div className="px-3 py-4 text-sm text-muted-foreground">No matching nodes.</div>
-          )}
+          ) : null}
         </div>
       ) : null}
     </div>

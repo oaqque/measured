@@ -204,8 +204,10 @@ describe("deriveGraphSearchState", () => {
 
     expect(result.directMatchNodeIds.has("match")).toBe(true);
     expect(result.suggestions[0]).toMatchObject({
-      nodeId: "match",
-      matchKind: "direct",
+      label: "Today",
+      matchKind: "filter",
+      nodeId: null,
+      query: "Today",
     });
   });
 
@@ -334,5 +336,117 @@ describe("deriveGraphSearchState", () => {
     expect(result.directMatchNodeIds.has("match")).toBe(true);
     expect(result.directMatchNodeIds.has("week-later-run")).toBe(true);
     expect(result.directMatchNodeIds.has("next-week-run")).toBe(false);
+    expect(result.suggestions[0]).toMatchObject({
+      label: "This Week",
+      matchKind: "filter",
+      nodeId: null,
+      query: "This Week",
+    });
+  });
+
+  it("prefers an exact category filter suggestion ahead of matching nodes", () => {
+    const graph: NoteGraphData = {
+      ...TEST_GRAPH,
+      nodes: [
+        ...TEST_GRAPH.nodes,
+        {
+          id: "run-node",
+          slug: "run-node",
+          nodeKind: "workout",
+          title: "Lunch Session",
+          date: "2026-04-10",
+          category: "run",
+          status: "planned",
+          sourcePath: "notes/lunch-session.md",
+          excerpt: null,
+          radius: 16,
+          x: 12,
+          y: 12,
+          clusters: {
+            eventType: "run",
+            month: "2026-04",
+            status: "planned",
+            trainingBlock: "block-a",
+          },
+          metrics: {
+            expectedDistanceKm: 8,
+            actualDistanceKm: null,
+          },
+        },
+      ],
+      links: TEST_GRAPH.links,
+      clusters: TEST_GRAPH.clusters,
+    };
+
+    const result = deriveGraphSearchState(graph, "run");
+
+    expect(result.suggestions[0]).toMatchObject({
+      label: "Run",
+      matchKind: "filter",
+      nodeId: null,
+      query: "Run",
+    });
+    expect(result.suggestions[1]?.matchKind).toBe("direct");
+  });
+
+  it("matches category and event-type tokens even when the title does not contain them", () => {
+    const graph: NoteGraphData = {
+      ...TEST_GRAPH,
+      nodes: [
+        {
+          id: "race-node",
+          slug: "race-node",
+          nodeKind: "workout",
+          title: "Berlin Marathon",
+          date: "2026-04-10",
+          category: "race",
+          status: "planned",
+          sourcePath: "notes/berlin-marathon.md",
+          excerpt: null,
+          radius: 16,
+          x: 0,
+          y: 0,
+          clusters: {
+            eventType: "race",
+            month: "2026-04",
+            status: "planned",
+            trainingBlock: "block-a",
+          },
+          metrics: {
+            expectedDistanceKm: 42.2,
+            actualDistanceKm: null,
+          },
+        },
+        {
+          id: "run-node",
+          slug: "run-node",
+          nodeKind: "workout",
+          title: "Lunch Session",
+          date: "2026-04-10",
+          category: "run",
+          status: "planned",
+          sourcePath: "notes/lunch-session.md",
+          excerpt: null,
+          radius: 16,
+          x: 12,
+          y: 12,
+          clusters: {
+            eventType: "run",
+            month: "2026-04",
+            status: "planned",
+            trainingBlock: "block-a",
+          },
+          metrics: {
+            expectedDistanceKm: 8,
+            actualDistanceKm: null,
+          },
+        },
+      ],
+      links: [],
+      clusters: [],
+    };
+
+    expect(deriveGraphSearchState(graph, "race").directMatchNodeIds.has("race-node")).toBe(true);
+    expect(deriveGraphSearchState(graph, "run").directMatchNodeIds.has("run-node")).toBe(true);
   });
 });
