@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Mobility Only",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-21",
+  "completed": false,
+  "eventType": "mobility",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Mobility only\n- Treat today as a reset day with no running.\n- Keep the work brief and restorative so Wednesday can absorb the deferred threshold session and Saturday still stays protected."
+    }
+  ]
+}
