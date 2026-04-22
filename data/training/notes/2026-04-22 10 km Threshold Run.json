@@ -4,13 +4,59 @@
   "allDay": true,
   "type": "single",
   "date": "2026-04-22",
-  "completed": false,
+  "completed": "2026-04-21T21:18:07.000Z",
   "eventType": "run",
   "expectedDistance": "10 km",
+  "stravaId": 18204451464,
+  "activityRefs": {
+    "strava": "18204451464",
+    "appleHealth": "46297AEC-6F6D-4A81-94CB-46E8CFA66816"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- 10 km run including 20 minutes threshold work\n- This session has moved back one day because Tuesday, `2026-04-21`, is now a no-run reset.\n- Keep the quality controlled rather than trying to cram extra work into the deferred slot.\n- The point is to preserve one useful threshold stimulus without compromising Saturday's `30 km` long run."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This landed on the planned Wednesday, `2026-04-22`, after Tuesday's no-run reset, so the main scheduling goal was met. The completed run covered `9.589 km` in `53:04` moving time (`53:35` elapsed on Strava) with `110.2 m` of climbing, average HR `158.7`, and max HR `174`, so it finished `0.411 km` short of the planned `10 km` but still delivered a meaningful threshold-adjacent aerobic load.\n- What did not show up cleanly was the planned workout structure. Strava and Apple Health match the same session (`18204451464` / `46297AEC-6F6D-4A81-94CB-46E8CFA66816`), and the route stream reads more like one near-continuous progression than a distinct warm-up, `20`-minute threshold block, and cool-down. The first `20` minutes covered about `3.581 km` at roughly `5:35 /km` with average HR about `153.6`, while the fastest `20`-minute window covered about `3.651 km` at roughly `5:29 /km` with average HR about `161.1`.\n- The distance thirds make the same point. The first third averaged about `5:35 /km` at `152.8 bpm`, the middle third held the same pace but cost `164.5 bpm`, and the final third quickened slightly to about `5:27 /km` at `159.8 bpm` while also taking on about `50.2 m` of climbing. That is useful steady-threshold work, but it is not a sharply segmented threshold prescription."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate job is still to protect the rest of the week around Saturday's `30 km` long run. This session gave the week its intended quality stimulus, but it was expensive enough that Thursday and Friday should stay honestly easy rather than trying to top it up with extra pace or distance.\n- Weekly running volume is only `9.589 km` so far because Tuesday stayed as planned in the repo: no run. That means there is still room for the week to land, but only if the next two runs absorb this session instead of turning the week into back-to-back moderate efforts."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- Long term, this is still a constructive outcome because the deferred threshold day happened and the session stayed below all-out race effort. That matters for the half-marathon checkpoints and the larger marathon build, where consistency after small schedule slips is more valuable than forcing perfect execution every time.\n- The coaching caution is execution quality. A session labeled threshold becomes more useful when the warm-up, work, and cooldown are actually separable in the data. Keeping that structure cleaner will matter later when marathon-specific weeks get longer and the difference between controlled quality and general medium-hard running becomes more important."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:32 /km` across `9.589 km` in `53:04` moving time.\n- The first `20` minutes averaged about `5:35 /km`, while the fastest `20`-minute window averaged about `5:29 /km`, so the run tightened slightly rather than showing a clear on-off threshold pattern."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava summary HR came in at `158.7 bpm` average and `174 bpm` max, while Apple Health matched the same workout at `158.2 bpm` average and `174 bpm` max.\n- By distance thirds, HR climbed from `152.8 bpm` to `164.5 bpm` before easing to `159.8 bpm`, which fits a steady progression that became costlier through the middle rather than a cleanly isolated threshold block."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `53:04` out of `53:35` elapsed on Strava, so stoppage cost was only `31` seconds.\n- The route stream shows `6` brief stop segments, with the longest only about `6.4` seconds, which supports reading this as one mostly continuous run."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Total elevation gain was `110.2 m` on Strava, and the final third alone accounted for about `50.2 m` of that climbing.\n- That extra late climbing helps explain why the closing section could quicken slightly without reading like a cleaner, cheaper cooldown."
+        }
+      ]
     }
   ]
 }
