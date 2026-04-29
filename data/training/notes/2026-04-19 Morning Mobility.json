@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "title": "Morning Mobility",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-19",
+  "completed": "2026-04-18T21:21:57.000Z",
+  "eventType": "mobility",
+  "expectedDistance": "0 km",
+  "activityRefs": {
+    "appleHealth": "F487B353-7B1C-41CE-86EA-652487F92EB7"
+  },
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Morning lower-body mobility routine from [MORNING_MOBILITY.md](MORNING_MOBILITY.md)\n- Use the ideal daily version as the default: active ankle, calf, hamstring, hip, adductor, and rotation work, then trunk control.\n- Keep the elastic primer small and skip it if the legs feel flat, sore, or too loaded from running."
+    }
+  ]
+}

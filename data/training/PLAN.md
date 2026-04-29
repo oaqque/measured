@@ -91,6 +91,7 @@ Execution becomes the priority: pacing, fueling, and recovery.
 Running volume below is weekly running distance only.
 Basketball and gym are listed as sessions but are not included in the weekly km total.
 Each day lists sessions on separate lines.
+From `2026-04-21` through `2026-08-30`, treat the morning mobility routine in `notes/YYYY-MM-DD Morning Mobility.json` as a daily default session across the whole block. On dates that already carry a `Mobility Only` note, that note is the daily mobility session for the day and now contains the full routine.
 
 | Week | Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday | Weekly km | Weights |
 | --- | --- | --- | --- | --- | --- | --- | --- | ---: | --- |
