@@ -145,6 +145,20 @@ private struct RemoteSyncRouteBlobData: Codable, Sendable {
     let routeStreams: AppleHealthExportRouteStreams?
 }
 
+private struct RemoteSyncActivitySummaryBlobData: Codable, Sendable {
+    let activityId: String
+    let sportType: String?
+    let startDate: String?
+    let distanceMeters: Double?
+    let distanceKm: Double?
+    let movingTimeSeconds: Int?
+    let elapsedTimeSeconds: Int?
+    let averageHeartrate: Double?
+    let maxHeartrate: Double?
+    let detailFetchedAt: String?
+    let source: AppleHealthExportSource?
+}
+
 private struct RemoteSyncCollectionMetadataBlobData: Codable, Sendable {
     let key: String
     let kind: String
@@ -176,6 +190,7 @@ enum RemoteSyncBuilder {
             let activityBlob = try stageBlob(
                 lines: snapshot.activities.values
                     .sorted(by: activitySort)
+                    .map(activitySummaryBlobData)
                     .map(canonicalJSONData),
                 maxBlobBytes: receiverStatus.maxBlobBytes
             )
@@ -376,6 +391,22 @@ enum RemoteSyncBuilder {
             ($0.collectionKey, $0.bucketId, $0.blobHash) < ($1.collectionKey, $1.bucketId, $1.blobHash)
         }
     }
+}
+
+private func activitySummaryBlobData(_ activity: AppleHealthExportActivity) -> RemoteSyncActivitySummaryBlobData {
+    RemoteSyncActivitySummaryBlobData(
+        activityId: activity.activityId,
+        sportType: activity.sportType,
+        startDate: activity.startDate,
+        distanceMeters: activity.distanceMeters,
+        distanceKm: activity.distanceKm,
+        movingTimeSeconds: activity.movingTimeSeconds,
+        elapsedTimeSeconds: activity.elapsedTimeSeconds,
+        averageHeartrate: activity.averageHeartrate,
+        maxHeartrate: activity.maxHeartrate,
+        detailFetchedAt: activity.detailFetchedAt,
+        source: activity.source
+    )
 }
 
 private func stageBlob(lines: [Data], maxBlobBytes: Int) throws -> RemoteSyncStagedBlob {

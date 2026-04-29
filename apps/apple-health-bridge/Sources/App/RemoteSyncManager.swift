@@ -70,11 +70,13 @@ final class RemoteSyncManager: ObservableObject {
 
     func syncSnapshot(_ snapshot: AppleHealthExportSnapshot) async -> Bool {
         guard !isSending else {
+            AppDiagnosticsLogger.appendSync("Receiver sync skipped because a send is already in progress.")
             return false
         }
 
         guard let receiverBaseURL else {
             lastError = "Set a receiver URL to enable direct sync."
+            AppDiagnosticsLogger.appendSync("Receiver sync aborted because no receiver URL is configured.")
             return false
         }
 
@@ -87,12 +89,19 @@ final class RemoteSyncManager: ObservableObject {
         )
         lastError = nil
         defer { isSending = false }
+        AppDiagnosticsLogger.appendSync(
+            "Receiver sync begin baseURL=\(receiverBaseURL.absoluteString) activities=\(snapshot.activities.count) collections=\(snapshot.collections.count) deletedActivities=\(snapshot.deletedActivityIds.count)"
+        )
 
         do {
+            AppDiagnosticsLogger.appendSync("Receiver sync requesting status.")
             let status: RemoteSyncStatusResponse = try await sendRequest(
                 path: RemoteSyncConstants.endpointPath,
                 method: "GET",
                 baseURL: receiverBaseURL
+            )
+            AppDiagnosticsLogger.appendSync(
+                "Receiver status loaded receiverId=\(status.receiverId) protocol=\(status.protocolVersion) schema=\(status.schema)"
             )
             sendProgress = BridgeProgress(
                 title: "Sending health data…",
@@ -123,16 +132,22 @@ final class RemoteSyncManager: ObservableObject {
             let checkpointPath = "\(RemoteSyncConstants.endpointPath)/_local/\(RemoteSyncManager.percentEncodedPathComponent(replicationId))"
             let checkpointResponse: RemoteSyncCheckpointResponse?
             do {
+                AppDiagnosticsLogger.appendSync("Receiver sync requesting checkpoint replicationId=\(replicationId).")
                 checkpointResponse = try await sendRequest(
                     path: checkpointPath,
                     method: "GET",
                     baseURL: receiverBaseURL
                 )
+                AppDiagnosticsLogger.appendSync(
+                    "Receiver checkpoint loaded lastSequence=\(checkpointResponse?.lastSequence ?? 0)"
+                )
             } catch {
                 let nsError = error as NSError
                 if nsError.code == 404 {
                     checkpointResponse = nil
+                    AppDiagnosticsLogger.appendSync("Receiver checkpoint missing; starting from empty receiver state.")
                 } else {
+                    AppDiagnosticsLogger.appendSync("Receiver checkpoint request failed error=\(error.localizedDescription)")
                     throw error
                 }
             }
@@ -143,11 +158,15 @@ final class RemoteSyncManager: ObservableObject {
                 completedUnitCount: 2,
                 totalUnitCount: 4
             )
+            AppDiagnosticsLogger.appendSync("Receiver sync preparing canonical manifest.")
             let preparedSync = try RemoteSyncBuilder.prepareSync(
                 snapshot: snapshot,
                 state: replicationState,
                 receiverStatus: status,
                 checkpointSequence: checkpointResponse?.lastSequence
+            )
+            AppDiagnosticsLogger.appendSync(
+                "Receiver sync prepared replicationId=\(preparedSync.replicationId) sequence=\(preparedSync.sequence) changed=\(preparedSync.changed) recoveredSenderState=\(preparedSync.recoveredSenderState) blobCount=\(preparedSync.blobCount) totalBlobBytes=\(preparedSync.totalBlobBytes)"
             )
 
             if !preparedSync.changed, checkpointResponse?.lastSequence == preparedSync.sequence {
@@ -165,6 +184,7 @@ final class RemoteSyncManager: ObservableObject {
                 ]
                 .filter { !$0.isEmpty }
                 .joined(separator: " ")
+                AppDiagnosticsLogger.appendSync("Receiver sync finished early because receiver is already up to date.")
                 return true
             }
 
@@ -174,6 +194,7 @@ final class RemoteSyncManager: ObservableObject {
                 completedUnitCount: 3,
                 totalUnitCount: 5
             )
+            AppDiagnosticsLogger.appendSync("Receiver sync requesting plan for sequence=\(preparedSync.sequence).")
             let planResponse: RemoteSyncPlanResponse = try await sendRequest(
                 path: "\(RemoteSyncConstants.endpointPath)/_plan",
                 method: "POST",
@@ -185,9 +206,13 @@ final class RemoteSyncManager: ObservableObject {
                 baseURL: receiverBaseURL
             )
             let missingBlobHashes = Array(NSOrderedSet(array: planResponse.missingBlobHashes)) as? [String] ?? []
+            AppDiagnosticsLogger.appendSync(
+                "Receiver plan loaded missingBlobs=\(missingBlobHashes.count)"
+            )
 
             for (index, blobHash) in missingBlobHashes.enumerated() {
                 guard let blob = preparedSync.stagedBlobs[blobHash] else {
+                    AppDiagnosticsLogger.appendSync("Receiver requested unknown blob hash=\(blobHash).")
                     throw NSError(domain: "RemoteSyncManager", code: 9, userInfo: [
                         NSLocalizedDescriptionKey: "Receiver requested an unknown blob \(blobHash).",
                     ])
@@ -199,6 +224,9 @@ final class RemoteSyncManager: ObservableObject {
                     completedUnitCount: 4,
                     totalUnitCount: 5
                 )
+                AppDiagnosticsLogger.appendSync(
+                    "Uploading blob \(index + 1)/\(missingBlobHashes.count) hash=\(blobHash) compressedBytes=\(blob.compressedBytes)"
+                )
                 let _: BlobUploadResponse = try await sendBinaryRequest(
                     path: "\(RemoteSyncConstants.endpointPath)/_blob/\(blobHash)",
                     method: "PUT",
@@ -206,6 +234,7 @@ final class RemoteSyncManager: ObservableObject {
                     contentType: "application/octet-stream",
                     baseURL: receiverBaseURL
                 )
+                AppDiagnosticsLogger.appendSync("Uploaded blob hash=\(blobHash).")
             }
 
             sendProgress = BridgeProgress(
@@ -214,6 +243,7 @@ final class RemoteSyncManager: ObservableObject {
                 completedUnitCount: 4,
                 totalUnitCount: 5
             )
+            AppDiagnosticsLogger.appendSync("Receiver sync committing sequence=\(preparedSync.sequence).")
             let commitResponse: RemoteSyncCommitResponse = try await sendRequest(
                 path: "\(RemoteSyncConstants.endpointPath)/_commit",
                 method: "POST",
@@ -227,6 +257,9 @@ final class RemoteSyncManager: ObservableObject {
 
             replicationState = preparedSync.nextState
             try replicationStateStore.saveValue(replicationState)
+            AppDiagnosticsLogger.appendSync(
+                "Receiver commit finished lastSequence=\(commitResponse.lastSequence)."
+            )
             sendProgress = BridgeProgress(
                 title: "Sending health data…",
                 detail: "Receiver checkpoint updated.",
@@ -244,9 +277,11 @@ final class RemoteSyncManager: ObservableObject {
             ]
             .filter { !$0.isEmpty }
             .joined(separator: " ")
+            AppDiagnosticsLogger.appendSync("Receiver sync completed successfully.")
             return true
         } catch {
             lastError = error.localizedDescription
+            AppDiagnosticsLogger.appendSync("Receiver sync failed error=\(error.localizedDescription)")
             return false
         }
     }

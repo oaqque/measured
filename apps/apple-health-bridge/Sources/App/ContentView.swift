@@ -419,7 +419,16 @@ struct ContentView: View {
     }
 
     private func syncAndExport() async {
+        AppDiagnosticsLogger.resetSyncLog()
+        AppDiagnosticsLogger.appendSync("Sync run started.")
+
+        AppDiagnosticsLogger.appendSync("Starting workout sync.")
         await workoutSyncEngine.syncWorkouts(using: healthAuthorizationManager.healthStore)
+        AppDiagnosticsLogger.appendSync(
+            "Workout sync finished. workouts=\(workoutSyncEngine.workouts.count) deleted=\(workoutSyncEngine.deletedWorkoutIds.count) error=\(workoutSyncEngine.lastError ?? "none")"
+        )
+
+        AppDiagnosticsLogger.appendSync("Starting route sync.")
         await routeSyncEngine.syncRoutes(
             for: workoutSyncEngine.workouts,
             cachedWorkoutSamples: workoutSyncEngine.workoutSamples,
@@ -427,7 +436,15 @@ struct ContentView: View {
             deletedWorkoutIds: workoutSyncEngine.deletedWorkoutIds,
             using: healthAuthorizationManager.healthStore
         )
+        AppDiagnosticsLogger.appendSync(
+            "Route sync finished. routes=\(routeSyncEngine.routes.count) error=\(routeSyncEngine.lastError ?? "none")"
+        )
+
+        AppDiagnosticsLogger.appendSync("Starting health data sync.")
         await healthDataSyncEngine.syncSamples(using: healthAuthorizationManager.healthStore)
+        AppDiagnosticsLogger.appendSync(
+            "Health data sync finished. collections=\(healthDataSyncEngine.collections.count) totalSamples=\(healthDataSyncEngine.totalSampleCount) error=\(healthDataSyncEngine.lastError ?? "none")"
+        )
 
         let snapshot = SnapshotExportBuilder.snapshot(
             workouts: workoutSyncEngine.workouts,
@@ -435,22 +452,37 @@ struct ContentView: View {
             collections: healthDataSyncEngine.collections,
             deletedActivityIds: workoutSyncEngine.deletedWorkoutIds
         )
+        AppDiagnosticsLogger.appendSync(
+            "Snapshot built. activities=\(snapshot.activities.count) collections=\(snapshot.collections.count) deletedActivities=\(snapshot.deletedActivityIds.count)"
+        )
 
         if remoteSyncManager.hasReceiverConfigured {
+            AppDiagnosticsLogger.appendSync("Starting receiver sync.")
             let didSync = await remoteSyncManager.syncSnapshot(snapshot)
+            AppDiagnosticsLogger.appendSync(
+                "Receiver sync finished. success=\(didSync) error=\(remoteSyncManager.lastError ?? "none")"
+            )
             if didSync {
                 shareRequest = nil
             }
             return
         }
 
+        AppDiagnosticsLogger.appendSync("Starting export bundle write.")
         if let exportBundle = await exportWriter.writeSnapshot(
             workouts: workoutSyncEngine.workouts,
             routes: routeSyncEngine.routes,
             collections: healthDataSyncEngine.collections,
             deletedActivityIds: workoutSyncEngine.deletedWorkoutIds
         ) {
+            AppDiagnosticsLogger.appendSync(
+                "Export bundle write finished. path=\(exportBundle.directoryURL.lastPathComponent)"
+            )
             shareRequest = ShareRequest.taildrop(exportBundle: exportBundle)
+        } else {
+            AppDiagnosticsLogger.appendSync(
+                "Export bundle write finished without output. error=\(exportWriter.lastError ?? "none")"
+            )
         }
     }
 

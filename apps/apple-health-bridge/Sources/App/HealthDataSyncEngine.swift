@@ -44,6 +44,7 @@ final class HealthDataSyncEngine: ObservableObject {
         let descriptors = HealthKitTypeRegistry.collectionDescriptors
         let totalDescriptors = max(descriptors.count, 1)
         var completedDescriptors = 0
+        AppDiagnosticsLogger.appendSync("Health data sync preparing \(descriptors.count) descriptors.")
         syncProgress = BridgeProgress(
             title: "Syncing health data…",
             detail: descriptors.isEmpty
@@ -55,11 +56,15 @@ final class HealthDataSyncEngine: ObservableObject {
         defer { isSyncing = false }
 
         let preferredUnits = await preferredQuantityUnits(for: descriptors, using: healthStore)
+        AppDiagnosticsLogger.appendSync("Resolved preferred units for \(preferredUnits.count) quantity types.")
         var nextCollections = collections
         var failureMessages: [String] = []
         var skippedCollectionCount = 0
 
         for descriptor in descriptors {
+            AppDiagnosticsLogger.appendSync(
+                "Collection begin key=\(descriptor.key) strategy=\(descriptor.queryStrategy.exportValue) existingSamples=\(nextCollections[descriptor.key]?.samples.count ?? 0)"
+            )
             syncProgress = BridgeProgress(
                 title: "Syncing health data…",
                 detail: "Syncing \(descriptor.displayName).",
@@ -81,18 +86,21 @@ final class HealthDataSyncEngine: ObservableObject {
 
             guard let objectType else {
                 failureMessages.append("\(descriptor.displayName): unavailable on this device or SDK build")
+                AppDiagnosticsLogger.appendSync("Collection skipped key=\(descriptor.key) reason=objectTypeUnavailable")
                 continue
             }
 
             if descriptor.requiresPerObjectAuthorization {
                 nextCollections[descriptor.key] = emptyCollection(for: descriptor, objectType: objectType)
                 skippedCollectionCount += 1
+                AppDiagnosticsLogger.appendSync("Collection skipped key=\(descriptor.key) reason=requiresPerObjectAuthorization")
                 continue
             }
 
             guard HealthKitTypeRegistry.shouldAttemptSync(for: descriptor) else {
                 nextCollections[descriptor.key] = emptyCollection(for: descriptor, objectType: objectType)
                 skippedCollectionCount += 1
+                AppDiagnosticsLogger.appendSync("Collection skipped key=\(descriptor.key) reason=registryDisabled")
                 continue
             }
 
@@ -158,9 +166,15 @@ final class HealthDataSyncEngine: ObservableObject {
                 if descriptor.queryStrategy.usesAnchoredQueries {
                     try anchorStore(for: descriptor).saveAnchor(newAnchor)
                 }
+                AppDiagnosticsLogger.appendSync(
+                    "Collection finished key=\(descriptor.key) changed=\(didChange) sampleCount=\(collection.samples.count)"
+                )
             } catch {
                 nextCollections[descriptor.key] = existingCollection
                 failureMessages.append("\(descriptor.displayName): \(error.localizedDescription)")
+                AppDiagnosticsLogger.appendSync(
+                    "Collection failed key=\(descriptor.key) error=\(error.localizedDescription)"
+                )
             }
         }
 
@@ -174,6 +188,9 @@ final class HealthDataSyncEngine: ObservableObject {
         )
         lastSyncSummary = "Loaded \(totalSampleCount) samples across \(nonEmptyCollectionCount) non-empty collections. Skipped \(skippedCollectionCount) collections that require unsupported or explicit authorization. Registry covers \(descriptors.count) HealthKit collections."
         lastError = failureMessages.isEmpty ? nil : failureMessages.joined(separator: "\n")
+        AppDiagnosticsLogger.appendSync(
+            "Health data sync summary totalSamples=\(totalSampleCount) nonEmptyCollections=\(nonEmptyCollectionCount) skipped=\(skippedCollectionCount) failures=\(failureMessages.count)"
+        )
     }
 
     private func emptyCollection(
