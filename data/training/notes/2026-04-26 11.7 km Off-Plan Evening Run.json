@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "11.7 km Off-Plan Evening Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-26",
+  "completed": "2026-04-26T10:36:01Z",
+  "eventType": "run",
+  "stravaId": 18264682653,
+  "activityRefs": {
+    "strava": "18264682653",
+    "appleHealth": "A409E1A8-F79A-4583-8DA1-9BEA1A7CF5B0"
+  },
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Unplanned evening run.\n- No run was scheduled here; Sunday was supposed to stay full rest after Saturday's protected `30 km` long-run slot.\n- Treat this note as a record of the actual session rather than a retroactive prescription."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This did not match the written week at all. Sunday, `2026-04-26`, was supposed to be full rest after Saturday's planned `30 km` long run, but there is no matching long-run provider record on Saturday and this off-plan evening run instead covered `11.712 km` in `1:04:42` moving time with average HR `166.9`, max HR `182`, and only minimal stop time.\n- Strava and Apple Health agree on the same run (`18264682653` / `A409E1A8-F79A-4583-8DA1-9BEA1A7CF5B0`), and the route stream reads as a mostly flat continuous progression rather than a broken jog. Estimated pace moved from `5:42 /km` in the first half to `5:20 /km` in the second while distance-split HR rose from `162.1 bpm` to `172.2 bpm`. Apple Health also logged a separate `13.113 km` hike earlier that day, so total lower-leg load on what was meant to be a rest day ended up materially higher than the plan intended."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate consequence going into race week was reset, not sharpness. A session this costly on a supposed rest day is the opposite of a clean taper, especially with right-ankle peroneal tendon irritation already forcing reset days between easy runs.\n- The next useful move after this run was to return to genuinely easy running or full rest rather than try to rescue the missed Saturday long run or resume the planned Tuesday `400 m` session on schedule."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- Long term, this kind of off-plan medium-hard load is a bigger risk signal than the missed long run by itself because it blurs the line between building fitness and keeping the ankle calm enough to train again two days later.\n- For the broader half-marathon and marathon build, durability now matters more than salvaging every scheduled session. The block will be stronger if irritated-tendon weeks stay simple enough to absorb, even when that means giving up planned sharpness."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- Have Peroneal Tendon Irritation in my right ankle, taking reset days in between easy runs."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:31 /km` across `11.712 km` in `1:04:42` moving time.\n- Estimated first-half moving pace was `5:42 /km` and second-half pace was `5:20 /km` (-22 s/km), so pace picked up through the second half."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava summary HR came in at `166.9 bpm` average and `182 bpm` max.\n- Distance-split HR averaged `162.1 bpm` in the first half and `172.2 bpm` in the second (+10.1 bpm), which shows clear late cardiovascular drift."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `1:04:42` out of `1:04:42` elapsed (100.0%), which kept stoppage cost negligible.\n- The downsampled moving stream shows `3` stop segments and `0.3%` stationary samples, so the run was mostly continuous with a few interruptions."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged about `18.8 m` of climbing, with altitude moving between roughly `2.8 m` and `7.6 m`.\n- Estimated climbing was `9.0 m` in the first half and `9.8 m` in the second, so the climbing load was split fairly evenly."
+        }
+      ]
+    }
+  ]
+}

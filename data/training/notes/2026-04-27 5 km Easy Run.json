@@ -4,13 +4,59 @@
   "allDay": true,
   "type": "single",
   "date": "2026-04-27",
-  "completed": false,
+  "completed": "2026-04-26T23:22:16Z",
   "eventType": "run",
   "expectedDistance": "5 km",
+  "stravaId": 18272962916,
+  "activityRefs": {
+    "strava": "18272962916",
+    "appleHealth": "E5874DA1-356D-42D7-80F0-BE14ED3160DF"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- 5 km easy run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This stayed on the planned Monday, `2026-04-27`, but it became a deliberately gentler reset-style run than the written week originally implied. The completed run covered `6.006 km` in `45:35` moving time (`46:09` elapsed) with about `16.8 m` of provider climbing on Apple Health, Strava-estimated climbing of about `33.0 m`, average HR `143.7`, and max HR `163`, so it finished `1.006 km` over the planned `5 km` while staying much slower and cheaper than the previous day's off-plan load.\n- Strava and Apple Health match the same session (`18272962916` / `E5874DA1-356D-42D7-80F0-BE14ED3160DF`). Pace moved from an estimated `7:41 /km` in the first half to `7:30 /km` in the second while distance-split HR rose from `138.6 bpm` to `149.7 bpm`. That late drift is real, but the overall cost still reads as an easy re-entry run rather than hidden quality work."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate job after this run was to keep the right ankle settling and preserve the reset-day pattern you described. This only helps if the next day stays down or easy rather than trying to force the original `6 x 400 m` sharp-session script straight back into the week.\n- Relative to the planned HOKA Runaway half-marathon taper, the useful signal is that easy running was still available, but only in a much gentler form than the written schedule assumed."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- Long term, this kind of slow controlled run is the one that keeps the build alive when tendon irritation is present. It preserves frequency without demanding that every day push fitness forward.\n- The broader goal now is repeatable running, not perfect adherence to the written taper. If easy days stay this controlled, the block still has a path back; if not, the ankle will keep dictating unplanned resets."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- Have Peroneal Tendon Irritation in my right ankle, taking reset days in between easy runs."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `7:35 /km` across `6.006 km` in `45:35` moving time.\n- Estimated first-half moving pace was `7:41 /km` and second-half pace was `7:30 /km` (-11 s/km), so pace picked up through the second half."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava summary HR came in at `143.7 bpm` average and `163 bpm` max.\n- Distance-split HR averaged `138.6 bpm` in the first half and `149.7 bpm` in the second (+11.1 bpm), which shows clear late cardiovascular drift."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `45:35` out of `46:09` elapsed (98.8%), which kept stoppage cost negligible.\n- The downsampled moving stream shows `9` stop segments and `1.4%` stationary samples, so the run was mostly continuous with a few interruptions."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged about `33.0 m` of climbing, with altitude moving between roughly `6.0 m` and `13.4 m`.\n- Estimated climbing was `15.4 m` in the first half and `17.6 m` in the second, so the climbing load was split fairly evenly."
+        }
+      ]
     }
   ]
 }

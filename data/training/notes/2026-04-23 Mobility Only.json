@@ -4,9 +4,12 @@
   "allDay": true,
   "type": "single",
   "date": "2026-04-23",
-  "completed": false,
+  "completed": "2026-04-23T04:48:08Z",
   "eventType": "mobility",
   "expectedDistance": "0 km",
+  "activityRefs": {
+    "appleHealth": "D4CFBF9B-AC15-4ECA-B03A-FB9FFD2D9F83"
+  },
   "sections": [
     {
       "kind": "program",

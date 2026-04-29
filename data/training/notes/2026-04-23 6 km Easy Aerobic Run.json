@@ -4,13 +4,59 @@
   "allDay": true,
   "type": "single",
   "date": "2026-04-23",
-  "completed": false,
+  "completed": "2026-04-23T06:11:02Z",
   "eventType": "run",
   "expectedDistance": "6 km",
+  "stravaId": 18221735695,
+  "activityRefs": {
+    "strava": "18221735695",
+    "appleHealth": "79DAC428-C569-48DF-BC08-9D760A855C65"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- 6 km easy aerobic run\n- This is no longer a steady day.\n- Keep the whole run genuinely easy so Saturday can carry the week's long aerobic load.\n- Finish feeling underdone rather than trying to squeeze extra quality into the middle of the week."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This stayed on the planned Thursday, `2026-04-23`, and mostly did the intended easy-support job after Wednesday's threshold session. The completed run covered `6.149 km` in `37:50` moving time (`38:12` elapsed) with about `87.2 m` of climbing, average HR `154.2`, and max HR `168`, so it finished only `0.149 km` over the planned `6 km`.\n- Strava and Apple Health match the same session (`18221735695` / `79DAC428-C569-48DF-BC08-9D760A855C65`), and the route stream reads as a continuous aerobic run rather than hidden pace work. Moving pace averaged `6:09 /km`, estimated first-half pace was `6:05 /km`, second-half pace was `6:13 /km`, and distance-split HR rose from `151.5 bpm` to `156.7 bpm`, which makes this a slightly costly easy day rather than a compromised steady workout."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate job after this run was still to keep Friday quiet and preserve room for Saturday's protected `30 km` long run. Because this day got a little hillier and a little more expensive late than a pure recovery jog, it argued for keeping the next session honest rather than topping the week up.\n- With right-ankle peroneal tendon irritation already in the background, the useful signal is that easy volume was still tolerable when separated by reset time. The caution is that even moderate late drift made the day more than a free aerobic filler."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- Long term, this supported the block better than another missed day would have because it kept frequency moving after the threshold run without turning into a second quality session.\n- The limit is cost control. For the half-marathon and marathon goals, easy support runs need to stay cheap enough that they do not compete with key sessions or keep feeding the irritated ankle."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- Have Peroneal Tendon Irritation in my right ankle, taking reset days in between easy runs."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `6:09 /km` across `6.149 km` in `37:50` moving time.\n- Estimated first-half moving pace was `6:05 /km` and second-half pace was `6:13 /km` (+8 s/km), so pace eased a little late."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava summary HR came in at `154.2 bpm` average and `168 bpm` max.\n- Distance-split HR averaged `151.5 bpm` in the first half and `156.7 bpm` in the second (+5.2 bpm), which shows a modest late rise in aerobic cost."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `37:50` out of `38:12` elapsed (99.0%), which kept stoppage cost negligible.\n- The downsampled moving stream shows `6` stop segments and `0.8%` stationary samples, so the run was mostly continuous with a few interruptions."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged about `92.4 m` of climbing, with altitude moving between roughly `41.8 m` and `63.8 m`.\n- Estimated climbing was `43.2 m` in the first half and `49.2 m` in the second, so the climbing load was split fairly evenly."
+        }
+      ]
     }
   ]
 }
