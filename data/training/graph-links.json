@@ -9,11 +9,11 @@
       "label": "threshold session progression"
     },
     {
-      "sourceSlug": "2026-04-28-8-km-sharp-run",
+      "sourceSlug": "2026-05-01-4-km-easy-run",
       "targetSlug": "2026-05-03-hoka-runaway-sydney-half-marathon",
       "kind": "taper",
-      "weight": 0.82,
-      "label": "race sharpening"
+      "weight": 0.42,
+      "label": "ankle-safe taper check"
     },
     {
       "sourceSlug": "2026-05-03-hoka-runaway-sydney-half-marathon",

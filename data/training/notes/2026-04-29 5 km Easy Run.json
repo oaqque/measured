@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "5 km Easy Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-29",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "5 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 5 km easy run\n- Only take this if Tuesday's reset day leaves the right ankle calmer rather than merely tolerable.\n- Keep the effort fully conversational and shorten or stop early if the peroneal tendon starts talking again.\n- The goal is to keep a little frequency without breaking the reset-day pattern."
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Mobility Only",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-30",
+  "completed": false,
+  "eventType": "mobility",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Mobility only\n- Thursday is now another reset day with no steady running and no strides.\n- Keep this ankle-friendly and restorative so Friday can stay as a light check-in run rather than another forced compromise.\n- Use the recovery-day version of the routine and leave out any elastic or speed-oriented work if symptoms are still present."
+    }
+  ]
+}

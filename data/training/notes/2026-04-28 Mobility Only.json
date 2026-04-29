@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Mobility Only",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-04-28",
+  "completed": false,
+  "eventType": "mobility",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Mobility only\n- Tuesday is now a full reset day with no running and no gym.\n- Keep the work brief and restorative so the right ankle gets a real down day between easy runs.\n- Prioritise feet, calves, ankles, hips, and trunk control. Skip the elastic primer if the ankle still feels irritated."
+    }
+  ]
+}
