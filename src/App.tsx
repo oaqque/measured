@@ -20,6 +20,7 @@ import {
   Orbit,
   Trophy,
 } from "lucide-react";
+import { BestEffortsSection } from "@/components/BestEffortsSection";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -37,6 +38,7 @@ import {
   allChangelogEntries,
   allGoalNotes,
   allWorkouts,
+  bestEffortsSummary,
   filterWorkouts,
   formatChangelogDate,
   formatDisplayDate,
@@ -49,14 +51,21 @@ import {
   trainingPlan,
   welcomeDocument,
 } from "@/lib/workouts/load";
-import type { ChangelogEntry, GoalNote, WorkoutFilters } from "@/lib/workouts/schema";
+import type {
+  ChangelogEntry,
+  GoalNote,
+  WorkoutBestEffortsSummary,
+  WorkoutFilters,
+} from "@/lib/workouts/schema";
 import { cn } from "@/lib/utils";
 
 type View = "welcome" | "goals" | "heart-rate" | "morning-mobility" | "plan" | "calendar" | "graph";
+const APP_VIEWS: View[] = ["welcome", "goals", "heart-rate", "morning-mobility", "plan", "calendar", "graph"];
 type WorkoutStatus = WorkoutFilters["status"];
 type AppRoute = {
   view: View;
   noteSlug: string | null;
+  noteOriginView?: View | null;
 };
 
 const LEFT_SIDEBAR_MIN_WIDTH = 240;
@@ -64,7 +73,7 @@ const LEFT_SIDEBAR_MAX_WIDTH = 420;
 const LazyWorkoutNotePane = lazy(() => import("@/components/WorkoutNotePane"));
 
 export default function App() {
-  const [{ view, noteSlug: selectedWorkoutSlug }, navigateRoute] = useAppRoute();
+  const [{ view, noteOriginView, noteSlug: selectedWorkoutSlug }, navigateRoute] = useAppRoute();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
@@ -223,12 +232,13 @@ export default function App() {
   }, [calendarFocusDateState, filteredWorkouts, selectedWorkout]);
   const showSelectedWorkoutPane =
     selectedWorkout !== null && (selectedWorkoutSlug !== null || rightSidebarOpen);
+  const selectedWorkoutOriginView = selectedWorkoutSlug ? noteOriginView ?? "calendar" : "calendar";
 
   useEffect(() => {
     if (selectedWorkoutSlug && !selectedWorkout) {
-      navigateRoute({ view: "calendar", noteSlug: null }, { replace: true });
+      navigateRoute({ view: selectedWorkoutOriginView, noteSlug: null }, { replace: true });
     }
-  }, [navigateRoute, selectedWorkout, selectedWorkoutSlug]);
+  }, [navigateRoute, selectedWorkout, selectedWorkoutOriginView, selectedWorkoutSlug]);
 
   useEffect(() => {
     if (selectedWorkout?.date) {
@@ -284,11 +294,12 @@ export default function App() {
     setCalendarFocusDate(value);
   };
 
-  const openWorkout = (slug: string, syncCalendarDate = true) => {
+  const openWorkout = (slug: string, syncCalendarDate = true, originView?: View) => {
     const workout = getWorkoutBySlug(slug);
     if (!workout) {
       return;
     }
+    const resolvedOriginView = originView ?? (selectedWorkoutSlug ? selectedWorkoutOriginView : view);
 
     setEventType(DEFAULT_EVENT_TYPES);
     setStatus("all");
@@ -300,19 +311,21 @@ export default function App() {
       if (!isDesktop) {
         setRightSidebarOpen(false);
       }
-      setCalendarFocusDate(previousSelectedWorkoutDateRef.current ?? workout.date);
-      navigateRoute({ view: "calendar", noteSlug: null });
+      if (selectedWorkoutOriginView === "calendar") {
+        setCalendarFocusDate(previousSelectedWorkoutDateRef.current ?? workout.date);
+      }
+      navigateRoute({ view: selectedWorkoutOriginView, noteSlug: null });
       return;
     }
 
     if (!isDesktop) {
       setRightSidebarOpen(true);
     }
-    navigateRoute({ view: "calendar", noteSlug: slug });
+    navigateRoute({ view: "calendar", noteSlug: slug, noteOriginView: resolvedOriginView });
   };
 
   const openWorkoutFromCalendar = (slug: string) => {
-    openWorkout(slug, false);
+    openWorkout(slug, false, "calendar");
   };
 
   const focusNodeFromGraph = (nodeId: string | null) => {
@@ -337,8 +350,10 @@ export default function App() {
   const handleDetailPanelOpenChange = (open: boolean) => {
     if (!open && selectedWorkoutSlug) {
       setRightSidebarOpen(false);
-      setCalendarFocusDate(previousSelectedWorkoutDateRef.current ?? calendarFocusDate);
-      navigateRoute({ view: "calendar", noteSlug: null });
+      if (selectedWorkoutOriginView === "calendar") {
+        setCalendarFocusDate(previousSelectedWorkoutDateRef.current ?? calendarFocusDate);
+      }
+      navigateRoute({ view: selectedWorkoutOriginView, noteSlug: null });
       return;
     }
 
@@ -559,6 +574,7 @@ export default function App() {
                       {selectedWorkout ? (
                         <Suspense fallback={<WorkoutNotePaneSkeleton />}>
                           <LazyWorkoutNotePane
+                            backLabel={buildWorkoutBackLabel(selectedWorkoutOriginView)}
                             key={selectedWorkout.slug}
                             workout={selectedWorkout}
                             onBack={() => handleDetailPanelOpenChange(false)}
@@ -615,8 +631,10 @@ export default function App() {
               ) : view === "goals" ? (
                 <div className="app-scroll-pane h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
                   <GoalsPage
+                    bestEfforts={bestEffortsSummary}
                     goals={allGoalNotes}
                     intro={goalsDocument.body}
+                    onOpenWorkout={openWorkout}
                     relatedChanges={goalsChanges}
                     sourcePath={goalsDocument.sourcePath}
                     onFileClick={handleMarkdownLink}
@@ -821,15 +839,19 @@ function GraphDocumentOverlay({
 }
 
 function GoalsPage({
+  bestEfforts,
   goals,
   intro,
+  onOpenWorkout,
   relatedChanges,
   sourcePath,
   onFileClick,
   onLinkClick,
 }: {
+  bestEfforts: WorkoutBestEffortsSummary;
   goals: GoalNote[];
   intro: string;
+  onOpenWorkout: (slug: string) => void;
   relatedChanges: ChangelogEntry[];
   sourcePath: string;
   onFileClick: (sourcePath: string) => void;
@@ -877,6 +899,12 @@ function GoalsPage({
           ))}
         </div>
       </section>
+
+      <BestEffortsSection
+        bestEfforts={bestEfforts}
+        className="mt-10"
+        onOpenWorkout={onOpenWorkout}
+      />
 
       <RelatedChangesSection
         className="mt-10"
@@ -1217,7 +1245,9 @@ function BrandMark({ className }: { className?: string }) {
 
 function useAppRoute(): [AppRoute, (route: AppRoute, options?: { replace?: boolean }) => void] {
   const [route, setRoute] = useState<AppRoute>(() =>
-    typeof window === "undefined" ? { view: "welcome", noteSlug: null } : getRouteFromPath(window.location.pathname),
+    typeof window === "undefined"
+      ? { view: "welcome", noteSlug: null }
+      : getRouteFromHistory(window.location.pathname, window.history.state),
   );
 
   useEffect(() => {
@@ -1230,11 +1260,12 @@ function useAppRoute(): [AppRoute, (route: AppRoute, options?: { replace?: boole
       window.location.pathname === "/index.html" ||
       window.location.pathname === "/changelog"
     ) {
-      window.history.replaceState(null, "", "/");
+      const fallbackRoute: AppRoute = { view: "welcome", noteSlug: null };
+      window.history.replaceState(buildHistoryState(fallbackRoute), "", "/");
     }
 
     const handlePopState = () => {
-      setRoute(getRouteFromPath(window.location.pathname));
+      setRoute(getRouteFromHistory(window.location.pathname, window.history.state));
     };
 
     handlePopState();
@@ -1247,16 +1278,18 @@ function useAppRoute(): [AppRoute, (route: AppRoute, options?: { replace?: boole
 
   const navigate = (nextRoute: AppRoute, options?: { replace?: boolean }) => {
     const nextPath = getPathFromRoute(nextRoute);
+    const nextState = buildHistoryState(nextRoute);
 
     if (window.location.pathname === nextPath) {
+      window.history.replaceState(nextState, "", nextPath);
       setRoute(nextRoute);
       return;
     }
 
     if (options?.replace) {
-      window.history.replaceState(null, "", nextPath);
+      window.history.replaceState(nextState, "", nextPath);
     } else {
-      window.history.pushState(null, "", nextPath);
+      window.history.pushState(nextState, "", nextPath);
     }
     setRoute(nextRoute);
   };
@@ -1264,14 +1297,16 @@ function useAppRoute(): [AppRoute, (route: AppRoute, options?: { replace?: boole
   return [route, navigate];
 }
 
-function getRouteFromPath(pathname: string): AppRoute {
+function getRouteFromHistory(pathname: string, historyState: unknown): AppRoute {
   const normalizedPath = normalizePathname(pathname);
 
   if (normalizedPath.startsWith("/notes/")) {
     const noteSlug = decodeURIComponent(normalizedPath.slice("/notes/".length)).trim();
+    const noteOriginView = getNoteOriginViewFromHistoryState(historyState);
     return {
       view: "calendar",
       noteSlug: noteSlug.length > 0 ? noteSlug : null,
+      noteOriginView,
     };
   }
 
@@ -1300,6 +1335,28 @@ function getRouteFromPath(pathname: string): AppRoute {
   }
 
   return { view: "welcome", noteSlug: null };
+}
+
+function buildHistoryState(route: AppRoute) {
+  return route.noteSlug
+    ? {
+        noteOriginView: route.noteOriginView ?? "calendar",
+        noteSlug: route.noteSlug,
+        view: route.view,
+      }
+    : {
+        noteSlug: null,
+        view: route.view,
+      };
+}
+
+function getNoteOriginViewFromHistoryState(historyState: unknown): View {
+  if (!historyState || typeof historyState !== "object") {
+    return "calendar";
+  }
+
+  const candidate = (historyState as { noteOriginView?: unknown }).noteOriginView;
+  return isView(candidate) ? candidate : "calendar";
 }
 
 function getPathFromRoute(route: AppRoute) {
@@ -1372,6 +1429,18 @@ function formatViewLabel(view: View) {
   }
 
   return "Welcome";
+}
+
+function buildWorkoutBackLabel(view: View) {
+  if (view === "calendar") {
+    return "Back to calendar";
+  }
+
+  return `Back to ${formatViewLabel(view)}`;
+}
+
+function isView(value: unknown): value is View {
+  return typeof value === "string" && APP_VIEWS.includes(value as View);
 }
 
 function clampNumber(value: number, min: number, max: number) {

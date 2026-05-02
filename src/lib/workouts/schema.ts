@@ -242,12 +242,35 @@ export interface ChangelogEntry {
   sourcePath: string;
 }
 
+export interface WorkoutBestEffortEntry {
+  elapsedSeconds: number;
+  paceSecondsPerKm: number;
+  workoutSlug: string;
+  workoutTitle: string;
+  workoutDate: string;
+  workoutActualDistanceKm: number | null;
+}
+
+export interface WorkoutBestEffort extends WorkoutBestEffortEntry {
+  key: string;
+  label: string;
+  distanceMeters: number;
+  topEfforts: WorkoutBestEffortEntry[];
+}
+
+export interface WorkoutBestEffortsSummary {
+  eligibleWorkoutCount: number;
+  analyzedWorkoutCount: number;
+  efforts: WorkoutBestEffort[];
+}
+
 export interface WorkoutsData {
   generatedAt: string;
   welcome: PlanDocument;
   goals: PlanDocument;
   heartRate: PlanDocument;
   morningMobility: PlanDocument;
+  bestEfforts: WorkoutBestEffortsSummary;
   goalNotes: GoalNote[];
   plan: PlanDocument;
   changelog: ChangelogEntry[];

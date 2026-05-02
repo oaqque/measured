@@ -14,6 +14,7 @@ import {
   renderWorkoutNoteSourceDocumentBody,
 } from "../src/lib/workouts/source-note";
 import { resolveWorkoutMediaThumbnail } from "../src/lib/workouts/media";
+import { buildWorkoutBestEffortsSummary } from "../src/lib/workouts/best-efforts";
 import type {
   AppleHealthMeasurementPoint,
   AppleHealthMeasurementSeries,
@@ -264,6 +265,20 @@ async function main() {
     left.date === right.date ? left.slug.localeCompare(right.slug) : left.date.localeCompare(right.date),
   );
 
+  const bestEfforts = buildWorkoutBestEffortsSummary(
+    workouts.map((workout) => ({
+      slug: workout.slug,
+      title: workout.title,
+      date: workout.date,
+      completed: workout.completed,
+      eventType: workout.eventType,
+      actualDistanceKm: workout.actualDistanceKm,
+      actualMovingTimeSeconds: workout.actualMovingTimeSeconds,
+      actualElapsedTimeSeconds: workout.actualElapsedTimeSeconds,
+      routeStreams: getWorkoutRouteStreams(workout, providerCaches),
+    })),
+  );
+
   const generatedAt = new Date().toISOString();
   const payload: WorkoutsData = {
     generatedAt,
@@ -271,6 +286,7 @@ async function main() {
     goals,
     heartRate,
     morningMobility,
+    bestEfforts,
     goalNotes,
     plan,
     changelog: changelogEntries,
@@ -1048,6 +1064,24 @@ function buildGeneratedWorkoutFallback(workout: WorkoutNote): GeneratedWorkoutFa
     weather: normalizeCachedWeather(legacy.weather),
     sources,
   };
+}
+
+function getWorkoutRouteStreams(
+  workout: WorkoutNote,
+  providerCaches: Record<WorkoutProvider, ProviderCacheSnapshot>,
+) {
+  if (!workout.sources || !workout.activityRefs) {
+    return null;
+  }
+
+  const displaySource = selectDisplaySourceSummary(workout.sources, workout.activityRefs);
+  if (!displaySource || !displaySource.hasRouteStreams) {
+    return null;
+  }
+
+  return normalizeRouteStreams(
+    providerCaches[displaySource.provider].activities[displaySource.activityId]?.routeStreams,
+  );
 }
 
 function toPublicWorkoutNote(workout: WorkoutNote): WorkoutNote {
