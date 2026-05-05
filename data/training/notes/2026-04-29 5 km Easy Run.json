@@ -4,13 +4,59 @@
   "allDay": true,
   "type": "single",
   "date": "2026-04-29",
-  "completed": false,
+  "completed": "2026-04-29T08:38:55Z",
   "eventType": "run",
   "expectedDistance": "5 km",
+  "stravaId": 18303333870,
+  "activityRefs": {
+    "strava": "18303333870",
+    "appleHealth": "7E9AC687-19DC-41C2-8FA0-52975F207386"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- 5 km easy run\n- Only take this if Tuesday's reset day leaves the right ankle calmer rather than merely tolerable.\n- Keep the effort fully conversational and shorten or stop early if the peroneal tendon starts talking again.\n- The goal is to keep a little frequency without breaking the reset-day pattern."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was planned as a `5 km` easy ankle-check run after the Tuesday reset day, and the completed run deliberately came in much shorter at `2.156 km` in `14:55` moving and elapsed time. That missed the distance prescription by `2.844 km`, but it matched the more important instruction in the note: keep the right peroneal tendon quiet and stop early rather than force volume.\n- Strava and Apple Health identify the same session (`18303333870` / `7E9AC687-19DC-41C2-8FA0-52975F207386`). The cost stayed genuinely low, with Strava HR at `132.3 bpm` average and `146 bpm` max, Apple Health at `131.6 bpm` average and `146 bpm` max, no recorded climbing, and no stoppage in the stream."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The short-term win was restraint. This run kept a little race-week frequency without turning Wednesday into another compromised fitness session, which made the Thursday reset day and Friday check-in run more defensible.\n- Because the second half quickened from an estimated `7:36 /km` to `6:12 /km` while HR rose from `130.0` to `141.0 bpm`, the next session still needed to stay short and honest rather than chase the missed `5 km`."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- Long term, this supports the half-marathon and marathon build more by proving the ankle-management rule can actually override the calendar. The useful habit here is stopping with the tendon still manageable, not banking every planned kilometre.\n- That matters for the Parramatta and Sydney goals because the later block will only tolerate higher volume if easy and injured-tendon days remain cheap enough to repeat."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `6:55 /km` across `2.156 km` in `14:55`.\n- The first half averaged an estimated `7:36 /km`; the second half averaged `6:12 /km`, so the run finished quicker even though the total session stayed very short."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR was `132.3 bpm` average and `146 bpm` max; Apple Health was nearly identical at `131.6 bpm` average and `146 bpm` max.\n- Distance-split HR rose from `130.0 bpm` in the first half to `141.0 bpm` in the second, which is a mild rise but still comfortably below the harder aerobic bands used elsewhere in this block."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time and elapsed time were both `14:55`, so there was no meaningful stop cost.\n- The stream shows `0` stop segments and `0.0%` stationary samples, which makes this a clean short outing rather than a broken attempt to complete the full prescription."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava recorded `0.0 m` of climbing, so terrain did not materially affect the read.\n- With the route flat and the duration short, the main training signal is the deliberately reduced load rather than any aerobic stimulus."
+        }
+      ]
     }
   ]
 }
