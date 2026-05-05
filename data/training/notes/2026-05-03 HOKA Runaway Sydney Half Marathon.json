@@ -55,6 +55,11 @@
           "kind": "stravaMeasurement",
           "measurement": "elevation",
           "markdown": "- Strava logged `189.4 m` of climbing. Stream-estimated climbing by segment was `60.8 m`, `39.6 m`, `11.4 m`, `79.8 m`, and `18.2 m`, which helps explain why the `15-20 km` block demanded the highest HR despite not being the fastest split.\n- Weather was usable but not invisible: overcast, about `17.4 C` average apparent conditions, `80.5%` humidity, and light wind."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Comparison With 2025 First Half",
+          "markdown": "- Compared with `2025-05-04 21.3 km First Half` (`14370324425` / `FE78517A-5AD3-4A8E-A576-510E3C50B7AE`), this race was a major step forward: `21.469 km` in `1:50:24` moving time versus `21.290 km` in `2:09:23`, so the 2026 run was `18:59` faster while covering `0.180 km` more.\n- Pace improved from `6:05 /km` to `5:09 /km`, a gain of about `56 s/km`, while average HR fell from `178.6 bpm` to `174.7 bpm` and max HR fell from `188` to `184`. The 2026 route also had less Strava-summary climbing (`189.4 m` versus `255.8 m`), so the course was kinder, but the time and heart-rate improvement is too large to explain by elevation alone.\n- The split shape changed most. In 2025 the race faded steadily: `5:30`, `5:42`, `5:55`, `6:12 /km`, then about `6:31 /km` to half-marathon distance. In 2026 the profile was much stronger: `4:55`, `5:09`, `5:23`, `5:14 /km`, then about `5:15 /km` to half-marathon distance with an extra fast finish beyond that.\n- The training context was also different. Strava shows about `102.1 km` across the eight weeks into the 2025 race (`12.8 km/week`) versus about `327.3 km` into the 2026 race (`40.9 km/week`). That higher base is the main explanation for why 2026 could run faster, with lower average HR, and still close instead of continuing the 2025 fade."
         }
       ]
     }
