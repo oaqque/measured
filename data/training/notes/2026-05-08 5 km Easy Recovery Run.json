@@ -4,13 +4,59 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-08",
-  "completed": false,
+  "completed": "2026-05-07T22:41:28Z",
   "eventType": "run",
   "expectedDistance": "5 km",
+  "stravaId": 18418796592,
+  "activityRefs": {
+    "strava": "18418796592",
+    "appleHealth": "C1C57B34-9A63-4B39-A041-AE82D9837777"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- 5 km easy recovery run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was planned as a `5 km` easy recovery run, but the completed session became a slightly bigger and quicker aerobic run: `6.074 km` in `35:04` moving time (`35:48` elapsed), about `1.074 km` over the prescription.\n- Strava and Apple Health match the same run (`18418796592` / `C1C57B34-9A63-4B39-A041-AE82D9837777`). Strava HR averaged `151.9 bpm` with a `169 bpm` max, Apple Health averaged `151.1 bpm` with the same `169 bpm` max, and Strava logged `97.2 m` of climbing. That is still aerobic, but it is not as cheap as a pure recovery run."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The week now has `19.435 km` across three completed runs after the HOKA race, versus `27 km` planned from Tuesday through Friday because Tuesday was skipped and Wednesday was shortened. That means the weekend should not chase volume just because the weekly total is low.\n- The route stream shows the caution: the first half averaged an estimated `6:01 /km` at `146.4 bpm`, while the second half quickened to `5:44 /km` and HR rose to `157.7 bpm`. Saturday should stay optional and genuinely light, and basketball should be the first thing to drop if the legs or ankle feel anything less than settled."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- Long term, this is a mixed signal. It is encouraging that post-race running already has normal rhythm and the legs can move at `5:46 /km` without race-level HR, but the late HR rise shows how easily a recovery run can become moderate aerobic work.\n- For the Parramatta and Sydney goals, the durable move is to keep recovery days boring enough that future threshold, half-marathon-pace, and long-run sessions can be absorbed rather than stacked on hidden fatigue."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:46 /km` across `6.074 km` in `35:04`.\n- Estimated half splits moved from `6:01 /km` for the first `3.037 km` to `5:44 /km` for the second `3.037 km`; the `3-4 km` and `4-5 km` portions were the quickest sustained part of the run."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR was `151.9 bpm` average and `169 bpm` max; Apple Health was `151.1 bpm` average and `169 bpm` max.\n- Distance-split HR rose from `146.4 bpm` in the first half to `157.7 bpm` in the second. That is the main reason to treat this as more than a pure recovery run."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `35:04` out of `35:48` elapsed, so stoppage cost was `44 s`.\n- The stream shows `8` short stop segments and about `1.1%` stationary samples, which is still mostly continuous but less clean than the Wednesday and Thursday runs."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `97.2 m` of climbing, with stream-estimated climbing balanced across the run at about `49.4 m` in each half.\n- Clear conditions were cool but windier than the prior two runs, with about `11.9 C` average temperature and `14.4 kph` average wind, so the late HR rise should be read as combined pace, terrain, and recovery cost rather than pace alone."
+        }
+      ]
     }
   ]
 }
