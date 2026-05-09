@@ -134,8 +134,8 @@ From `2026-04-21` through `2026-08-30`, treat the morning mobility routine in `n
 ```json plan-analysis-timeline
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-04-17",
-  "sourceSummary": "Built from Strava activity history through 2026-04-13, the receiver-backed Apple Health snapshot generated at 2026-04-13T04:32:29Z, workout notes in this folder, and the later 2026-04-17 current-block read.",
+  "updatedAt": "2026-05-09",
+  "sourceSummary": "Built from Strava activity history through the cache synced at 2026-05-09T12:10:21Z, the receiver-backed Apple Health snapshot generated at 2026-05-09T11:34:35Z, workout notes, goal notes, and changelog history through 2026-05-09.",
   "entries": [
     {
       "id": "2026-01-12-week-restart",
@@ -389,6 +389,108 @@ From `2026-04-21` through `2026-08-30`, treat the morning mobility routine in `n
         "reopenedWeekUpperKm": 60
       },
       "analysis": "The practical coaching read is that the earlier clampdown on the rest of `2026-04-13` to `2026-04-19` no longer needed to stay absolute. Friday, `2026-04-17`, added a controlled `10.030 km` run at `153.1 bpm` average HR with only modest pace and heart-rate drift, and the subjective follow-up was that you felt really good afterward. That was enough to reopen the weekend for easy running, but not to reopen it for everything.\n\nThe better move was to keep basketball out, let Saturday stay an optional `4 km` shakeout only if the same good feeling held, and keep Sunday as the protected `10 km` easy run. That pointed to a week closer to `56 to 60 km` rather than the previously reduced `52 km`, which was still below the `65.332 km` week that preceded it. Progress from there still depended on preserving the separation between easy and hard, but the evidence supported a little more weekend running rather than an automatic shutdown."
+    },
+    {
+      "id": "2026-04-19-week-half-marathon-substitute",
+      "date": "2026-04-19",
+      "period": {
+        "start": "2026-04-13",
+        "end": "2026-04-19"
+      },
+      "category": "weekly summary",
+      "title": "Half-marathon substitute changed the week",
+      "summary": "51.087 km across five runs, driven by a 21.270 km midweek substitute.",
+      "metrics": {
+        "distanceKm": 51.087,
+        "runs": 5,
+        "longestRunKm": 21.27,
+        "longestRunAverageHeartRateBpm": 155.1,
+        "sundayRunKm": 5.37,
+        "sundayAverageHeartRateBpm": 172.8,
+        "sundayMaxHeartRateBpm": 185
+      },
+      "analysis": "The week did not become the planned hill-plus-support structure. Wednesday's planned `8 km` aerobic support run became a `21.270 km` half-marathon substitute at `6:06 /km`, with `191.2 m` climbing and `155.1 bpm` average HR, so the week received a long aerobic stimulus early and the remainder was rightly reduced.\n\nThe total still reached `51.087 km`, but the shape matters more than the number. The Sunday shoe-test run was only `5.370 km`, yet it averaged `172.8 bpm` and maxed at `185 bpm`, so the final session was not the low-cost aerobic volume the plan had tried to preserve. This block still supports the HOKA and Parramatta build through durability, but it also confirms that ankle management and easy-day discipline had become the active constraints."
+    },
+    {
+      "id": "2026-04-26-week-missed-thirty",
+      "date": "2026-04-26",
+      "period": {
+        "start": "2026-04-20",
+        "end": "2026-04-26"
+      },
+      "category": "weekly summary",
+      "title": "The 30 km long-run week did not land",
+      "summary": "27.450 km across three runs after the planned Saturday 30 km long run was missed.",
+      "metrics": {
+        "distanceKm": 27.45,
+        "runs": 3,
+        "plannedLongRunKm": 30,
+        "deferredThresholdKm": 9.589,
+        "deferredThresholdAverageHeartRateBpm": 158.7,
+        "offPlanSundayKm": 11.712,
+        "offPlanSundayAverageHeartRateBpm": 166.9
+      },
+      "analysis": "This week was rewritten around a Tuesday reset, a deferred Wednesday threshold run, and a protected Saturday `30 km` long run, but the long run did not happen. The completed running was `9.589 km` on Wednesday, `6.149 km` on Thursday, and an off-plan `11.712 km` Sunday evening run, for only `27.450 km` across three runs.\n\nThe problem was not just low volume. The off-plan Sunday run averaged `166.9 bpm` with a `182 bpm` max, so the week finished with moderate-to-hard cost without getting the intended long-run durability or fueling-practice benefit. For the Parramatta and Sydney goals, this was a consolidation miss: useful threshold work was banked, but the long-run progression had to be rebuilt rather than treated as complete."
+    },
+    {
+      "id": "2026-05-03-hoka-checkpoint",
+      "date": "2026-05-03",
+      "period": {
+        "start": "2026-04-27",
+        "end": "2026-05-03"
+      },
+      "category": "race checkpoint",
+      "title": "HOKA beat the checkpoint, with real recovery cost",
+      "summary": "36.867 km race week including a 1:50:24 HOKA half marathon.",
+      "metrics": {
+        "distanceKm": 36.867,
+        "runs": 4,
+        "hokaTargetMinutes": 120,
+        "hokaMovingTimeSeconds": 6624,
+        "hokaDistanceKm": 21.469,
+        "hokaAverageHeartRateBpm": 174.7,
+        "hokaMaxHeartRateBpm": 184,
+        "preRaceRunKm": 7.236
+      },
+      "analysis": "Race week was ankle-managed rather than a normal taper: Monday stayed easy, Wednesday was cut to `2.156 km`, Thursday stayed mobility-only, and Friday became a bigger-than-planned `7.236 km` hilly aerobic run two days before the race.\n\nThe HOKA result still beat the dedicated goal note's `2:00:00` hard target decisively: `21.469 km` in `1:50:24` moving time at `5:09 /km`. The cost was also clear, with average HR `174.7 bpm`, just above the working LTHR model of `173 bpm`, and max HR `184 bpm`. That makes HOKA a successful checkpoint for half-marathon readiness, but not a controlled long run. The downstream plan should treat the result as proof that the build is working and also as a hard race that requires a genuine recovery bridge before Parramatta-specific work."
+    },
+    {
+      "id": "2026-05-09-recovery-week-overdistance",
+      "date": "2026-05-09",
+      "period": {
+        "start": "2026-05-04",
+        "end": "2026-05-10"
+      },
+      "category": "current block",
+      "title": "Recovery week rebuilt rhythm, then Saturday overreached",
+      "summary": "30.125 km across four runs through Saturday, with Sunday now optional recovery.",
+      "metrics": {
+        "distanceKmThroughSaturday": 30.125,
+        "runsThroughSaturday": 4,
+        "distanceWeightedAverageHeartRateBpm": 148.1,
+        "saturdayPlannedKm": 3,
+        "saturdayActualKm": 10.69,
+        "saturdayAverageHeartRateBpm": 153,
+        "basketballElapsedSeconds": 6966,
+        "sundayRecoveryUpperKm": 6
+      },
+      "analysis": "The post-HOKA week started correctly: Tuesday was skipped, Wednesday came in short and easy at `6.125 km` with `145.4 bpm` average HR, and Thursday stayed controlled at `7.236 km` with only `139.9 bpm` average HR. Friday was less cheap at `6.074 km`, with HR rising late, and Saturday then became the real issue.\n\nThe planned `3 km` shakeout became `10.690 km` in `1:02:26`, followed by a `1:56:06` Apple Health court-style workout in the scheduled basketball slot. The weekly total through Saturday is already `30.125 km`, almost exactly the original Tuesday-through-Saturday running plan despite the missed Tuesday run. Sunday is now correctly rewritten as full rest or at most `6 km` very easy, because the recovery week has already absorbed enough load."
+    },
+    {
+      "id": "2026-05-09-parramatta-sydney-outlook",
+      "date": "2026-05-09",
+      "category": "current block",
+      "title": "Parramatta bridge depends on clean rebuilding",
+      "summary": "HOKA validates the build, but the next block needs controlled volume rather than compressed make-up load.",
+      "metrics": {
+        "parramattaTargetMinutes": 105,
+        "sydneyTargetMinutes": 210,
+        "nextPlannedWeekKm": 68,
+        "currentWeekKmLowerBound": 30,
+        "currentWeekKmUpperBound": 36,
+        "futureHighVolumeWeekKm": 80
+      },
+      "analysis": "The dedicated goal notes now make Parramatta `2026-06-21` at `1:45:00` and Sydney Marathon `2026-08-30` at `3:30:00` the live performance targets. HOKA's `1:50:24` says the half-marathon direction is credible, but the April and early-May timeline says the limiter is still repeatability: missed long-run progression, ankle-management resets, and easy days that can quietly become moderate load.\n\nThe next block should therefore rebuild normally instead of trying to compensate for the missed `30 km` week or the reduced recovery week. The planned `68 km` week from `2026-05-11` to `2026-05-17` is the right kind of bridge only if the easy days stay genuinely easy and basketball does not compromise Tuesday, Thursday, or Sunday. For Sydney's later `80 km`-plus weeks to become realistic, the immediate win is cleaner distribution of load, not a bigger single-session statement."
     }
   ]
 }
