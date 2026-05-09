@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Optional Recovery Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-05-10",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "0 to 6 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Full rest is acceptable after Saturday became a `10.690 km` aerobic run instead of the planned `3 km` shakeout.\n- If the legs and right ankle feel clearly settled, run up to `6 km` very easy.\n- Keep this below steady effort and stop early if any ankle irritation, heavy legs, or post-race fatigue shows up."
+    }
+  ]
+}
