@@ -4,13 +4,64 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-03",
-  "completed": false,
+  "completed": "2026-05-02T21:08:06Z",
   "eventType": "race",
   "expectedDistance": "21.1 km",
+  "stravaId": 18352213672,
+  "activityRefs": {
+    "strava": "18352213672",
+    "appleHealth": "960C2B4E-A317-493C-ACA5-934340AF83A3"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- HOKA Runaway Sydney Half Marathon race\n- Treat this as a controlled decision-day effort rather than a hard-target race.\n- Start only if the right ankle stays calm through Friday and Saturday.\n- If the peroneal tendon is still irritated during warm-up, switch from racing to support-only attendance or withdraw rather than forcing the load."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- The note had downgraded this from a pure hard-target race to a controlled decision-day effort because of the right-ankle peroneal tendon irritation. The completed race showed the ankle was good enough to start and race, and the result was well ahead of the original `2:00:00` checkpoint: `21.469 km` in `1:50:24` moving time and `1:51:17` elapsed, averaging `5:09 /km`.\n- It was not a conservative effort physiologically. Strava and Apple Health match the same race (`18352213672` / `960C2B4E-A317-493C-ACA5-934340AF83A3`), with average HR `174.7 bpm` on Strava, `174.6 bpm` on Apple Health, and max HR `184 bpm`. That puts the average just above the working `173 bpm` LTHR model, so this should count as a real race effort rather than a controlled long run."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The recovery week should be treated as recovery first, not as a guaranteed `42 km` rebuild. Race-week Strava volume finished at `36.867 km` across four runs, including this `21.469 km` race, and the two days before the race included a `7.236 km` hilly run rather than only a tiny shakeout.\n- The race splits show why absorption matters: `0-5 km` averaged `4:55 /km` at `172.2 bpm`, `5-10 km` averaged `5:09 /km` at `173.6 bpm`, `10-15 km` slowed to `5:23 /km` at `172.9 bpm`, then the hilly `15-20 km` block averaged `5:14 /km` at `178.7 bpm` before the final `1.469 km` lifted to `4:58 /km` at `179.8 bpm`. That is a strong close, but it is also a clear cost signal."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- This materially supports the half-marathon block: the `2:00:00` HOKA checkpoint is no longer the limiter, and the `2026-06-21` Parramatta `1:45:00` target is more plausible than it looked earlier in the rebuild. The gap is still real, because `1:45:00` requires about `4:59 /km`, and this race averaged `5:09 /km` while already sitting at race-level HR.\n- For the `2026-08-30` Sydney Marathon `3:30:00` goal, the takeaway is similar but stricter. The pace is close to marathon-target pace, but the heart-rate cost is far too high for marathon durability right now. The next block needs cleaner easy running, more sustainable weekly volume, and threshold work that lowers the cost of this pace rather than just proving you can fight for it once."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:09 /km` across `21.469 km` in `1:50:24`; elapsed pace was `5:11 /km` across `1:51:17`.\n- Segment paces were `4:55 /km` for `0-5 km`, `5:09 /km` for `5-10 km`, `5:23 /km` for `10-15 km`, `5:14 /km` for `15-20 km`, and `4:58 /km` for the final `1.469 km`."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR was `174.7 bpm` average and `184 bpm` max; Apple Health was `174.6 bpm` average and `184 bpm` max.\n- Segment HR moved from `172.2` to `173.6` to `172.9` to `178.7 bpm`, then `179.8 bpm` over the final `1.469 km`, which shows the race became substantially more expensive from `15 km` onward."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `1:50:24` out of `1:51:17` elapsed, so stoppage cost was only `53 s`.\n- The stream shows `3` stop segments and `0.3%` stationary samples, so the result reads as a continuous race effort rather than a stop-start run."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `189.4 m` of climbing. Stream-estimated climbing by segment was `60.8 m`, `39.6 m`, `11.4 m`, `79.8 m`, and `18.2 m`, which helps explain why the `15-20 km` block demanded the highest HR despite not being the fastest split.\n- Weather was usable but not invisible: overcast, about `17.4 C` average apparent conditions, `80.5%` humidity, and light wind."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Comparison With 2025 First Half",
+          "markdown": "- Compared with `2025-05-04 21.3 km First Half` (`14370324425` / `FE78517A-5AD3-4A8E-A576-510E3C50B7AE`), this race was a major step forward: `21.469 km` in `1:50:24` moving time versus `21.290 km` in `2:09:23`, so the 2026 run was `18:59` faster while covering `0.180 km` more.\n- Pace improved from `6:05 /km` to `5:09 /km`, a gain of about `56 s/km`, while average HR fell from `178.6 bpm` to `174.7 bpm` and max HR fell from `188` to `184`. The Strava route streams confirm this was effectively the same course: start points were `8.5 m` apart, finish points were `1.8 m` apart, and nearest-path separation averaged `7.4 m` with every sampled point within `50 m`.\n- The elevation totals differ (`255.8 m` Strava-summary climbing in 2025 versus `189.4 m` in 2026), but that should be treated as a measurement discrepancy rather than a course difference. The matched-distance altitude traces have almost no systematic offset, with 2025 minus 2026 averaging only about `0.5 m`, even though the accumulated ascent differs because of stream noise and elevation processing.\n- The split shape changed most. In 2025 the race faded steadily: `5:30`, `5:42`, `5:55`, `6:12 /km`, then about `6:31 /km` to half-marathon distance. In 2026 the profile was much stronger: `4:55`, `5:09`, `5:23`, `5:14 /km`, then about `5:15 /km` to half-marathon distance with an extra fast finish beyond that.\n- The training context was also different. Strava shows about `102.1 km` across the eight weeks into the 2025 race (`12.8 km/week`) versus about `327.3 km` into the 2026 race (`40.9 km/week`). That higher base is the main explanation for why 2026 could run faster, with lower average HR, and still close instead of continuing the 2025 fade."
+        }
+      ]
     }
   ]
 }

@@ -4,13 +4,59 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-09",
-  "completed": false,
+  "completed": "2026-05-08T21:08:00Z",
   "eventType": "run",
   "expectedDistance": "3 km",
+  "stravaId": 18430650496,
+  "activityRefs": {
+    "strava": "18430650496",
+    "appleHealth": "B8BCF788-01A0-4321-850A-990BFC992F7F"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- 3 km easy run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was planned as a `3 km` easy shakeout in the post-HOKA recovery week, but it became a much bigger aerobic run: `10.690 km` in `1:02:26` moving time (`1:03:05` elapsed), which is `7.690 km` over the prescription.\n- Strava and Apple Health identify the same session (`18430650496` / `B8BCF788-01A0-4321-850A-990BFC992F7F`). Strava HR averaged `153.0 bpm` with a `170 bpm` max, Apple Health averaged `152.8 bpm` with the same `170 bpm` max, and Strava logged `59.6 m` of climbing. The effort was controlled, but it was not the optional light Saturday run that the week called for."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The week now has `30.125 km` across four completed runs through Saturday, almost exactly the original Tuesday-through-Saturday planned running load of `30 km` despite the skipped Tuesday run. That means Sunday should not chase the original `12 km` long-run prescription.\n- Apple Health also recorded a later `1:56:06` court-style workout on Saturday morning with `141.2 bpm` average HR and a `186 bpm` max, matching the scheduled basketball slot. With that added load, Sunday is now better treated as full rest or at most a very easy short recovery run."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- Long term, this supports the Parramatta and Sydney build by showing that the post-HOKA legs can already handle normal aerobic rhythm again. The caution is distribution: turning the planned `3 km` shakeout into `10.690 km`, then adding basketball, compresses load in a way that should not become the default pattern.\n- The durable move is to protect the next few days so the following week's threshold, steady, and long-run work can be absorbed rather than starting the Parramatta block with hidden fatigue."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:50 /km` across `10.690 km` in `1:02:26`.\n- Estimated stream segments were controlled rather than fading: the first half averaged `5:54 /km`, the second half `5:47 /km`, and the final `2.675 km` quickened to about `5:39 /km`."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR was `153.0 bpm` average and `170 bpm` max; Apple Health was `152.8 bpm` average and `170 bpm` max.\n- Distance-split HR stayed fairly even from `152.6 bpm` in the first half to `153.7 bpm` in the second, but the final `690 m` averaged `158.4 bpm` and reached the session max. That late lift is enough to read this as real aerobic load rather than recovery."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `1:02:26` out of `1:03:05` elapsed, so stoppage cost was only `39 s`.\n- The stream shows `7` stationary samples, about `0.7%` of the route stream, across `6` short stop flags, leaving the run effectively continuous for training purposes."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `59.6 m` of total elevation gain, while the stream-estimated climbing was split at about `40.0 m` in the first half and `35.0 m` in the second.\n- Conditions were favourable at about `11.6 C` average temperature with clear sky and `7.4 kph` wind, so the session cost comes mainly from distance, late pace, and the added basketball load rather than weather."
+        }
+      ]
     }
   ]
 }

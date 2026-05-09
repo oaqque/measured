@@ -220,6 +220,28 @@ export interface PlanDocument {
   title: string;
   body: string;
   sourcePath: string;
+  analysisTimeline: PlanAnalysisTimeline | null;
+}
+
+export interface PlanAnalysisTimeline {
+  schemaVersion: 1;
+  updatedAt: string;
+  sourceSummary: string | null;
+  entries: PlanAnalysisTimelineEntry[];
+}
+
+export interface PlanAnalysisTimelineEntry {
+  id: string;
+  date: string;
+  title: string;
+  analysis: string;
+  category: string | null;
+  summary: string | null;
+  period: {
+    start: string;
+    end: string;
+  } | null;
+  metrics: Record<string, string | number | boolean | null>;
 }
 
 export interface GoalNote {
@@ -242,12 +264,35 @@ export interface ChangelogEntry {
   sourcePath: string;
 }
 
+export interface WorkoutBestEffortEntry {
+  elapsedSeconds: number;
+  paceSecondsPerKm: number;
+  workoutSlug: string;
+  workoutTitle: string;
+  workoutDate: string;
+  workoutActualDistanceKm: number | null;
+}
+
+export interface WorkoutBestEffort extends WorkoutBestEffortEntry {
+  key: string;
+  label: string;
+  distanceMeters: number;
+  topEfforts: WorkoutBestEffortEntry[];
+}
+
+export interface WorkoutBestEffortsSummary {
+  eligibleWorkoutCount: number;
+  analyzedWorkoutCount: number;
+  efforts: WorkoutBestEffort[];
+}
+
 export interface WorkoutsData {
   generatedAt: string;
   welcome: PlanDocument;
   goals: PlanDocument;
   heartRate: PlanDocument;
   morningMobility: PlanDocument;
+  bestEfforts: WorkoutBestEffortsSummary;
   goalNotes: GoalNote[];
   plan: PlanDocument;
   changelog: ChangelogEntry[];

@@ -1,11 +1,11 @@
 ---
 name: training-analysis
-description: Analyze training data and maintain the repo's training source files. Use when Codex needs to sync Strava data, verify receiver-backed Apple Health data in `vault/`, backfill or update workout notes in data/training/notes, revise the training plan in data/training/PLAN.md, create changelog entries in data/training/changelog, explain the relationship between planned sessions and completed runs, or package that work into a required git commit at the end.
+description: Analyze training data and maintain the repo's training source files. Use when Codex needs to sync Strava data, verify receiver-backed Apple Health data in `vault/`, backfill or update workout notes in data/training/notes, revise the training plan in data/training/PLAN.md, ground analysis in data/training/GOALS.md and data/training/goals, create changelog entries in data/training/changelog, explain the relationship between planned sessions and completed runs, or package that work into a required git commit at the end.
 ---
 
 # Training Analysis
 
-Use this skill to keep the training data in this repo coherent across Strava sync, receiver-backed Apple Health cache checks, workout-note authorship, plan updates, and changelog history.
+Use this skill to keep the training data in this repo coherent across Strava sync, receiver-backed Apple Health cache checks, workout-note authorship, goal context, plan updates, and changelog history.
 
 ## Workflow Choice
 
@@ -37,27 +37,32 @@ Read [`references/data-shapes.md`](references/data-shapes.md) before creating or
 1. Fetch the current local date and time first using Linux CLI utilities such as `date` if you have not already done so in this run.
 2. Make sure `Sync and Refresh` has been completed in this run first. New analysis should use a current receiver-backed Apple Health snapshot and freshly synced Strava data.
 3. Read the plan first in `data/training/PLAN.md` before writing analysis for a run. Treat the scheduled intent as the baseline.
-4. Open the target note in `data/training/notes/`.
-5. If no note exists for the run, create one using the workout note shape in `references/data-shapes.md`.
-6. Before writing analysis, make sure the target note is linked to the relevant Apple Health workout when one exists for that session.
-7. Keep planned intent and actual outcome separate in the JSON note document:
+4. Read the dedicated goal sources before writing analysis:
+   - Start with `data/training/GOALS.md` for the current goal hierarchy.
+   - Read the relevant files in `data/training/goals/` for the goal horizon affected by the workout, such as the next race goal, the current marathon block goal, or non-running goals directly implicated by the session.
+   - If the relevant goal file is ambiguous, read all current `data/training/goals/*.md` files and then cite only the goals that materially affect the analysis.
+   - Do not rely on goal statements copied into `PLAN.md` when the dedicated goal sources are available.
+5. Open the target note in `data/training/notes/`.
+6. If no note exists for the run, create one using the workout note shape in `references/data-shapes.md`.
+7. Before writing analysis, make sure the target note is linked to the relevant Apple Health workout when one exists for that session.
+8. Keep planned intent and actual outcome separate in the JSON note document:
    - `expectedDistance` is the plan.
    - `actualDistance` is only for manual overrides.
    - `activityRefs` is the preferred provider linkage map.
    - `stravaId` remains valid for legacy linkage and back-compat.
-8. Use the canonical `sections` layout that matches the run status:
+9. Use the canonical `sections` layout that matches the run status:
    - If the run is unfinished, the note should usually contain only one `program` section.
    - If the run is completed, keep the `program` section and add an `analysis` section with typed entries for `intention`, `shortTermGoal`, `longTermGoal`, and `personalNote`.
-9. For a newly completed run note, explicitly ask the user: `Would you like to add a personal note for this run?`
+10. For a newly completed run note, explicitly ask the user: `Would you like to add a personal note for this run?`
    - Put the user's response under `### Personal Note`.
    - If the user declines or has nothing to add, write `- None provided.`
-10. In completed-run analysis, make each subsection specific:
+11. In completed-run analysis, make each subsection specific:
    - `### Intention`: whether the run matched the planned purpose of the session
    - `### Short-Term Goal`: what it implies for the next few days or the current week
-   - `### Long-Term Goal`: how it supports or threatens the current training block and race goals
+   - `### Long-Term Goal`: how it supports or threatens the dedicated goals in `GOALS.md` and `goals/*.md`, not just the plan prose
    - `### Personal Note`: the user's own subjective note, preserved clearly
-11. If the run happened on a different day than planned, state that explicitly and update the surrounding notes or plan if needed.
-12. After producing or materially revising run analysis, create a changelog entry in the same pass even if the only file change is the note itself.
+12. If the run happened on a different day than planned, state that explicitly and update the surrounding notes or plan if needed.
+13. After producing or materially revising run analysis, create a changelog entry in the same pass even if the only file change is the note itself.
 
 ### Analysis Guidance
 
@@ -66,6 +71,7 @@ Read [`references/data-shapes.md`](references/data-shapes.md) before creating or
 When producing run analysis, use the fused view of the workout rather than a single source. At minimum, combine:
 
 - planned intent from `data/training/PLAN.md`
+- goal hierarchy from `data/training/GOALS.md` and the relevant goal detail files under `data/training/goals/`
 - the target note in `data/training/notes/`
 - Apple Health summary and linked provider data in the receiver-backed cache under `vault/apple-health/`, with `vault/apple-health-sync-server/receiver.sqlite3` treated as the freshness source of truth
 - Strava summary data in `vault/strava/cache-export.json`
@@ -110,12 +116,13 @@ If the program says `3 x 8 minutes at threshold`, the analysis should verify whe
 
 Before finalizing analysis, check whether the repo has more evidence you can use:
 
-- note frontmatter and markdown program
+- note JSON fields and program markdown
 - Apple Health-linked provider ids and imported Apple Health summaries
 - actual Strava-linked summary metrics
 - route stream arrays
 - prior and next runs in the same week
 - the weekly target in `PLAN.md`
+- the current goal hierarchy in `GOALS.md` and relevant goal notes in `data/training/goals/`
 - existing changelog history that explains schedule changes or reinterpretations
 
 If a source is unavailable, say so briefly and base the analysis on the remaining sources. If streams are unavailable, explicitly fall back to summary metrics and note that segment-level verification was not possible.
@@ -124,7 +131,7 @@ If a source is unavailable, say so briefly and base the analysis on the remainin
 
 - `### Intention`: compare the planned session to the observed execution using measured facts, including exact date drift when relevant.
 - `### Short-Term Goal`: tie the workout's real cost to the next few days using metrics such as over-distance, elevated heart rate, extra climbing, or visible late fade.
-- `### Long-Term Goal`: connect the measured outcome to the current training block and race goals, using weekly volume, repeatability, and execution quality rather than vague optimism.
+- `### Long-Term Goal`: connect the measured outcome to the dedicated goal sources and current training block, using weekly volume, repeatability, execution quality, and the specific target dates or measures from `GOALS.md` and `goals/*.md` rather than vague optimism.
 - `### Personal Note`: preserve the user's own words; do not replace them with inferred commentary.
 
 Default run-note examples:
@@ -205,7 +212,7 @@ Completed run note:
    - `shortTermGoal`
    - `longTermGoal`
    - `personalNote`
-7. When writing completed-run analysis, anchor it in the workout's intended purpose first, then connect it to the immediate week and the larger training block.
+7. When writing completed-run analysis, anchor it in the workout's intended purpose first, then connect it to the immediate week, the larger training block, and the dedicated goal sources in `GOALS.md` and `data/training/goals/`.
 8. If changing the weekly structure, update both:
    - `data/training/PLAN.md`
    - the affected note files in `data/training/notes/`

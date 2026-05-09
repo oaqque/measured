@@ -4,13 +4,59 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-07",
-  "completed": false,
+  "completed": "2026-05-06T20:40:30Z",
   "eventType": "run",
   "expectedDistance": "8 km",
+  "stravaId": 18404682200,
+  "activityRefs": {
+    "strava": "18404682200",
+    "appleHealth": "96BD1A72-C2EB-4132-8775-2BF8ABCDCCB8"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- 8 km steady run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was scheduled as an `8 km` steady run, but the completed session was better interpreted as controlled aerobic running in a recovery week. It covered `7.236 km` in `43:52` moving time (`44:00` elapsed), about `0.764 km` short of the prescription.\n- That softer execution was the right bias after Sunday's HOKA race. Strava and Apple Health match the same run (`18404682200` / `96BD1A72-C2EB-4132-8775-2BF8ABCDCCB8`), with low cost for the pace: Strava HR averaged `139.9 bpm` with a `160 bpm` max, Apple Health averaged `139.6 bpm` with the same `160 bpm` max, and Strava logged `102.4 m` of climbing."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate takeaway is that Thursday did not need to become a real steady workout. The first half averaged an estimated `6:09 /km` at `137.2 bpm`, and the second half held `6:05 /km` at `142.8 bpm`, so the run stayed smooth without adding much intensity.\n- That supports keeping Friday's run genuinely recoverable. There is still no need to replace the skipped Tuesday run by compressing extra work into the end of the week."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- Long term, this is a useful recovery-week signal because pace improved relative to Wednesday while HR stayed lower. That suggests the HOKA effort is being absorbed rather than leaving obvious cardiovascular residue.\n- For Parramatta and Sydney, the win is discipline: steady-day labels should still bend to the actual recovery state, especially in the week after a hard half marathon."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `6:04 /km` across `7.236 km` in `43:52`.\n- Estimated half splits were nearly even: `6:09 /km` for the first `3.618 km` and `6:05 /km` for the second `3.618 km`."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR was `139.9 bpm` average and `160 bpm` max; Apple Health was `139.6 bpm` average and `160 bpm` max.\n- Distance-split HR rose from `137.2 bpm` in the first half to `142.8 bpm` in the second, which is a small rise and keeps the session comfortably below the harder aerobic range used elsewhere in the block."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `43:52` out of `44:00` elapsed, so stoppage cost was only `8 s`.\n- The stream shows `5` short stop segments and about `0.5%` stationary samples, so the run reads as continuous aerobic work."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `102.4 m` of climbing, with stream-estimated climbing almost evenly distributed: `53.3 m` in the first half and `53.5 m` in the second.\n- The low HR despite the climbing makes this a better recovery-week execution than forcing a true steady effort would have been."
+        }
+      ]
     }
   ]
 }

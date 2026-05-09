@@ -4,13 +4,59 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-01",
-  "completed": false,
+  "completed": "2026-04-30T21:03:34Z",
   "eventType": "run",
   "expectedDistance": "4 km",
+  "stravaId": 18324369668,
+  "activityRefs": {
+    "strava": "18324369668",
+    "appleHealth": "A6E1A1F4-67AB-4BCA-9DE3-3BDED9ABAC48"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- 4 km easy run\n- This is just a light pre-race check, not a fitness session.\n- Only run if Wednesday's easy day and Thursday's reset leave the right ankle settled.\n- Keep it soft, flat, and genuinely easy. No strides unless the ankle feels fully quiet."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was meant to be a light `4 km` pre-race ankle check, only if the right ankle had stayed settled. The completed run did not stay that small: it covered `7.236 km` in `40:00` moving time (`40:29` elapsed), so it exceeded the plan by `3.236 km`.\n- Strava and Apple Health match the same session (`18324369668` / `A6E1A1F4-67AB-4BCA-9DE3-3BDED9ABAC48`). Average HR landed at `155.8 bpm` on Strava and `155.1 bpm` on Apple Health with a `177 bpm` max, and Strava logged `95.4 m` of climbing. That is closer to a moderate aerobic run than a tiny pre-race systems check."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate implication before Sunday was that Saturday rest became non-negotiable. This run added real load two days out from HOKA: the first half averaged an estimated `5:24 /km` at `151.6 bpm`, and the second half held similar pace at `5:28 /km` while HR rose to `160.3 bpm` with slightly more climbing.\n- After the race, this also argues against forcing the whole recovery-week script if the ankle or calves feel flat. Tuesday and Wednesday should stay genuinely easy, and the Thursday steady run should be the first thing to soften if recovery is not obvious."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- Long term, the good sign is that the ankle allowed a continuous hilly run at normal aerobic pace. The risk is that an intended easy check became another medium-cost session in a week already built around tendon management.\n- For Parramatta and Sydney, this is the pattern to clean up: use easy days to protect repeatability, not to prove readiness. The fitness is moving, but the build will be more durable if pre-race checks stay boring."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:32 /km` across `7.236 km` in `40:00`.\n- Estimated half splits were steady rather than fading badly: `5:24 /km` for the first `3.618 km` and `5:28 /km` for the second `3.618 km`."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR was `155.8 bpm` average and `177 bpm` max; Apple Health was `155.1 bpm` average and `177 bpm` max.\n- Distance-split HR rose from `151.6 bpm` in the first half to `160.3 bpm` in the second, which made this meaningfully more expensive than a pre-race shakeout should be."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `40:00` out of `40:29` elapsed, so stoppage cost was only `29 s`.\n- The stream shows `7` stop segments and `0.8%` stationary samples, leaving the run mostly continuous despite small interruptions."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `95.4 m` of climbing, with estimated climbing split as `45.8 m` in the first half and `53.8 m` in the second.\n- The late HR rise should therefore be read with the hills in mind, but the session was still too substantial for the original `4 km` ankle-check intent."
+        }
+      ]
     }
   ]
 }

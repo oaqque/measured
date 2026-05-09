@@ -1,6 +1,9 @@
 import workoutsJson from "@/generated/workouts.json";
 import type {
   ChangelogEntry,
+  WorkoutBestEffort,
+  WorkoutBestEffortEntry,
+  WorkoutBestEffortsSummary,
   WorkoutFilters,
   WorkoutNote,
   WorkoutsData,
@@ -8,11 +11,12 @@ import type {
 
 type RawWorkoutNote = WorkoutNote;
 
-type RawWorkoutsData = Omit<WorkoutsData, "workouts"> & {
+type RawWorkoutsData = Omit<WorkoutsData, "workouts" | "bestEfforts"> & {
+  bestEfforts?: WorkoutBestEffortsSummary | null;
   workouts: RawWorkoutNote[];
 };
 
-const rawWorkoutsData = workoutsJson as RawWorkoutsData;
+const rawWorkoutsData = workoutsJson as unknown as RawWorkoutsData;
 const changelog = [...rawWorkoutsData.changelog].sort((left, right) =>
   left.date === right.date ? right.slug.localeCompare(left.slug) : right.date.localeCompare(left.date),
 );
@@ -32,6 +36,7 @@ export const welcomeDocument = rawWorkoutsData.welcome;
 export const goalsDocument = rawWorkoutsData.goals;
 export const heartRateDocument = rawWorkoutsData.heartRate;
 export const morningMobilityDocument = rawWorkoutsData.morningMobility;
+export const bestEffortsSummary = normalizeBestEffortsSummary(rawWorkoutsData.bestEfforts);
 export const allGoalNotes = goalNotes;
 export const trainingPlan = rawWorkoutsData.plan;
 export const allChangelogEntries = changelog;
@@ -275,6 +280,52 @@ function buildChangelogByAffectedFile(entries: ChangelogEntry[]) {
   }
 
   return changelogMap;
+}
+
+function normalizeBestEffortsSummary(
+  summary: WorkoutBestEffortsSummary | null | undefined,
+): WorkoutBestEffortsSummary {
+  if (!summary) {
+    return {
+      eligibleWorkoutCount: 0,
+      analyzedWorkoutCount: 0,
+      efforts: [],
+    };
+  }
+
+  return {
+    eligibleWorkoutCount:
+      typeof summary.eligibleWorkoutCount === "number" && Number.isFinite(summary.eligibleWorkoutCount)
+        ? summary.eligibleWorkoutCount
+        : 0,
+    analyzedWorkoutCount:
+      typeof summary.analyzedWorkoutCount === "number" && Number.isFinite(summary.analyzedWorkoutCount)
+        ? summary.analyzedWorkoutCount
+        : 0,
+    efforts: Array.isArray(summary.efforts)
+      ? summary.efforts.map(normalizeBestEffort)
+      : [],
+  };
+}
+
+function normalizeBestEffort(effort: WorkoutBestEffort): WorkoutBestEffort {
+  return {
+    ...effort,
+    topEfforts: Array.isArray(effort.topEfforts)
+      ? effort.topEfforts.map(normalizeBestEffortEntry)
+      : [normalizeBestEffortEntry(effort)],
+  };
+}
+
+function normalizeBestEffortEntry(effort: WorkoutBestEffortEntry): WorkoutBestEffortEntry {
+  return {
+    elapsedSeconds: effort.elapsedSeconds,
+    paceSecondsPerKm: effort.paceSecondsPerKm,
+    workoutSlug: effort.workoutSlug,
+    workoutTitle: effort.workoutTitle,
+    workoutDate: effort.workoutDate,
+    workoutActualDistanceKm: effort.workoutActualDistanceKm,
+  };
 }
 
 function formatMonthLabel(date: string) {

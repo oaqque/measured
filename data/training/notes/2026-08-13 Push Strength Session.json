@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Push Strength Session",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-08-13",
+  "completed": false,
+  "eventType": "strength",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Push strength session\n- Horizontal press: bench press, dumbbell press, or push-ups, `3 to 5 x 4 to 8`.\n- Vertical press: landmine press or overhead press, `3 x 5 to 8`.\n- Accessory push: incline press, dips, or cable press, `2 to 3 x 8 to 12`.\n- Shoulder durability: serratus, rotator cuff, and loaded carries, `2 to 3` controlled sets.\n- Stop before failure so shooting, basketball contact, and key running sessions stay clean."
+    }
+  ]
+}
