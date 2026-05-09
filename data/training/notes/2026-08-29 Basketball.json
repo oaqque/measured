@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Basketball",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-08-29",
+  "completed": false,
+  "eventType": "basketball",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Basketball, Saturday morning.\n- Race-eve rule: skip this session if possible.\n- If it is unavoidable, keep minutes low, avoid all-out jumping or repeated sprints, and protect Sunday race freshness."
+    }
+  ]
+}

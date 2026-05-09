@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Light Legs Strength Session",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-08-19",
+  "completed": false,
+  "eventType": "strength",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Light legs strength session\n- Keep this as a low-soreness lower-body maintenance session, not a heavy lift.\n- Technique strength: squat, trap-bar, or leg press pattern, `2 to 3 x 3 to 5` with plenty in reserve.\n- Single-leg control: split squat, step-up, or reverse lunge, `2 x 5 to 6` each side.\n- Tendon and court durability: calves, tibialis, adductors, and trunk work, `2` easy controlled sets.\n- Skip anything that would compromise Thursday quality, Saturday basketball, or race freshness."
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Basketball",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-08-15",
+  "completed": false,
+  "eventType": "basketball",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Basketball, Saturday morning.\n- Treat this as hard court load, not a casual recovery session.\n- Keep the session controlled enough that Sunday long-run quality is still protected."
+    }
+  ]
+}

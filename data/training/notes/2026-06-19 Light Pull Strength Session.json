@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Light Pull Strength Session",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-06-19",
+  "completed": false,
+  "eventType": "strength",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Light pull strength session\n- Keep this as upper-back activation and trunk control, not a fatigue session.\n- Vertical pull or pulldown: `2 to 3 x 5 to 8`.\n- Row variation: `2 to 3 x 6 to 10`.\n- Posterior shoulder plus anti-rotation trunk work: `2` easy sets.\n- Avoid grip failure and heavy carries during race week."
+    }
+  ]
+}

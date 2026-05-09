@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Legs Strength Session",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-07-22",
+  "completed": false,
+  "eventType": "strength",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Legs strength session\n- This is the only heavy lower-body lift for the week; keep it away from Tuesday, Thursday, and Sunday hard run days and the Monday/Saturday basketball slots.\n- Main strength: squat, trap-bar deadlift, or leg press pattern, `3 to 5 x 3 to 6`.\n- Single-leg strength: split squat, step-up, or reverse lunge, `3 x 6 to 8` each side.\n- Posterior chain: Romanian deadlift, hip thrust, or hamstring curl, `3 x 6 to 10`.\n- Basketball durability: calf raises, tibialis raises, Copenhagen or adductor work, and anti-rotation trunk work, `2 to 3` controlled sets.\n- If Tuesday quality or Monday basketball leaves the legs flat, reduce this to light technique work and avoid soreness-chasing accessories."
+    }
+  ]
+}
