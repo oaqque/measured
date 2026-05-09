@@ -21,6 +21,8 @@ import type {
   AppleHealthWorkoutMeasurements,
   ChangelogEntry,
   GoalNote,
+  PlanAnalysisTimeline,
+  PlanAnalysisTimelineEntry,
   PlanDocument,
   WorkoutActivityRefMap,
   WorkoutEventType,
@@ -56,6 +58,8 @@ const appleHealthPublicIdSalt = normalizeNullableString(process.env.APPLE_HEALTH
 const changelogDirName = "changelog";
 const goalsDirName = "goals";
 const notesDirName = "notes";
+const planAnalysisTimelineSectionPattern =
+  /\n*## Analysis Timeline\s*\n+```(?:json\s+)?plan-analysis-timeline\s*\n([\s\S]*?)\n```\s*$/u;
 
 interface ProviderCacheSnapshot {
   appleHealthCollectionSamples: Record<AppleHealthMeasurementKey, AppleHealthCollectionSampleRecord[]> | null;
@@ -860,13 +864,122 @@ async function readChangelogEntries(changelogDir: string, rootPath: string): Pro
 }
 
 function buildPlanDocument(fileContent: string, sourcePath: string): PlanDocument {
-  const titleMatch = fileContent.match(/^#\s+(.+)$/m);
+  const timelineMatch = fileContent.match(planAnalysisTimelineSectionPattern);
+  const body = timelineMatch ? fileContent.slice(0, timelineMatch.index ?? fileContent.length).trim() : fileContent.trim();
+  const titleMatch = body.match(/^#\s+(.+)$/m);
 
   return {
     title: titleMatch?.[1]?.trim() ?? "Training Plan",
-    body: sanitizePublicText(fileContent.trim()),
+    body: sanitizePublicText(body),
     sourcePath,
+    analysisTimeline: timelineMatch
+      ? buildPlanAnalysisTimeline(parsePlanAnalysisTimelineJson(timelineMatch[1], sourcePath), sourcePath)
+      : null,
   };
+}
+
+function parsePlanAnalysisTimelineJson(value: string, sourcePath: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`${sourcePath}: analysis timeline JSON is invalid: ${message}`);
+  }
+}
+
+function buildPlanAnalysisTimeline(value: unknown, sourcePath: string): PlanAnalysisTimeline {
+  if (!isPlainObject(value)) {
+    throw new Error(`${sourcePath}: analysis timeline must be a JSON object`);
+  }
+
+  if (value.schemaVersion !== 1) {
+    throw new Error(`${sourcePath}: analysis timeline schemaVersion must be 1`);
+  }
+
+  if (!Array.isArray(value.entries)) {
+    throw new Error(`${sourcePath}: analysis timeline entries must be an array`);
+  }
+
+  return {
+    schemaVersion: 1,
+    updatedAt: normalizeDate(value.updatedAt, sourcePath, "analysisTimeline.updatedAt"),
+    sourceSummary: sanitizeNullablePublicText(normalizeNullableString(value.sourceSummary)),
+    entries: value.entries.map((entry, index) => buildPlanAnalysisTimelineEntry(entry, sourcePath, index)),
+  };
+}
+
+function buildPlanAnalysisTimelineEntry(
+  value: unknown,
+  sourcePath: string,
+  index: number,
+): PlanAnalysisTimelineEntry {
+  const fieldPrefix = `analysisTimeline.entries[${index}]`;
+  if (!isPlainObject(value)) {
+    throw new Error(`${sourcePath}: ${fieldPrefix} must be a JSON object`);
+  }
+
+  const title = expectString(value.title, sourcePath, `${fieldPrefix}.title`);
+  const date = normalizeDate(value.date, sourcePath, `${fieldPrefix}.date`);
+  const id = normalizeNullableString(value.id) ?? slugify(`${date}-${title}`);
+
+  return {
+    id,
+    date,
+    title,
+    analysis: sanitizePublicText(expectString(value.analysis, sourcePath, `${fieldPrefix}.analysis`)),
+    category: sanitizeNullablePublicText(normalizeNullableString(value.category)),
+    summary: sanitizeNullablePublicText(normalizeNullableString(value.summary)),
+    period: normalizePlanAnalysisTimelinePeriod(value.period, sourcePath, fieldPrefix),
+    metrics: normalizePlanAnalysisTimelineMetrics(value.metrics, sourcePath, fieldPrefix),
+  };
+}
+
+function normalizePlanAnalysisTimelinePeriod(
+  value: unknown,
+  sourcePath: string,
+  fieldPrefix: string,
+): PlanAnalysisTimelineEntry["period"] {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (!isPlainObject(value)) {
+    throw new Error(`${sourcePath}: ${fieldPrefix}.period must be a JSON object`);
+  }
+
+  return {
+    start: normalizeDate(value.start, sourcePath, `${fieldPrefix}.period.start`),
+    end: normalizeDate(value.end, sourcePath, `${fieldPrefix}.period.end`),
+  };
+}
+
+function normalizePlanAnalysisTimelineMetrics(
+  value: unknown,
+  sourcePath: string,
+  fieldPrefix: string,
+): PlanAnalysisTimelineEntry["metrics"] {
+  if (value === null || value === undefined) {
+    return {};
+  }
+
+  if (!isPlainObject(value)) {
+    throw new Error(`${sourcePath}: ${fieldPrefix}.metrics must be a JSON object`);
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([metric, metricValue]) => {
+      if (
+        typeof metricValue !== "string" &&
+        typeof metricValue !== "number" &&
+        typeof metricValue !== "boolean" &&
+        metricValue !== null
+      ) {
+        throw new Error(`${sourcePath}: ${fieldPrefix}.metrics.${metric} must be a scalar value`);
+      }
+
+      return [metric, typeof metricValue === "string" ? sanitizePublicText(metricValue) : metricValue];
+    }),
+  );
 }
 
 function buildChangelogEntry(fileName: string, fileContent: string, sourcePath: string): ChangelogEntry {
@@ -1370,6 +1483,14 @@ function normalizeNullableString(value: unknown) {
   }
 
   return null;
+}
+
+function sanitizeNullablePublicText(value: string | null) {
+  return value === null ? null : sanitizePublicText(value);
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function normalizeStringArray(value: unknown, fileName: string, field: string) {

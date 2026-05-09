@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { BestEffortsSection } from "@/components/BestEffortsSection";
 import { MarkdownContent } from "@/components/MarkdownContent";
+import { PlanAnalysisTimeline } from "@/components/PlanAnalysisTimeline";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
@@ -54,6 +55,7 @@ import {
 import type {
   ChangelogEntry,
   GoalNote,
+  PlanDocument,
   WorkoutBestEffortsSummary,
   WorkoutFilters,
 } from "@/lib/workouts/schema";
@@ -662,16 +664,12 @@ export default function App() {
                   />
                 </div>
               ) : view === "plan" ? (
-                <div className="app-scroll-pane h-full overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
-                  <MarkdownPage
-                    content={trainingPlan.body}
-                    relatedChanges={planChanges}
-                    showRelatedChanges={false}
-                    sourcePath={trainingPlan.sourcePath}
-                    onFileClick={handleMarkdownLink}
-                    onLinkClick={handleMarkdownLink}
-                  />
-                </div>
+                <PlanPage
+                  plan={trainingPlan}
+                  relatedChanges={planChanges}
+                  onFileClick={handleMarkdownLink}
+                  onLinkClick={handleMarkdownLink}
+                />
               ) : null}
             </main>
           </div>
@@ -784,6 +782,34 @@ function MarkdownPage({
           title="Applies here"
         />
       ) : null}
+    </div>
+  );
+}
+
+function PlanPage({
+  plan,
+  relatedChanges,
+  onFileClick,
+  onLinkClick,
+}: {
+  plan: PlanDocument;
+  relatedChanges: ChangelogEntry[];
+  onFileClick: (sourcePath: string) => void;
+  onLinkClick?: (href: string) => boolean;
+}) {
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="app-scroll-pane min-h-0 flex-1 overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-10 lg:py-10">
+        <MarkdownPage
+          content={plan.body}
+          relatedChanges={relatedChanges}
+          showRelatedChanges={false}
+          sourcePath={plan.sourcePath}
+          onFileClick={onFileClick}
+          onLinkClick={onLinkClick}
+        />
+      </div>
+      <PlanAnalysisTimeline timeline={plan.analysisTimeline} onLinkClick={onLinkClick} />
     </div>
   );
 }

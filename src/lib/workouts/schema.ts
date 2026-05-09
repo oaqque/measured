@@ -220,6 +220,28 @@ export interface PlanDocument {
   title: string;
   body: string;
   sourcePath: string;
+  analysisTimeline: PlanAnalysisTimeline | null;
+}
+
+export interface PlanAnalysisTimeline {
+  schemaVersion: 1;
+  updatedAt: string;
+  sourceSummary: string | null;
+  entries: PlanAnalysisTimelineEntry[];
+}
+
+export interface PlanAnalysisTimelineEntry {
+  id: string;
+  date: string;
+  title: string;
+  analysis: string;
+  category: string | null;
+  summary: string | null;
+  period: {
+    start: string;
+    end: string;
+  } | null;
+  metrics: Record<string, string | number | boolean | null>;
 }
 
 export interface GoalNote {

@@ -129,32 +129,267 @@ From `2026-04-21` through `2026-08-30`, treat the morning mobility routine in `n
 - Maintain strength and mobility throughout the year, but let running quality drive decisions.
 - Let long-run progression drive the marathon build.
 
-## Analysis
+## Analysis Timeline
 
-Updated `2026-04-13` using Strava activity history through `2026-04-13`, the receiver-backed Apple Health snapshot generated at `2026-04-13T04:32:29Z`, and workout notes in this folder.
-
-- `2026-01-12 to 2026-01-18` - `4.61 km` across two short runs. This was a restart week, not a training week. The main signal is simply that running resumed after a very low base.
-- `2026-01-19 to 2026-01-25` - `5.03 km` across one run. Momentum did not hold yet, so fitness was still being rebuilt from scattered sessions rather than consistent load.
-- `2026-01-26 to 2026-02-01` - `11.87 km` across two runs, including a `7.00 km` longest run. This was the first week with any real hint of returning frequency, but total load was still far below what the half-marathon and marathon plan will require.
-- `2026-02-02 to 2026-02-08` - `11.04 km` from one run. The durability to cover longer distance was present, but the gap between runs meant endurance was ahead of routine and consistency.
-- `2026-02-23 to 2026-03-01` - `9.55 km` from one run. This week effectively marked the start of the current build, but it was still only a re-entry point rather than meaningful weekly training.
-- `2026-03-02 to 2026-03-08` - `16.14 km` across three runs. This was the first week in 2026 where frequency began to look useful. The load was still low, but rhythm was finally improving.
-- `2026-03-09 to 2026-03-15` - `31.04 km` across four runs, with a longest run of `10.37 km`. This was the best week of the year so far and the clearest sign that aerobic consistency is coming back. It was the first week that looked like an actual training block rather than a loose collection of runs.
-- `2026-03-16 to 2026-03-22` - `10.39 km` across two runs. This was a clear drop-back week. That may have helped absorb the previous jump, but it also shows that consistency is still fragile and not yet stable enough to assume uninterrupted progression.
-- `2026-03-23 to 2026-03-29` - `47.41 km` across six runs, with the long run reaching `14.06 km`. This ended up being a much more useful bridge week than it first looked: frequency held, the longest run extended well past the planned `12 km`, and the total load now looks close enough to the next block that the `54 km` target week is no longer an obvious overreach. The caution still sits with effort control, because heart rate stayed high on several runs even when the intent was easier aerobic work.
-- `2026-03-30 to 2026-04-05` - `30.63 km` across four runs as of `2026-04-02`, with the threshold session deferred from Tuesday to Wednesday but still completed, and Thursday turned into an `8.53 km` aerobic support run. The encouraging part is that frequency held together despite the reshaped week. The caution is cumulative load: Monday drifted long, Wednesday carried real threshold cost, and the week is already more than halfway to the planned `54 km` before Friday and the weekend arrive.
-- `2026-04-03 state of block` - January plus February totaled only `32.55 km`, but March finished at `116.89 km`, which is the clearest sign yet that the rebuild is becoming real training rather than isolated runs. The best completed week is now `47.41 km`, so the first formal `54 km` week is no longer the problem by itself. The bigger issue is whether the easy and recovery days stay disciplined enough for the ramp to remain durable.
-
-### `2026-04-13` Current Block State
-
-The current picture is more encouraging than the older short weekly bullets make it look, but it is also sharper in where the risk sits. The load progression is real: `47.412 km` across `6` runs for `2026-03-23` to `2026-03-29`, then `57.691 km` for `2026-03-30` to `2026-04-05`, then `65.332 km` across `6` runs for `2026-04-06` to `2026-04-12`. Monday, `2026-04-13`, has already opened the new week with a controlled `7.124 km` easy run.
-
-That means the rebuild is no longer the question. The main question is how expensive the volume is. Too many of the nominally easy or supportive runs are still landing in a range that looks more like upper aerobic to moderate work than true recovery. Using the working LTHR model in `metaanalysis/HEART_RATE.md`, with `LTHR = 173 bpm`, the important bands are roughly `Z1 <147`, `Z2 147-155`, `Z3 156-163`, and `Z4 164-172`. Recent examples show the split clearly: the genuinely easy days look acceptable when they stay there, like `2026-04-11` at `147.2 bpm` average HR and `2026-04-13` at `146.6 bpm`, but the problem days are the ones that drift well above that. `2026-04-05` averaged `162.9`, `2026-04-06` averaged `164.6`, `2026-04-08` averaged `153.7` but drifted late, `2026-04-10` averaged `157.1`, and `2026-04-12` averaged `159.5`. That is enough evidence to say the block is being handled, but not cheaply.
-
-Recovery does not look like it is collapsing, which matters. Apple Health resting heart rate still supports a working baseline around `55 bpm`, and the latest `30` resting-HR samples average about `54.33`, with the most recent few days at `63`, `60`, `48`, and `43` rather than showing a simple upward spiral. Cadence also stays mostly stable across recent runs instead of falling apart late. Those are useful durability signals. The caution comes more from cardiovascular drift and session cost than from obvious breakdown. Several recent runs show late HR rise without equivalent pace gain, which is the classic sign that the week is absorbable only if the support days stay genuinely supportive.
-
-From a stretch-goal perspective, that distinction matters more than the raw kilometre total. The `2026-05-03` HOKA Runaway Sydney Half Marathon hard target of `2:00:00` is still supported by the current block. The `2026-06-21` Parramatta Half Marathon hard target of `1:45:00` is still possible, but only if the next phase gets cleaner rather than simply bigger. The `2026-08-30` Sydney Marathon hard target of `3:30:00` still requires substantially more volume later in the year, including multiple weeks above `80 km`, but the immediate limiter is not courage or willingness to train. It is the ability to make easy running cheap enough that higher volume becomes repeatable instead of turning every week into a soft race against accumulated fatigue.
-
-The practical coaching read is that the earlier clampdown on the rest of `2026-04-13` to `2026-04-19` no longer needs to stay absolute. Friday, `2026-04-17`, added a controlled `10.030 km` run at `153.1 bpm` average HR with only modest pace and heart-rate drift, and the subjective follow-up was that you felt really good afterward. That is enough to reopen the weekend for easy running, but not to reopen it for everything.
-
-The better move is to keep basketball out, let Saturday stay an optional `4 km` shakeout only if the same good feeling holds, and keep Sunday as the protected `10 km` easy run. That points to a week closer to `56 to 60 km` rather than the previously reduced `52 km`, which is still below the `65.332 km` week that preceded it. Progress from here still depends on preserving the separation between easy and hard, but the current evidence supports a little more weekend running rather than an automatic shutdown.
+```json plan-analysis-timeline
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-04-17",
+  "sourceSummary": "Built from Strava activity history through 2026-04-13, the receiver-backed Apple Health snapshot generated at 2026-04-13T04:32:29Z, workout notes in this folder, and the later 2026-04-17 current-block read.",
+  "entries": [
+    {
+      "id": "2026-01-12-week-restart",
+      "date": "2026-01-18",
+      "period": {
+        "start": "2026-01-12",
+        "end": "2026-01-18"
+      },
+      "category": "weekly summary",
+      "title": "Restart week",
+      "summary": "4.61 km across two short runs.",
+      "metrics": {
+        "distanceKm": 4.61,
+        "runs": 2
+      },
+      "analysis": "This was a restart week, not a training week. The main signal is simply that running resumed after a very low base."
+    },
+    {
+      "id": "2026-01-19-week-scattered",
+      "date": "2026-01-25",
+      "period": {
+        "start": "2026-01-19",
+        "end": "2026-01-25"
+      },
+      "category": "weekly summary",
+      "title": "Momentum still scattered",
+      "summary": "5.03 km across one run.",
+      "metrics": {
+        "distanceKm": 5.03,
+        "runs": 1
+      },
+      "analysis": "Momentum did not hold yet, so fitness was still being rebuilt from scattered sessions rather than consistent load."
+    },
+    {
+      "id": "2026-01-26-week-first-frequency-hint",
+      "date": "2026-02-01",
+      "period": {
+        "start": "2026-01-26",
+        "end": "2026-02-01"
+      },
+      "category": "weekly summary",
+      "title": "First hint of frequency",
+      "summary": "11.87 km across two runs, including a 7.00 km longest run.",
+      "metrics": {
+        "distanceKm": 11.87,
+        "runs": 2,
+        "longestRunKm": 7
+      },
+      "analysis": "This was the first week with any real hint of returning frequency, but total load was still far below what the half-marathon and marathon plan will require."
+    },
+    {
+      "id": "2026-02-02-week-endurance-ahead-of-routine",
+      "date": "2026-02-08",
+      "period": {
+        "start": "2026-02-02",
+        "end": "2026-02-08"
+      },
+      "category": "weekly summary",
+      "title": "Endurance ahead of routine",
+      "summary": "11.04 km from one run.",
+      "metrics": {
+        "distanceKm": 11.04,
+        "runs": 1
+      },
+      "analysis": "The durability to cover longer distance was present, but the gap between runs meant endurance was ahead of routine and consistency."
+    },
+    {
+      "id": "2026-02-23-week-current-build-entry",
+      "date": "2026-03-01",
+      "period": {
+        "start": "2026-02-23",
+        "end": "2026-03-01"
+      },
+      "category": "weekly summary",
+      "title": "Current build entry point",
+      "summary": "9.55 km from one run.",
+      "metrics": {
+        "distanceKm": 9.55,
+        "runs": 1
+      },
+      "analysis": "This week effectively marked the start of the current build, but it was still only a re-entry point rather than meaningful weekly training."
+    },
+    {
+      "id": "2026-03-02-week-useful-frequency",
+      "date": "2026-03-08",
+      "period": {
+        "start": "2026-03-02",
+        "end": "2026-03-08"
+      },
+      "category": "weekly summary",
+      "title": "Useful frequency begins",
+      "summary": "16.14 km across three runs.",
+      "metrics": {
+        "distanceKm": 16.14,
+        "runs": 3
+      },
+      "analysis": "This was the first week in 2026 where frequency began to look useful. The load was still low, but rhythm was finally improving."
+    },
+    {
+      "id": "2026-03-09-week-first-real-block",
+      "date": "2026-03-15",
+      "period": {
+        "start": "2026-03-09",
+        "end": "2026-03-15"
+      },
+      "category": "weekly summary",
+      "title": "First real training-block signal",
+      "summary": "31.04 km across four runs, with a longest run of 10.37 km.",
+      "metrics": {
+        "distanceKm": 31.04,
+        "runs": 4,
+        "longestRunKm": 10.37
+      },
+      "analysis": "This was the best week of the year so far and the clearest sign that aerobic consistency is coming back. It was the first week that looked like an actual training block rather than a loose collection of runs."
+    },
+    {
+      "id": "2026-03-16-week-drop-back",
+      "date": "2026-03-22",
+      "period": {
+        "start": "2026-03-16",
+        "end": "2026-03-22"
+      },
+      "category": "weekly summary",
+      "title": "Drop-back week",
+      "summary": "10.39 km across two runs.",
+      "metrics": {
+        "distanceKm": 10.39,
+        "runs": 2
+      },
+      "analysis": "This was a clear drop-back week. That may have helped absorb the previous jump, but it also shows that consistency is still fragile and not yet stable enough to assume uninterrupted progression."
+    },
+    {
+      "id": "2026-03-23-week-bridge",
+      "date": "2026-03-29",
+      "period": {
+        "start": "2026-03-23",
+        "end": "2026-03-29"
+      },
+      "category": "weekly summary",
+      "title": "Useful bridge week",
+      "summary": "47.41 km across six runs, with the long run reaching 14.06 km.",
+      "metrics": {
+        "distanceKm": 47.41,
+        "runs": 6,
+        "longestRunKm": 14.06,
+        "plannedLongRunKm": 12
+      },
+      "analysis": "This ended up being a much more useful bridge week than it first looked: frequency held, the longest run extended well past the planned `12 km`, and the total load now looks close enough to the next block that the `54 km` target week is no longer an obvious overreach. The caution still sits with effort control, because heart rate stayed high on several runs even when the intent was easier aerobic work."
+    },
+    {
+      "id": "2026-03-30-week-reshaped-threshold",
+      "date": "2026-04-05",
+      "period": {
+        "start": "2026-03-30",
+        "end": "2026-04-05"
+      },
+      "category": "weekly summary",
+      "title": "Reshaped threshold week",
+      "summary": "30.63 km across four runs as of 2026-04-02.",
+      "metrics": {
+        "distanceKm": 30.63,
+        "runs": 4,
+        "supportRunKm": 8.53,
+        "plannedWeekKm": 54
+      },
+      "analysis": "The threshold session was deferred from Tuesday to Wednesday but still completed, and Thursday turned into an `8.53 km` aerobic support run. The encouraging part is that frequency held together despite the reshaped week. The caution is cumulative load: Monday drifted long, Wednesday carried real threshold cost, and the week was already more than halfway to the planned `54 km` before Friday and the weekend arrived."
+    },
+    {
+      "id": "2026-04-03-block-state",
+      "date": "2026-04-03",
+      "category": "block state",
+      "title": "Rebuild becoming real training",
+      "summary": "January plus February totaled 32.55 km; March finished at 116.89 km.",
+      "metrics": {
+        "januaryFebruaryKm": 32.55,
+        "marchKm": 116.89,
+        "bestCompletedWeekKm": 47.41,
+        "firstFormalTargetWeekKm": 54
+      },
+      "analysis": "January plus February totaled only `32.55 km`, but March finished at `116.89 km`, which is the clearest sign yet that the rebuild is becoming real training rather than isolated runs. The best completed week was `47.41 km`, so the first formal `54 km` week was no longer the problem by itself. The bigger issue was whether the easy and recovery days would stay disciplined enough for the ramp to remain durable."
+    },
+    {
+      "id": "2026-04-13-load-progression",
+      "date": "2026-04-13",
+      "category": "current block",
+      "title": "Load progression is real",
+      "summary": "47.412 km, then 57.691 km, then 65.332 km across the three completed build weeks.",
+      "metrics": {
+        "weekEnding2026_03_29Km": 47.412,
+        "weekEnding2026_04_05Km": 57.691,
+        "weekEnding2026_04_12Km": 65.332,
+        "runsInLatestWeek": 6,
+        "mondayOpeningRunKm": 7.124
+      },
+      "analysis": "The current picture is more encouraging than the older short weekly bullets make it look, but it is also sharper in where the risk sits. The load progression is real: `47.412 km` across `6` runs for `2026-03-23` to `2026-03-29`, then `57.691 km` for `2026-03-30` to `2026-04-05`, then `65.332 km` across `6` runs for `2026-04-06` to `2026-04-12`. Monday, `2026-04-13`, had already opened the new week with a controlled `7.124 km` easy run."
+    },
+    {
+      "id": "2026-04-13-volume-cost",
+      "date": "2026-04-13",
+      "category": "current block",
+      "title": "Volume is being handled, but not cheaply",
+      "summary": "The easy-day heart-rate pattern still looks too often like upper aerobic to moderate work.",
+      "metrics": {
+        "lthrBpm": 173,
+        "z1UpperBpm": 146,
+        "z2LowerBpm": 147,
+        "z2UpperBpm": 155,
+        "z3LowerBpm": 156,
+        "z3UpperBpm": 163
+      },
+      "analysis": "That means the rebuild is no longer the question. The main question is how expensive the volume is. Too many of the nominally easy or supportive runs are still landing in a range that looks more like upper aerobic to moderate work than true recovery. Using the working LTHR model in `metaanalysis/HEART_RATE.md`, with `LTHR = 173 bpm`, the important bands are roughly `Z1 <147`, `Z2 147-155`, `Z3 156-163`, and `Z4 164-172`. Recent examples show the split clearly: the genuinely easy days look acceptable when they stay there, like `2026-04-11` at `147.2 bpm` average HR and `2026-04-13` at `146.6 bpm`, but the problem days are the ones that drift well above that. `2026-04-05` averaged `162.9`, `2026-04-06` averaged `164.6`, `2026-04-08` averaged `153.7` but drifted late, `2026-04-10` averaged `157.1`, and `2026-04-12` averaged `159.5`. That is enough evidence to say the block is being handled, but not cheaply."
+    },
+    {
+      "id": "2026-04-13-recovery-signals",
+      "date": "2026-04-13",
+      "category": "current block",
+      "title": "Recovery is not collapsing",
+      "summary": "Resting heart rate and cadence are not showing obvious breakdown, but cardiovascular drift still matters.",
+      "metrics": {
+        "restingHeartRateBaselineBpm": 55,
+        "recentRestingHeartRateAverageBpm": 54.33,
+        "restingHeartRateSamples": 30
+      },
+      "analysis": "Recovery does not look like it is collapsing, which matters. Apple Health resting heart rate still supports a working baseline around `55 bpm`, and the latest `30` resting-HR samples average about `54.33`, with the most recent few days at `63`, `60`, `48`, and `43` rather than showing a simple upward spiral. Cadence also stays mostly stable across recent runs instead of falling apart late. Those are useful durability signals. The caution comes more from cardiovascular drift and session cost than from obvious breakdown. Several recent runs show late HR rise without equivalent pace gain, which is the classic sign that the week is absorbable only if the support days stay genuinely supportive."
+    },
+    {
+      "id": "2026-04-13-goal-outlook",
+      "date": "2026-04-13",
+      "category": "current block",
+      "title": "Goal outlook depends on cheaper easy running",
+      "summary": "HOKA remained supported; Parramatta and Sydney depended on cleaner volume, not simply more volume.",
+      "metrics": {
+        "hokaTargetMinutes": 120,
+        "parramattaTargetMinutes": 105,
+        "sydneyTargetMinutes": 210,
+        "futureHighVolumeWeekKm": 80
+      },
+      "analysis": "From a stretch-goal perspective, the cost of volume matters more than the raw kilometre total. The `2026-05-03` HOKA Runaway Sydney Half Marathon hard target of `2:00:00` was still supported by the current block. The `2026-06-21` Parramatta Half Marathon hard target of `1:45:00` was still possible, but only if the next phase got cleaner rather than simply bigger. The `2026-08-30` Sydney Marathon hard target of `3:30:00` still required substantially more volume later in the year, including multiple weeks above `80 km`, but the immediate limiter was not courage or willingness to train. It was the ability to make easy running cheap enough that higher volume becomes repeatable instead of turning every week into a soft race against accumulated fatigue."
+    },
+    {
+      "id": "2026-04-17-weekend-adjustment",
+      "date": "2026-04-17",
+      "category": "current block",
+      "title": "Weekend reopened, but basketball stayed out",
+      "summary": "A controlled Friday run justified easy weekend running, not a full load reopening.",
+      "metrics": {
+        "fridayRunKm": 10.03,
+        "fridayAverageHeartRateBpm": 153.1,
+        "previousReducedWeekTargetKm": 52,
+        "reopenedWeekLowerKm": 56,
+        "reopenedWeekUpperKm": 60
+      },
+      "analysis": "The practical coaching read is that the earlier clampdown on the rest of `2026-04-13` to `2026-04-19` no longer needed to stay absolute. Friday, `2026-04-17`, added a controlled `10.030 km` run at `153.1 bpm` average HR with only modest pace and heart-rate drift, and the subjective follow-up was that you felt really good afterward. That was enough to reopen the weekend for easy running, but not to reopen it for everything.\n\nThe better move was to keep basketball out, let Saturday stay an optional `4 km` shakeout only if the same good feeling held, and keep Sunday as the protected `10 km` easy run. That pointed to a week closer to `56 to 60 km` rather than the previously reduced `52 km`, which was still below the `65.332 km` week that preceded it. Progress from there still depended on preserving the separation between easy and hard, but the evidence supported a little more weekend running rather than an automatic shutdown."
+    }
+  ]
+}
+```

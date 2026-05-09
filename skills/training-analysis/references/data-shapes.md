@@ -11,6 +11,50 @@ Use this file when creating or editing training source data under `data/training
 - `data/training/notes/*.json`: one workout note per file
 - `data/training/changelog/*.md`: one changelog entry per file
 
+## Plan Analysis Timeline Shape
+
+`data/training/PLAN.md` may end with a structured analysis timeline section:
+
+````md
+## Analysis Timeline
+
+```json plan-analysis-timeline
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-04-17",
+  "sourceSummary": "Short source note.",
+  "entries": [
+    {
+      "id": "2026-04-17-weekend-adjustment",
+      "date": "2026-04-17",
+      "period": {
+        "start": "2026-04-13",
+        "end": "2026-04-19"
+      },
+      "category": "current block",
+      "title": "Weekend reopened, but basketball stayed out",
+      "summary": "Short display summary.",
+      "metrics": {
+        "fridayRunKm": 10.03,
+        "fridayAverageHeartRateBpm": 153.1
+      },
+      "analysis": "Markdown-capable analysis text."
+    }
+  ]
+}
+```
+````
+
+Rules:
+
+- Keep this section at the bottom of `PLAN.md`.
+- The fence info string must include `plan-analysis-timeline`.
+- `schemaVersion` is `1`.
+- `updatedAt`, `date`, and optional `period.start` / `period.end` are `YYYY-MM-DD` dates.
+- `metrics` values must be scalar JSON values: string, number, boolean, or null.
+- `analysis` may contain markdown syntax, but it must be valid JSON string content.
+- The build strips this raw JSON from the main plan markdown and publishes it as `plan.analysisTimeline`.
+
 ## Workout Note Shape
 
 Workout notes now use canonical JSON documents rather than markdown frontmatter files.

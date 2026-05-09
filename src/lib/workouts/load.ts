@@ -16,7 +16,7 @@ type RawWorkoutsData = Omit<WorkoutsData, "workouts" | "bestEfforts"> & {
   workouts: RawWorkoutNote[];
 };
 
-const rawWorkoutsData = workoutsJson as RawWorkoutsData;
+const rawWorkoutsData = workoutsJson as unknown as RawWorkoutsData;
 const changelog = [...rawWorkoutsData.changelog].sort((left, right) =>
   left.date === right.date ? right.slug.localeCompare(left.slug) : right.date.localeCompare(left.date),
 );
