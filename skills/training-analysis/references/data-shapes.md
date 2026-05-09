@@ -6,6 +6,8 @@ Use this file when creating or editing training source data under `data/training
 
 - `data/training/WELCOME.md`: welcome-page markdown
 - `data/training/PLAN.md`: current training plan
+- `data/training/GOALS.md`: current goal hierarchy and goal overview
+- `data/training/goals/*.md`: one detailed goal note per goal
 - `data/training/notes/*.json`: one workout note per file
 - `data/training/changelog/*.md`: one changelog entry per file
 
