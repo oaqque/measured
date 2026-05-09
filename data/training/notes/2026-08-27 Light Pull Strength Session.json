@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Light Pull Strength Session",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-08-27",
+  "completed": false,
+  "eventType": "strength",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Light pull strength session\n- Keep this as upper-back maintenance, posture, and contact strength rather than a fatigue session.\n- Vertical pull: chin-ups or lat pulldown, `2 to 3 x 4 to 8`.\n- Row: chest-supported row, cable row, or single-arm row, `2 to 3 x 6 to 10`.\n- Posterior shoulder and trunk: face pulls, rear delts, suitcase carries, or anti-rotation holds, `2` controlled sets.\n- Stop before grip or upper-back fatigue changes running posture or race freshness."
+    }
+  ]
+}

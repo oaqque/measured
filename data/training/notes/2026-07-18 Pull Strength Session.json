@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Pull Strength Session",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-07-18",
+  "completed": false,
+  "eventType": "strength",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Pull strength session\n- Vertical pull: chin-ups or lat pulldown, `3 to 5 x 4 to 8`.\n- Row: chest-supported row, cable row, or single-arm row, `3 to 4 x 6 to 10`.\n- Posterior shoulder: face pulls, rear delt raises, or band external rotations, `2 to 3 x 10 to 15`.\n- Basketball contact and trunk: farmer carries, suitcase carries, or anti-rotation holds, `2 to 3` controlled sets.\n- Keep grip and upper-back work strong but not exhaustive, especially before Sunday long runs."
+    }
+  ]
+}
