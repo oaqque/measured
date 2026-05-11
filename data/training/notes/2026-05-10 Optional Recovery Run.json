@@ -4,13 +4,59 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-10",
-  "completed": false,
+  "completed": "2026-05-09T21:41:25Z",
   "eventType": "run",
   "expectedDistance": "0 to 6 km",
   "sections": [
     {
       "kind": "program",
       "markdown": "- Full rest is acceptable after Saturday became a `10.690 km` aerobic run instead of the planned `3 km` shakeout.\n- If the legs and right ankle feel clearly settled, run up to `6 km` very easy.\n- Keep this below steady effort and stop early if any ankle irritation, heavy legs, or post-race fatigue shows up."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was deliberately rewritten as optional after Saturday became a `10.690 km` run plus basketball, and the completed run matched that reset well: `2.338 km` in `15:36` moving and elapsed time, inside the `0 to 6 km` cap.\n- Strava activity `18444419782` and Apple Health workout `C92371CA-FE97-433E-A187-8743B7BCBC30` align on the same Sunday morning session. Strava logged `2.338 km`, `45.8 m` of climbing, `142.7 bpm` average HR, and `158 bpm` max HR; Apple Health was effectively the same at `2.338 km`, `141.9 bpm` average HR, and `158 bpm` max HR. This was a genuine recovery add-on rather than a disguised long run."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The recovery week finished at about `32.463 km` across five runs after the adjusted Sunday cap, which lands within the revised `30 to 36 km` range and avoids chasing the original long-run prescription.\n- The short-term win is that Monday can reopen normally, but not aggressively. With Monday night basketball now treated as hard load and Tuesday carrying the `14 km` threshold session, the next decision point is freshness: keep basketball controlled, and reduce Tuesday quality before forcing threshold work on heavy legs."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- This supports the Parramatta `1:45:00` and Sydney Marathon `3:30:00` goals by showing better discipline after an over-distance Saturday: the plan changed, and the Sunday run stayed short enough to absorb the week.\n- The useful pattern to repeat is not the specific `2.338 km`; it is the willingness to cap optional volume when basketball and prior over-distance running have already supplied enough load."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `6:40 /km` for `2.338 km` in `15:36`.\n- Stream-estimated pacing was controlled but not perfectly even: about `6:28 /km` for the first half and `6:53 /km` for the second half."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `142.7 bpm` with a `158 bpm` max; Apple Health averaged `141.9 bpm` with the same `158 bpm` max.\n- The route stream shows HR rising from `137.2 bpm` in the first half to `148.0 bpm` in the second half, mostly because the second half carried more climbing rather than because the run became long or fast."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time and elapsed time were both `15:36`, so there was no meaningful stoppage cost.\n- The moving stream had `15` non-moving samples and `10` short stop flags, but Strava still counted the run as continuous for training purposes."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `45.8 m` of elevation gain over a short `2.338 km` route.\n- The stream-estimated climbing was uneven: about `11.2 m` in the first half and `37.2 m` in the second half, which explains the HR rise despite the slower second-half pace. Conditions were clear and cool at about `8.9 C` average temperature with `8.5 kph` average wind."
+        }
+      ]
     }
-  ]
+  ],
+  "stravaId": 18444419782,
+  "activityRefs": {
+    "strava": "18444419782",
+    "appleHealth": "C92371CA-FE97-433E-A187-8743B7BCBC30"
+  }
 }

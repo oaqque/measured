@@ -4,13 +4,59 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-11",
-  "completed": false,
+  "completed": "2026-05-10T21:16:38Z",
   "eventType": "run",
   "expectedDistance": "6 km",
   "sections": [
     {
       "kind": "program",
       "markdown": "- 6 km easy run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This matched the planned Monday easy run closely: `6.142 km` against a `6 km` prescription, completed in `37:19` moving time and `37:22` elapsed.\n- Strava activity `18458224530` and Apple Health workout `9559C696-7D7D-4DD2-95A3-3578661D46B9` identify the same run. Strava logged `90.0 m` of climbing, `150.8 bpm` average HR, and `167 bpm` max HR; Apple Health matched the distance and HR profile at `6.142 km`, `150.8 bpm` average HR, and `167 bpm` max HR. The distance execution was right, but the HR says this still carried moderate aerobic cost for an easy day."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The current week starts with `6.142 km` of the planned `68 km`, plus Monday night basketball still sitting on the same day. That is acceptable only if the court session stays controlled enough to protect Tuesday.\n- Tuesday is the first key session of the week: `14 km` including `4 x 2 km` threshold work. If basketball adds calf, ankle, adductor, or general leg fatigue tonight, the better adjustment is to reduce Tuesday's workout density rather than forcing the full threshold prescription."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- This supports the Parramatta `1:45:00` and Sydney Marathon `3:30:00` targets because it reopens the build with a normal-length easy run instead of either skipping volume or adding another oversized statement.\n- The caution is distribution. With Monday and Saturday basketball now assumed, easy runs need to stay cheap enough that Tuesday, Thursday, and Sunday can carry the real running load. This run was controlled, but the `150.8 bpm` average HR and `90.0 m` climbing mean it should not be treated as free recovery."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `6:05 /km` for `6.142 km` in `37:19`.\n- Stream-estimated halves were very even for pace: about `6:08 /km` for the first `3.071 km` and `6:07 /km` for the second `3.071 km`."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `150.8 bpm` with a `167 bpm` max; Apple Health matched at `150.8 bpm` average and `167 bpm` max.\n- The stream shows HR rising from `147.5 bpm` in the first half to `154.0 bpm` in the second half, and the final quarter averaged about `155.0 bpm`. That is manageable, but it is the main reason Tuesday should depend on how the legs respond after basketball."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Moving time was `37:19` out of `37:22` elapsed, so stoppage cost was only `3 s`.\n- The route stream had `4` non-moving samples and `4` short stop flags, leaving this effectively continuous."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `90.0 m` of elevation gain, with stream-estimated climbing of about `42.2 m` in the first half and `51.4 m` in the second half.\n- Conditions were light drizzle at about `12.2 C` average temperature with `7.3 kph` wind, so the HR drift should be read mostly as terrain plus accumulated post-race/court-load context rather than heat or weather stress."
+        }
+      ]
     }
-  ]
+  ],
+  "stravaId": 18458224530,
+  "activityRefs": {
+    "strava": "18458224530",
+    "appleHealth": "9559C696-7D7D-4DD2-95A3-3578661D46B9"
+  }
 }
