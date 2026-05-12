@@ -4,13 +4,59 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-12",
-  "completed": false,
+  "completed": "2026-05-11T21:46:38Z",
   "eventType": "run",
   "expectedDistance": "14 km",
   "sections": [
     {
       "kind": "program",
       "markdown": "- 14 km run including 4 x 2 km threshold work"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This matched the planned `14 km` threshold session very closely: `14.012 km` completed for a `14 km` prescription, with Strava recording `1:17:37` moving time (`1:18:22` elapsed) and Apple Health recording the same start time and `14.012 km`.\n- The route stream shows the intended `4 x 2 km` structure clearly enough to count it as threshold work: after about `2 km` warm-up, the inferred work blocks averaged about `5:10`, `5:08`, `5:03`, and `5:08 /km`. That is right inside the pre-run threshold target of roughly `5:05-5:10 /km`, with the third rep touching the faster edge rather than turning into a race."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The current week now has `20.154 km` across two runs, plus Monday night basketball about `11.5` hours before this threshold session. Apple Health logged that basketball-style workout at `58:21`, `146.6 bpm` average HR, and `184 bpm` max, so this was not done off a completely fresh lower-body day.\n- Wednesday should stay genuinely easy. The planned `8 km` aerobic run can remain if the legs feel normal, but the Wednesday legs session should become light technique work if calves, adductors, or ankles feel loaded. Do not chase heavy legs the day after a successful threshold workout."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- This is a strong Parramatta signal because the session delivered `8 km` of threshold work near `5:05-5:10 /km` without drifting into half-marathon-race HR. Compared with the HOKA race average of `5:09 /km` at `174.7 bpm`, today placed similar paces inside a controlled workout with lower whole-run average HR (`161.0 bpm`).\n- For the Sydney Marathon `3:30:00` target, the value is durability and control: the workout supports lactate-threshold development while keeping total volume on plan. The caution is cumulative load, not the threshold execution itself, because Monday basketball plus Tuesday quality means the next two days need absorption rather than extra proof."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:32 /km` across the full `14.012 km`.\n- Inferred threshold reps from the route stream were: rep 1 `2.0-4.0 km` at `5:10 /km`, rep 2 `4.5-6.5 km` at `5:08 /km`, rep 3 `6.75-8.75 km` at `5:03 /km`, and rep 4 `9.0-11.0 km` at `5:08 /km`. The combined likely work section from `2.0-11.0 km`, including recoveries, averaged about `5:16 /km`."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `161.0 bpm` with a `176 bpm` max; Apple Health averaged `160.6 bpm` with the same `176 bpm` max.\n- Rep HR stepped up but stayed controlled: about `164.5/169 bpm`, `168.3/174 bpm`, `170.6/176 bpm`, and `169.1/174 bpm` for average/max across the four inferred work blocks. The third rep was the highest-cost block, but the fourth did not keep climbing, which is a good sign for threshold control."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `1:17:37` out of `1:18:22` elapsed, so stoppage cost was `45 s`. Apple Health reported `1:18:22` moving and elapsed time for the same workout.\n- The inferred recoveries were uneven: about `2:53` after rep 1, `1:35` after rep 2, and `1:39` after rep 3. That kept the workout honest, but it also means this should be treated as a meaningful threshold load rather than a soft session."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `137.0 m` of elevation gain over the full route. The warm-up and cooldown carried a lot of that climbing: about `35.2 m` in the first `2 km` and about `52.6 m` from `11-14 km`.\n- Conditions were not costly but were damp: light drizzle, about `15.0 C` average temperature, `93.7%` humidity, and `7.3 kph` average wind. The workout cost should be read mainly from the threshold reps and prior basketball load, not from weather."
+        }
+      ]
     }
-  ]
+  ],
+  "stravaId": 18470156252,
+  "activityRefs": {
+    "strava": "18470156252",
+    "appleHealth": "158DE81F-EB93-4F5C-AEAD-00882F0E772E"
+  }
 }
