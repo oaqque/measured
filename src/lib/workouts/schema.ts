@@ -191,15 +191,13 @@ export interface AppleHealthWorkoutMeasurements {
 }
 
 export interface WorkoutGradeAdjustedPace {
-  modelVersion: "measured-gap-v1";
+  modelVersion: "strava-gap-v1";
+  source: "strava";
   paceSecondsPerKm: number;
   equivalentFlatTimeSeconds: number;
   actualPaceSecondsPerKm: number;
-  reliability: "high" | "medium" | "low";
   distanceIncludedRatio: number;
-  totalAscentMeters: number;
-  totalDescentMeters: number;
-  timeScale: number;
+  splitCount: number;
 }
 
 export interface WorkoutNote {

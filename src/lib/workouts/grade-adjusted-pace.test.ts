@@ -1,83 +1,93 @@
 import { describe, expect, it } from "vitest";
 import { buildGradeAdjustedPace } from "@/lib/workouts/grade-adjusted-pace";
-import type { WorkoutRouteStreams, WorkoutSourceSummary } from "@/lib/workouts/schema";
+import type { WorkoutSourceSummary } from "@/lib/workouts/schema";
 
 describe("grade-adjusted pace", () => {
-  it("keeps flat routes at the actual moving pace", () => {
+  it("uses Strava metric split grade-adjusted speeds", () => {
     const result = buildGradeAdjustedPace(
-      buildSummary({ distanceKm: 1, movingTimeSeconds: 300 }),
-      buildStreams({
-        altitude: [10, 10, 10, 10, 10],
-        distance: [0, 250, 500, 750, 1000],
-        velocity: [1000 / 300, 1000 / 300, 1000 / 300, 1000 / 300, 1000 / 300],
-      }),
+      buildSummary({ distanceKm: 2, movingTimeSeconds: 700 }),
+      {
+        source: "strava",
+        splitsMetric: [
+          {
+            averageGradeAdjustedSpeedMetersPerSecond: 4,
+            distanceMeters: 1000,
+            movingTimeSeconds: 300,
+          },
+          {
+            averageGradeAdjustedSpeedMetersPerSecond: 2,
+            distanceMeters: 1000,
+            movingTimeSeconds: 400,
+          },
+        ],
+      },
     );
 
-    expect(result).not.toBeNull();
-    expect(result?.paceSecondsPerKm).toBeCloseTo(300, 1);
-    expect(result?.actualPaceSecondsPerKm).toBeCloseTo(300, 1);
-    expect(result?.reliability).toBe("low");
+    expect(result).toEqual({
+      modelVersion: "strava-gap-v1",
+      source: "strava",
+      paceSecondsPerKm: 375,
+      equivalentFlatTimeSeconds: 750,
+      actualPaceSecondsPerKm: 350,
+      distanceIncludedRatio: 1,
+      splitCount: 2,
+    });
   });
 
-  it("adjusts uphill running faster than raw pace", () => {
+  it("weights split speeds by distance instead of averaging speeds", () => {
     const result = buildGradeAdjustedPace(
-      buildSummary({ distanceKm: 1, movingTimeSeconds: 360 }),
-      buildStreams({
-        altitude: [0, 12.5, 25, 37.5, 50],
-        distance: [0, 250, 500, 750, 1000],
-        velocity: [1000 / 360, 1000 / 360, 1000 / 360, 1000 / 360, 1000 / 360],
-      }),
+      buildSummary({ distanceKm: 1.5, movingTimeSeconds: 500 }),
+      {
+        source: "strava",
+        splitsMetric: [
+          {
+            averageGradeAdjustedSpeedMetersPerSecond: 5,
+            distanceMeters: 500,
+          },
+          {
+            averageGradeAdjustedSpeedMetersPerSecond: 2.5,
+            distanceMeters: 1000,
+          },
+        ],
+      },
     );
 
-    expect(result).not.toBeNull();
-    expect(result?.paceSecondsPerKm).toBeLessThan(360);
+    expect(result?.paceSecondsPerKm).toBeCloseTo(333.333, 3);
   });
 
-  it("adjusts downhill running slower than raw pace", () => {
+  it("returns null when Strava GAP coverage is incomplete", () => {
     const result = buildGradeAdjustedPace(
-      buildSummary({ distanceKm: 1, movingTimeSeconds: 300 }),
-      buildStreams({
-        altitude: [50, 37.5, 25, 12.5, 0],
-        distance: [0, 250, 500, 750, 1000],
-        velocity: [1000 / 300, 1000 / 300, 1000 / 300, 1000 / 300, 1000 / 300],
-      }),
+      buildSummary({ distanceKm: 10, movingTimeSeconds: 3000 }),
+      {
+        source: "strava",
+        splitsMetric: [
+          {
+            averageGradeAdjustedSpeedMetersPerSecond: 3.5,
+            distanceMeters: 5000,
+          },
+        ],
+      },
     );
 
-    expect(result).not.toBeNull();
-    expect(result?.paceSecondsPerKm).toBeGreaterThan(300);
+    expect(result).toBeNull();
   });
 
-  it("does not let small altitude noise materially change a flat run", () => {
-    const distance = Array.from({ length: 21 }, (_, index) => index * 50);
-    const altitude = distance.map((_, index) => (index % 2 === 0 ? 10 : 10.4));
-    const velocity = distance.map(() => 1000 / 300);
+  it("returns null for non-Strava sources", () => {
     const result = buildGradeAdjustedPace(
-      buildSummary({ distanceKm: 1, movingTimeSeconds: 300 }),
-      buildStreams({ altitude, distance, velocity }),
+      {
+        ...buildSummary({ distanceKm: 1, movingTimeSeconds: 300 }),
+        provider: "appleHealth",
+      },
+      {
+        source: "strava",
+        splitsMetric: [
+          {
+            averageGradeAdjustedSpeedMetersPerSecond: 3.3,
+            distanceMeters: 1000,
+          },
+        ],
+      },
     );
-
-    expect(result).not.toBeNull();
-    expect(result?.paceSecondsPerKm).toBeGreaterThan(295);
-    expect(result?.paceSecondsPerKm).toBeLessThan(305);
-  });
-
-  it("weights grade adjustment by the time stream when it is available", () => {
-    const result = buildGradeAdjustedPace(
-      buildSummary({ distanceKm: 1, movingTimeSeconds: 300 }),
-      buildStreams({
-        altitude: [0, 25, 25],
-        distance: [0, 500, 1000],
-        time: [0, 240, 300],
-        velocity: [1000 / 300, 1000 / 300, 1000 / 300],
-      }),
-    );
-
-    expect(result).not.toBeNull();
-    expect(result?.paceSecondsPerKm).toBeLessThan(280);
-  });
-
-  it("returns null when stream data is missing", () => {
-    const result = buildGradeAdjustedPace(buildSummary({ distanceKm: 1, movingTimeSeconds: 300 }), null);
 
     expect(result).toBeNull();
   });
@@ -106,27 +116,5 @@ function buildSummary({
     sportType: "Run",
     startDate: "2026-05-13T00:00:00Z",
     summaryPolyline: null,
-  };
-}
-
-function buildStreams({
-  altitude,
-  distance,
-  time,
-  velocity,
-}: {
-  altitude: number[];
-  distance: number[];
-  time?: number[];
-  velocity: number[];
-}): WorkoutRouteStreams {
-  return {
-    time: time ?? null,
-    altitude,
-    distance,
-    heartrate: null,
-    latlng: null,
-    moving: distance.map(() => true),
-    velocitySmooth: velocity,
   };
 }

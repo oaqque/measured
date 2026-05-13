@@ -801,7 +801,7 @@ function DistancePaceMetadataGroup({ workout }: { workout: WorkoutNote }) {
   const gradeAdjustedPace = formatGradeAdjustedPace(workout.gradeAdjustedPace);
   const primaryDistanceKm = workout.actualDistanceKm ?? workout.expectedDistanceKm;
   const primaryDistanceLabel = workout.actualDistanceKm !== null ? "Actual distance" : "Expected distance";
-  const paceLabel = movingPace ? "Moving pace" : gradeAdjustedPace ? "Grade-adjusted pace" : "Pace";
+  const paceLabel = movingPace ? "Moving pace" : gradeAdjustedPace ? "Strava GAP" : "Pace";
   const paceValue = movingPace ?? gradeAdjustedPace ?? "Pace TBD";
   const metrics = getDistancePaceMetrics(workout, movingPace, gradeAdjustedPace);
 
@@ -1432,7 +1432,7 @@ function getDistancePaceMetrics(
   }
 
   if (movingPace && gradeAdjustedPace) {
-    metrics.push({ icon: Mountain, label: "Grade-adjusted", value: gradeAdjustedPace });
+    metrics.push({ icon: Mountain, label: "Strava GAP", value: gradeAdjustedPace });
   }
 
   return metrics;
@@ -1774,7 +1774,7 @@ function formatGradeAdjustedPace(gradeAdjustedPace: WorkoutGradeAdjustedPace | n
     return null;
   }
 
-  return `${formatPaceSeconds(gradeAdjustedPace.paceSecondsPerKm)} /km (${gradeAdjustedPace.reliability})`;
+  return `${formatPaceSeconds(gradeAdjustedPace.paceSecondsPerKm)} /km`;
 }
 
 function formatPaceSeconds(secondsPerKm: number) {

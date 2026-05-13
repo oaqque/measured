@@ -86,6 +86,7 @@ interface ProviderCachedActivity {
   maxHeartrate?: number | null;
   summaryPolyline?: string | null;
   detailFetchedAt?: string | null;
+  gradeAdjustedPace?: unknown;
   gear?: unknown;
   weather?: unknown;
   hasStreams?: boolean;
@@ -1062,13 +1063,12 @@ function buildWorkoutNote(
   const slug = slugify(getWorkoutNoteBaseName(fileName));
   const hasRouteStreams = Boolean(displaySource?.hasRouteStreams && displaySource.routePath);
   const hasAppleHealthMeasurements = Boolean(activityRefs.appleHealth);
-  const displayRouteStreams =
-    displaySource && hasRouteStreams
-      ? normalizeRouteStreams(providerCaches[displaySource.provider].activities[displaySource.activityId]?.routeStreams)
-      : null;
+  const cachedStravaGradeAdjustedPace = activityRefs.strava
+    ? providerCaches.strava.activities[activityRefs.strava]?.gradeAdjustedPace
+    : null;
   const gradeAdjustedPace =
     displaySource && (document.eventType === "run" || document.eventType === "race")
-      ? buildGradeAdjustedPace(displaySource, displayRouteStreams)
+      ? buildGradeAdjustedPace(displaySource, cachedStravaGradeAdjustedPace)
       : null;
   const shoe = sources.strava?.gear ?? displaySource?.gear ?? null;
 

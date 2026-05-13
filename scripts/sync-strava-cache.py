@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import shutil
 import sqlite3
@@ -1020,6 +1021,7 @@ def write_export(
                 "summaryPolyline": row["summary_polyline"],
                 "primaryImageFileName": image_assets.get(int(row["activity_id"]), {}).get("fileName"),
                 "detailFetchedAt": row["detail_fetched_at"],
+                "gradeAdjustedPace": load_exportable_grade_adjusted_pace(row["detail_json"]),
                 "gear": load_exportable_gear(row["detail_json"]),
                 "weather": load_exportable_weather(row["weather_summary_json"]),
                 "hasStreams": bool(row["has_streams"]),
@@ -1134,6 +1136,52 @@ def load_exportable_streams(
         "heartrate": _stream_data(payload.get("heartrate")),
         "velocitySmooth": _stream_data(payload.get("velocity_smooth")),
         "moving": _stream_data(payload.get("moving")),
+    }
+
+
+def load_exportable_grade_adjusted_pace(value: Any) -> dict[str, Any] | None:
+    if not isinstance(value, str) or value.strip() == "":
+        return None
+
+    try:
+        detail = json.loads(value)
+    except json.JSONDecodeError:
+        return None
+
+    if not isinstance(detail, dict):
+        return None
+
+    splits = detail.get("splits_metric")
+    if not isinstance(splits, list):
+        return None
+
+    split_rows: list[dict[str, Any]] = []
+    for split in splits:
+        if not isinstance(split, dict):
+            continue
+
+        distance_meters = _as_optional_float(split.get("distance"))
+        gap_speed_mps = _as_optional_float(split.get("average_grade_adjusted_speed"))
+        if not _is_positive_finite(distance_meters) or not _is_positive_finite(gap_speed_mps):
+            continue
+
+        moving_time_seconds = _as_optional_float(split.get("moving_time"))
+        split_rows.append(
+            {
+                "averageGradeAdjustedSpeedMetersPerSecond": round(gap_speed_mps, 6),
+                "distanceMeters": round(distance_meters, 3),
+                "movingTimeSeconds": round(moving_time_seconds, 3)
+                if _is_positive_finite(moving_time_seconds)
+                else None,
+            }
+        )
+
+    if not split_rows:
+        return None
+
+    return {
+        "source": "strava",
+        "splitsMetric": split_rows,
     }
 
 
@@ -1426,6 +1474,10 @@ def _meters_to_km(value: Any) -> float | None:
     if meters is None:
         return None
     return round(meters / 1000.0, 3)
+
+
+def _is_positive_finite(value: float | None) -> bool:
+    return value is not None and math.isfinite(value) and value > 0
 
 
 def _extract_timezone_name(value: str | None) -> str | None:
