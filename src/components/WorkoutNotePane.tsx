@@ -23,7 +23,9 @@ import {
 } from "lucide-react";
 import {
   Area,
+  Bar,
   CartesianGrid,
+  Cell,
   ComposedChart,
   Line,
   ReferenceLine,
@@ -72,6 +74,8 @@ const WORKOUT_EVENT_TYPE_LABELS: Record<WorkoutEventType, string> = {
 };
 
 const WORKOUT_PANE_MAX_WIDTH_CLASS = "max-w-[80rem]";
+const HEART_RATE_ZONE_CHART_TARGET_BUCKETS = 44;
+const HEART_RATE_ZONE_SMOOTHING_WINDOW_SECONDS = 75;
 
 const ANALYSIS_SECTION_HEADINGS: Record<string, string> = {
   intention: "Intention",
@@ -741,6 +745,15 @@ interface WeatherMetadataDetails {
   temperatureContext: string | null;
 }
 
+interface HeartRateZoneBarDatum {
+  color: string;
+  endOffsetSeconds: number;
+  offsetSeconds: number;
+  startOffsetSeconds: number;
+  zoneLabel: string;
+  zoneLevel: number;
+}
+
 function MetadataSectionHeader({ icon: Icon, title }: { icon: LucideIcon; title: string }) {
   return (
     <div className="flex items-center gap-2 border-b border-foreground/10 pb-2">
@@ -829,7 +842,45 @@ function DistancePaceMetadataGroup({ workout }: { workout: WorkoutNote }) {
 }
 
 function HeartRateMetadataGroup({ workout }: { workout: WorkoutNote }) {
-  if (workout.averageHeartrate === null && workout.maxHeartrate === null) {
+  const measurementsPath = workout.measurementsPath;
+  const [measurementResult, setMeasurementResult] = useState<{
+    measurements: AppleHealthWorkoutMeasurements | null;
+    path: string;
+  } | null>(null);
+  const measurements = measurementResult?.path === measurementsPath ? measurementResult.measurements : null;
+  const measurementsLoaded = !measurementsPath || measurementResult?.path === measurementsPath;
+  const heartRateSeries =
+    measurements?.series.find((series) => series.section === "duringWorkout" && series.key === "heartRate") ?? null;
+
+  useEffect(() => {
+    if (!measurementsPath) {
+      return;
+    }
+
+    let cancelled = false;
+
+    loadAppleHealthWorkoutMeasurements(measurementsPath, generatedAt)
+      .then((payload) => {
+        if (cancelled) {
+          return;
+        }
+
+        setMeasurementResult({ measurements: payload, path: measurementsPath });
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+
+        setMeasurementResult({ measurements: null, path: measurementsPath });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [measurementsPath]);
+
+  if (workout.averageHeartrate === null && workout.maxHeartrate === null && !measurementsPath) {
     return null;
   }
 
@@ -848,6 +899,12 @@ function HeartRateMetadataGroup({ workout }: { workout: WorkoutNote }) {
           label="Max"
         />
       </div>
+
+      <HeartRateZoneBarChart
+        measurementsLoaded={measurementsLoaded}
+        series={heartRateSeries}
+        workoutElapsedTimeSeconds={workout.actualElapsedTimeSeconds}
+      />
     </section>
   );
 }
@@ -884,6 +941,113 @@ function HeartRateSummaryValue({
           <span>{zone.label}</span>
         </p>
       ) : null}
+    </div>
+  );
+}
+
+function HeartRateZoneBarChart({
+  measurementsLoaded,
+  series,
+  workoutElapsedTimeSeconds,
+}: {
+  measurementsLoaded: boolean;
+  series: AppleHealthMeasurementSeries | null;
+  workoutElapsedTimeSeconds: number | null;
+}) {
+  if (!measurementsLoaded) {
+    return (
+      <p className="mt-3 border-t border-foreground/10 pt-3 text-xs text-muted-foreground">
+        Loading HR zones...
+      </p>
+    );
+  }
+
+  if (!series || series.points.length === 0) {
+    return null;
+  }
+
+  const chartData = buildHeartRateZoneBarData(series.points, workoutElapsedTimeSeconds);
+  if (chartData.length === 0) {
+    return null;
+  }
+
+  const xDomain: [number, number] = [
+    chartData[0]?.startOffsetSeconds ?? 0,
+    chartData.at(-1)?.endOffsetSeconds ?? 1,
+  ];
+
+  return (
+    <div className="mt-4 border-t border-foreground/10 pt-3">
+      <div className="h-28 min-w-0">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+          <ComposedChart data={chartData} margin={{ top: 6, right: 4, bottom: 2, left: 0 }}>
+            <CartesianGrid vertical={false} stroke="currentColor" strokeOpacity={0.08} />
+            <XAxis
+              type="number"
+              dataKey="offsetSeconds"
+              domain={xDomain}
+              tickFormatter={(value) => formatDurationLabel(Math.abs(Number(value)))}
+              tick={{ fill: "currentColor", fontSize: 10 }}
+              tickLine={false}
+              axisLine={false}
+              minTickGap={10}
+              stroke="currentColor"
+              strokeOpacity={0.2}
+            />
+            <YAxis
+              type="number"
+              domain={[0, LTHR_HEART_RATE_ZONE_BANDS.length + 0.5]}
+              ticks={LTHR_HEART_RATE_ZONE_BANDS.map((_, index) => index + 1)}
+              tickFormatter={(value) => formatHeartRateZoneAxisTick(Number(value))}
+              tick={{ fill: "currentColor", fontSize: 10 }}
+              tickLine={false}
+              axisLine={false}
+              interval={0}
+              width={28}
+              stroke="currentColor"
+              strokeOpacity={0.2}
+            />
+            <Tooltip
+              cursor={{ fill: "currentColor", fillOpacity: 0.05 }}
+              content={(props) => <HeartRateZoneTooltip {...props} />}
+            />
+            <Bar dataKey="zoneLevel" barSize={4} isAnimationActive={false} radius={[2, 2, 0, 0]}>
+              {chartData.map((bar) => (
+                <Cell key={`${bar.startOffsetSeconds}-${bar.endOffsetSeconds}`} fill={bar.color} />
+              ))}
+            </Bar>
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function HeartRateZoneTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: ReadonlyArray<{ payload?: HeartRateZoneBarDatum }>;
+}) {
+  const datum = payload?.[0]?.payload;
+  if (!active || !datum) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-[0.65rem] border border-foreground/10 bg-background/95 px-3 py-2 text-xs shadow-sm">
+      <p className="font-medium text-foreground">
+        {formatDurationLabel(datum.startOffsetSeconds)}-{formatDurationLabel(datum.endOffsetSeconds)}
+      </p>
+      <p className="mt-1 flex items-center gap-1.5 text-muted-foreground">
+        <span
+          aria-hidden="true"
+          className="size-2 rounded-full"
+          style={{ backgroundColor: datum.color }}
+        />
+        {datum.zoneLabel}
+      </p>
     </div>
   );
 }
@@ -1144,14 +1308,86 @@ function getWorkoutStatusDetails(completed: string | null) {
 }
 
 function getHeartRateZoneDetails(heartRate: number) {
+  return LTHR_HEART_RATE_ZONE_BANDS[getHeartRateZoneIndex(heartRate)] ?? LTHR_HEART_RATE_ZONE_BANDS[0];
+}
+
+function getHeartRateZoneIndex(heartRate: number) {
   for (let index = LTHR_HEART_RATE_ZONE_BANDS.length - 1; index >= 0; index -= 1) {
     const band = LTHR_HEART_RATE_ZONE_BANDS[index];
     if (heartRate >= band.minimum) {
-      return band;
+      return index;
     }
   }
 
-  return LTHR_HEART_RATE_ZONE_BANDS[0];
+  return 0;
+}
+
+function buildHeartRateZoneBarData(
+  points: AppleHealthMeasurementSeries["points"],
+  workoutElapsedTimeSeconds: number | null,
+): HeartRateZoneBarDatum[] {
+  const sortedPoints = [...points]
+    .filter((point) => Number.isFinite(point.offsetSeconds) && Number.isFinite(point.value))
+    .sort((left, right) => left.offsetSeconds - right.offsetSeconds);
+  if (sortedPoints.length === 0) {
+    return [];
+  }
+
+  const smoothedPoints = smoothHeartRatePoints(sortedPoints);
+  const firstOffsetSeconds = Math.min(0, smoothedPoints[0]?.offsetSeconds ?? 0);
+  const lastPointOffsetSeconds = smoothedPoints.at(-1)?.offsetSeconds ?? firstOffsetSeconds;
+  const lastOffsetSeconds = Math.max(workoutElapsedTimeSeconds ?? 0, lastPointOffsetSeconds, firstOffsetSeconds + 1);
+  const durationSeconds = Math.max(lastOffsetSeconds - firstOffsetSeconds, 1);
+  const bucketCount = Math.min(
+    HEART_RATE_ZONE_CHART_TARGET_BUCKETS,
+    Math.max(8, Math.ceil(durationSeconds / 60)),
+  );
+  const bucketDurationSeconds = durationSeconds / bucketCount;
+  const chartData: HeartRateZoneBarDatum[] = [];
+
+  for (let index = 0; index < bucketCount; index += 1) {
+    const startOffsetSeconds = firstOffsetSeconds + index * bucketDurationSeconds;
+    const endOffsetSeconds =
+      index === bucketCount - 1 ? lastOffsetSeconds : firstOffsetSeconds + (index + 1) * bucketDurationSeconds;
+    const bucketPoints = smoothedPoints.filter(
+      (point) =>
+        point.offsetSeconds >= startOffsetSeconds &&
+        (index === bucketCount - 1 ? point.offsetSeconds <= endOffsetSeconds : point.offsetSeconds < endOffsetSeconds),
+    );
+
+    if (bucketPoints.length === 0) {
+      continue;
+    }
+
+    const averageHeartRate = average(bucketPoints.map((point) => point.value));
+    const zoneIndex = getHeartRateZoneIndex(averageHeartRate);
+    const zone = LTHR_HEART_RATE_ZONE_BANDS[zoneIndex] ?? LTHR_HEART_RATE_ZONE_BANDS[0];
+    chartData.push({
+      color: zone.color,
+      endOffsetSeconds: Math.round(endOffsetSeconds),
+      offsetSeconds: Math.round((startOffsetSeconds + endOffsetSeconds) / 2),
+      startOffsetSeconds: Math.round(startOffsetSeconds),
+      zoneLabel: zone.label,
+      zoneLevel: zoneIndex + 1,
+    });
+  }
+
+  return chartData;
+}
+
+function smoothHeartRatePoints(points: AppleHealthMeasurementSeries["points"]) {
+  return points.map((point) => {
+    const windowStart = point.offsetSeconds - HEART_RATE_ZONE_SMOOTHING_WINDOW_SECONDS / 2;
+    const windowEnd = point.offsetSeconds + HEART_RATE_ZONE_SMOOTHING_WINDOW_SECONDS / 2;
+    const windowPoints = points.filter(
+      (candidate) => candidate.offsetSeconds >= windowStart && candidate.offsetSeconds <= windowEnd,
+    );
+
+    return {
+      offsetSeconds: point.offsetSeconds,
+      value: average(windowPoints.map((candidate) => candidate.value)),
+    };
+  });
 }
 
 function getDistancePaceMetrics(
@@ -1500,6 +1736,10 @@ function formatHeartRate(value: number | null) {
   return `${Math.round(value)} bpm`;
 }
 
+function formatHeartRateZoneAxisTick(value: number) {
+  return `Z${Math.round(value)}`;
+}
+
 function formatWorkoutPace(movingTimeSeconds: number | null, distanceKm: number | null) {
   if (!movingTimeSeconds || !distanceKm) {
     return null;
@@ -1521,6 +1761,14 @@ function formatPaceSeconds(secondsPerKm: number) {
   const minutes = Math.floor(roundedSeconds / 60);
   const seconds = roundedSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function average(values: number[]) {
+  if (values.length === 0) {
+    return 0;
+  }
+
+  return values.reduce((total, value) => total + value, 0) / values.length;
 }
 
 function buildRouteMapKey(routePath: string | null | undefined, versionKey: string) {
