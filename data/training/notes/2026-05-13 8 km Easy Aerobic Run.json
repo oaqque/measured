@@ -4,13 +4,59 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-13",
-  "completed": false,
+  "completed": "2026-05-12T22:28:34Z",
   "eventType": "run",
   "expectedDistance": "8 km",
   "sections": [
     {
       "kind": "program",
       "markdown": "- 8 km easy aerobic run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This matched the planned `8 km` easy aerobic support run almost exactly on distance: `8.055 km` completed against an `8 km` prescription. Strava recorded `46:08` moving time (`46:34` elapsed), while Apple Health matched the same start time and distance at `8.055 km`.\n- The purpose was to absorb Monday basketball plus Tuesday threshold while keeping weekly volume moving. The execution was controlled by HR, but brisk for an easy-aerobic label: Strava pace averaged `5:44 /km`, with the first half around `5:47 /km` and the second half around `5:40 /km`."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The week now has `28.209 km` across three runs before Thursday, plus Monday night basketball and Tuesday's `4 x 2 km` threshold session. Today did its volume job without a high HR cost, but it was not a pure shuffle.\n- Thursday should still be disciplined steady running rather than an upgrade. Keep the planned `12 km` steady run controlled, and do not use today's `5:44 /km` average as a reason to chase faster than the `5:45-5:55 /km` steady range. If the legs feel loaded, the better adjustment is to soften Thursday or keep any remaining legs strength work light."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, this is useful support volume after a successful threshold workout: it adds aerobic work without reproducing threshold HR. That helps the block because the Tuesday session stays the week's primary quality signal.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, the good sign is durability: an `8 km` support run landed the day after threshold with HR still under control. The caution is habit formation. Easy-aerobic days that drift toward steady pace can accumulate hidden load when the week already includes basketball, threshold, steady running, and a long run."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:44 /km` across `8.055 km` in `46:08`.\n- Stream-estimated splits show the opening kilometre was the only clearly conservative one at about `6:08 /km`; after that, the kilometres mostly sat between about `5:37` and `5:44 /km`. The second half was slightly quicker than the first at about `5:40 /km` versus `5:47 /km`."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `147.0 bpm` with a `157 bpm` max; Apple Health was nearly identical at `146.7 bpm` average and `157 bpm` max.\n- HR rose modestly across the run rather than spiking: the first half averaged about `144.3 bpm`, the second half about `149.6 bpm`, and the final `2.055 km` about `151.0 bpm` with a `157 bpm` max. That keeps the run aerobic even though the pace was quicker than a cautious recovery pace."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `46:08` out of `46:34` elapsed, so stoppage cost was `26 s`. Apple Health reported `46:34` moving and elapsed time for the same workout.\n- The route stream had `14` non-moving samples out of `1000` and `13` short stop flags, leaving the session effectively continuous for training purposes."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `50.2 m` of elevation gain. Stream-estimated climbing was spread across the route rather than concentrated in one late climb, so the late HR rise reads more like normal aerobic drift plus pace than a terrain-driven spike.\n- Conditions were damp and a little windy: moderate drizzle, about `18.4 C`, `68%` humidity, `12.6 kph` wind, and `29.2 kph` gusts. Weather does not change the read much, but it was not a perfectly dry, still run."
+        }
+      ]
     }
-  ]
+  ],
+  "stravaId": 18484126972,
+  "activityRefs": {
+    "strava": "18484126972",
+    "appleHealth": "D5C60450-840E-4C04-8BD0-7B57574B2311"
+  }
 }
