@@ -36,7 +36,6 @@ import {
 } from "recharts";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { RouteMap } from "@/components/RouteMap";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { WorkoutShareButton } from "@/components/WorkoutShareButton";
@@ -283,17 +282,6 @@ function WorkoutNarrativePanel({
   return (
     <>
       <div className="mt-5 lg:hidden">
-        <Accordion className="border-b border-foreground/10" collapsible type="single">
-          <AccordionItem className="border-b-0" value="metadata">
-            <AccordionTrigger className="py-3 text-base font-semibold">
-              Metadata
-            </AccordionTrigger>
-            <AccordionContent>
-              <WorkoutMetadataGrid workout={workout} />
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-
         {hasRoutePanel ? (
           <div className="mt-5 border-b border-foreground/10 pb-5">
             <RouteMap
@@ -307,6 +295,8 @@ function WorkoutNarrativePanel({
             />
           </div>
         ) : null}
+
+        <WorkoutMetadataGrid className={cn(hasRoutePanel ? "mt-5" : "mt-0")} workout={workout} />
 
         <div className="markdown-prose mt-5 flex-1">
           <MarkdownContent content={narrativeContent} onLinkClick={onLinkClick} />
@@ -345,8 +335,7 @@ function WorkoutNarrativePanel({
           {mediaItems.length > 0 ? <WorkoutMediaSection items={mediaItems} /> : null}
 
           <section>
-            <p className="eyebrow">Metadata</p>
-            <WorkoutMetadataGrid className="mt-4 pt-0" workout={workout} />
+            <WorkoutMetadataGrid className="pt-0" workout={workout} />
           </section>
         </aside>
       </div>
@@ -776,16 +765,16 @@ function SessionMetadataGroup({ workout }: { workout: WorkoutNote }) {
     <section className="rounded-[0.5rem] border border-foreground/10 bg-background/40 p-3">
       <MetadataSectionHeader icon={CalendarCheck} title="Session" />
 
-      <div className="mt-3 grid grid-cols-2 items-end gap-3 border-b border-foreground/10 pb-3">
+      <div className="mt-3 grid grid-cols-1 items-end gap-3 border-b border-foreground/10 pb-3 sm:grid-cols-2">
         <div className="min-w-0">
           <p className="eyebrow">Event</p>
           <p className="mt-1 break-words text-base font-semibold leading-snug text-foreground">
             {WORKOUT_EVENT_TYPE_LABELS[workout.eventType]}
           </p>
         </div>
-        <div className="min-w-0 text-right">
+        <div className="min-w-0 sm:text-right">
           <p className="eyebrow">Status</p>
-          <p className="mt-1 flex items-center justify-end gap-1.5 text-sm font-semibold leading-snug text-foreground">
+          <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold leading-snug text-foreground sm:justify-end">
             <BadgeCheck className="size-4 shrink-0 text-muted-foreground" />
             <span>{statusDetails.label}</span>
           </p>
@@ -795,7 +784,7 @@ function SessionMetadataGroup({ workout }: { workout: WorkoutNote }) {
         </div>
       </div>
 
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+      <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
         {sessionMetrics.map((metric) => (
           <MetadataMetric key={metric.label} metric={metric} />
         ))}
@@ -817,21 +806,21 @@ function DistancePaceMetadataGroup({ workout }: { workout: WorkoutNote }) {
     <section className="rounded-[0.5rem] border border-foreground/10 bg-background/40 p-3">
       <MetadataSectionHeader icon={Route} title="Distance & pace" />
 
-      <div className="mt-3 grid grid-cols-2 items-end gap-3 border-b border-foreground/10 pb-3">
+      <div className="mt-3 grid grid-cols-1 items-end gap-3 border-b border-foreground/10 pb-3 sm:grid-cols-2">
         <div className="min-w-0">
           <p className="eyebrow">{primaryDistanceLabel}</p>
           <p className="mt-1 break-words text-xl font-black leading-none text-foreground">
             {formatDistance(primaryDistanceKm)}
           </p>
         </div>
-        <div className="min-w-0 text-right">
+        <div className="min-w-0 sm:text-right">
           <p className="eyebrow">{paceLabel}</p>
           <p className="mt-1 break-words text-xl font-black leading-none text-foreground">{paceValue}</p>
         </div>
       </div>
 
       {metrics.length > 0 ? (
-        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+        <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
           {metrics.map((metric) => (
             <MetadataMetric key={metric.label} metric={metric} />
           ))}
@@ -888,7 +877,7 @@ function HeartRateMetadataGroup({ workout }: { workout: WorkoutNote }) {
     <section className="rounded-[0.5rem] border border-foreground/10 bg-background/40 p-3">
       <MetadataSectionHeader icon={HeartPulse} title="Heart rate" />
 
-      <div className="mt-3 grid grid-cols-2 items-end gap-3">
+      <div className="mt-3 grid grid-cols-1 items-end gap-3 sm:grid-cols-2">
         <HeartRateSummaryValue
           heartRate={workout.averageHeartrate}
           label="Average"
@@ -921,7 +910,7 @@ function HeartRateSummaryValue({
   const zone = heartRate !== null ? getHeartRateZoneDetails(heartRate) : null;
 
   return (
-    <div className={cn("min-w-0", align === "right" && "text-right")}>
+    <div className={cn("min-w-0", align === "right" && "sm:text-right")}>
       <p className="eyebrow">{label}</p>
       <p className="mt-1 break-words text-xl font-black leading-none text-foreground">
         {formatHeartRate(heartRate) ?? "No data"}
@@ -930,7 +919,7 @@ function HeartRateSummaryValue({
         <p
           className={cn(
             "mt-2 flex items-center gap-1.5 text-xs leading-snug text-muted-foreground",
-            align === "right" && "justify-end",
+            align === "right" && "sm:justify-end",
           )}
         >
           <span
@@ -1064,7 +1053,7 @@ function MetadataGroup({
   return (
     <section className="rounded-[0.5rem] border border-foreground/10 bg-background/40 p-3">
       <MetadataSectionHeader icon={Icon} title={title} />
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+      <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
         {rows.map((row) => (
           <MetadataRow key={row.label} label={row.label} value={row.value} />
         ))}
@@ -1081,7 +1070,7 @@ function WeatherMetadataGroup({ details }: { details: WeatherMetadataDetails }) 
       <MetadataSectionHeader icon={CloudSun} title="Weather" />
 
       {hasLead ? (
-        <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 border-b border-foreground/10 pb-3">
+        <div className="mt-3 grid grid-cols-1 items-end gap-3 border-b border-foreground/10 pb-3 sm:grid-cols-[minmax(0,1fr)_auto]">
           <div className="min-w-0">
             <p className="eyebrow">Condition</p>
             <p className="mt-1 break-words text-base font-semibold leading-snug text-foreground">
@@ -1089,7 +1078,7 @@ function WeatherMetadataGroup({ details }: { details: WeatherMetadataDetails }) 
             </p>
           </div>
           {details.temperature ? (
-            <div className="text-right">
+            <div className="sm:text-right">
               <p className="eyebrow">Temp</p>
               <p className="mt-1 text-xl font-black leading-none text-foreground">{details.temperature}</p>
               {details.temperatureContext ? (
@@ -1103,7 +1092,7 @@ function WeatherMetadataGroup({ details }: { details: WeatherMetadataDetails }) 
       ) : null}
 
       {details.metrics.length > 0 ? (
-        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+        <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
           {details.metrics.map((metric) => (
             <MetadataMetric key={metric.label} metric={metric} />
           ))}
