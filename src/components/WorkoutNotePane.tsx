@@ -9,6 +9,7 @@ import {
   Clock,
   Droplets,
   FileText,
+  Footprints,
   Gauge,
   HeartPulse,
   Info,
@@ -55,6 +56,7 @@ import type {
   StravaAnalysisMeasurement,
   WorkoutGradeAdjustedPace,
   WorkoutEventType,
+  WorkoutGear,
   WorkoutNoteAnalysisSection,
   WorkoutNote,
   WorkoutNoteSourceSection,
@@ -399,6 +401,7 @@ function WorkoutMetadataGrid({
     <div className={cn("space-y-3 pt-1 text-sm", className)}>
       <SessionMetadataGroup workout={workout} />
       <DistancePaceMetadataGroup workout={workout} />
+      <ShoeMetadataGroup shoe={workout.shoe} />
       <HeartRateMetadataGroup workout={workout} />
       {weatherDetails ? <WeatherMetadataGroup details={weatherDetails} /> : null}
       <MetadataGroup
@@ -826,6 +829,35 @@ function DistancePaceMetadataGroup({ workout }: { workout: WorkoutNote }) {
           ))}
         </dl>
       ) : null}
+    </section>
+  );
+}
+
+function ShoeMetadataGroup({ shoe }: { shoe?: WorkoutGear | null }) {
+  if (!shoe) {
+    return null;
+  }
+
+  const status = shoe.retired === null ? null : shoe.retired ? "Retired" : "Active";
+
+  return (
+    <section className="rounded-[0.5rem] border border-foreground/10 bg-background/40 p-3">
+      <MetadataSectionHeader icon={Footprints} title="Shoe" />
+
+      <div className="mt-3 grid grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="min-w-0">
+          <p className="eyebrow">Model</p>
+          <p className="mt-1 break-words text-base font-semibold leading-snug text-foreground">
+            {shoe.name}
+          </p>
+        </div>
+        {status ? (
+          <div className="min-w-0 sm:text-right">
+            <p className="eyebrow">Status</p>
+            <p className="mt-1 text-sm font-semibold leading-snug text-foreground">{status}</p>
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 }

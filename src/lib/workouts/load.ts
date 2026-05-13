@@ -244,6 +244,7 @@ function normalizeWorkoutNote(workout: RawWorkoutNote): WorkoutNote {
     summaryPolyline: workout.summaryPolyline,
     primaryImageUrl: workout.primaryImageUrl,
     mediaThumbnailUrl: workout.mediaThumbnailUrl ?? null,
+    shoe: workout.shoe ?? null,
     weather: workout.weather ?? null,
     hasRouteStreams: workout.hasRouteStreams ?? workout.hasStravaStreams ?? false,
     routePath: workout.routePath ?? null,

@@ -31,6 +31,7 @@ import type {
   WorkoutNoteAnalysisSection,
   WorkoutNoteSourceDocument,
   WorkoutNoteSourceSection,
+  WorkoutGear,
   WorkoutProvider,
   WorkoutRouteStreams,
   WorkoutSourceDetailsPayload,
@@ -85,6 +86,7 @@ interface ProviderCachedActivity {
   maxHeartrate?: number | null;
   summaryPolyline?: string | null;
   detailFetchedAt?: string | null;
+  gear?: unknown;
   weather?: unknown;
   hasStreams?: boolean;
   routeStreams?: unknown;
@@ -135,6 +137,7 @@ interface GeneratedWorkoutFallback {
   actualDistance: string | null;
   actualDistanceKm: number | null;
   activityRefs: WorkoutActivityRefMap;
+  shoe: WorkoutGear | null;
   weather: WorkoutWeather | null;
   sources: Partial<Record<WorkoutProvider, WorkoutSourceSummary>>;
 }
@@ -143,6 +146,7 @@ interface LegacyGeneratedWorkoutShape {
   activityRefs?: WorkoutActivityRefMap;
   sources?: Partial<Record<WorkoutProvider, WorkoutSourceSummary>>;
   weather?: WorkoutWeather | null;
+  shoe?: WorkoutGear | null;
   stravaId?: number | null;
   primaryImageUrl?: string | null;
   actualMovingTimeSeconds?: number | null;
@@ -1066,6 +1070,7 @@ function buildWorkoutNote(
     displaySource && (document.eventType === "run" || document.eventType === "race")
       ? buildGradeAdjustedPace(displaySource, displayRouteStreams)
       : null;
+  const shoe = sources.strava?.gear ?? displaySource?.gear ?? null;
 
   return {
     slug,
@@ -1089,6 +1094,7 @@ function buildWorkoutNote(
       ? buildPublicWorkoutImagePath(slug, displaySource.primaryImageUrl)
       : null,
     mediaThumbnailUrl,
+    shoe: shoe ?? (hasDeletedLinkedActivity ? null : validFallback?.shoe ?? null),
     weather:
       selectWorkoutWeather(activityRefs, providerCaches) ??
       (hasDeletedLinkedActivity ? null : validFallback?.weather ?? null),
@@ -1170,6 +1176,7 @@ function buildWorkoutSourceSummary(
     routePath: activity.hasStreams === true ? buildRoutePath(provider, activityId) : null,
     primaryImageUrl: normalizeCachedImageUrl(activity),
     source: normalizeSourceMetadata(activity.source),
+    gear: normalizeCachedGear(activity.gear),
   };
 }
 
@@ -1184,6 +1191,7 @@ function buildGeneratedWorkoutFallback(workout: WorkoutNote): GeneratedWorkoutFa
     actualDistance: normalizeNullableString(workout.actualDistance),
     actualDistanceKm: normalizeCachedNumber(workout.actualDistanceKm),
     activityRefs,
+    shoe: normalizeCachedGear(legacy.shoe),
     weather: normalizeCachedWeather(legacy.weather),
     sources,
   };
@@ -1291,6 +1299,7 @@ function normalizeGeneratedSources(
               ? buildRoutePath(provider, activityRefs[provider] as string)
               : null),
           primaryImageUrl: normalizeNullableString(source.primaryImageUrl),
+          gear: normalizeCachedGear(source.gear),
         };
       }
     }
@@ -1340,6 +1349,7 @@ function buildLegacyStravaSourceSummary(
     routePath: hasRouteStreams ? buildLegacyStravaRoutePath(activityId) : null,
     primaryImageUrl: normalizeNullableString(legacy.primaryImageUrl),
     source: null,
+    gear: normalizeCachedGear(legacy.shoe),
   };
 }
 
@@ -1598,6 +1608,22 @@ function normalizeCachedWeather(value: unknown): WorkoutWeather | null {
     windGustKph: normalizeCachedNumber(candidate.windGustKph),
     weatherCode: normalizeCachedInteger(candidate.weatherCode),
     summary: normalizeNullableString(candidate.summary),
+  };
+}
+
+function normalizeCachedGear(value: unknown): WorkoutGear | null {
+  if (!isPlainObject(value)) {
+    return null;
+  }
+
+  const name = normalizeNullableString(value.name);
+  if (!name) {
+    return null;
+  }
+
+  return {
+    name: sanitizePublicText(name),
+    retired: typeof value.retired === "boolean" ? value.retired : null,
   };
 }
 

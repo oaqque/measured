@@ -988,6 +988,7 @@ def write_export(
           activities.average_heartrate,
           activities.max_heartrate,
           activities.summary_polyline,
+          activities.detail_json,
           activities.detail_fetched_at,
           activity_weather.summary_json AS weather_summary_json,
           EXISTS(
@@ -1019,6 +1020,7 @@ def write_export(
                 "summaryPolyline": row["summary_polyline"],
                 "primaryImageFileName": image_assets.get(int(row["activity_id"]), {}).get("fileName"),
                 "detailFetchedAt": row["detail_fetched_at"],
+                "gear": load_exportable_gear(row["detail_json"]),
                 "weather": load_exportable_weather(row["weather_summary_json"]),
                 "hasStreams": bool(row["has_streams"]),
                 "routeStreams": load_exportable_streams(
@@ -1144,6 +1146,35 @@ def load_exportable_weather(value: Any) -> dict[str, Any] | None:
         return None
 
     return payload if isinstance(payload, dict) else None
+
+
+def load_exportable_gear(value: Any) -> dict[str, Any] | None:
+    if not isinstance(value, str) or value.strip() == "":
+        return None
+
+    try:
+        detail = json.loads(value)
+    except json.JSONDecodeError:
+        return None
+
+    if not isinstance(detail, dict):
+        return None
+
+    gear = detail.get("gear")
+    if not isinstance(gear, dict):
+        return None
+
+    gear_id = _as_optional_text(gear.get("id") or detail.get("gear_id"))
+    name = _as_optional_text(gear.get("name") or gear.get("nickname"))
+    if gear_id is None and name is None:
+        return None
+
+    retired = gear.get("retired")
+    return {
+        "id": gear_id,
+        "name": name,
+        "retired": retired if isinstance(retired, bool) else None,
+    }
 
 
 def extract_primary_image_ref(detail: dict[str, Any]) -> ActivityImageRef | None:

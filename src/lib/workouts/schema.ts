@@ -122,6 +122,11 @@ export interface WorkoutSourceMetadata {
   deviceModel: string | null;
 }
 
+export interface WorkoutGear {
+  name: string;
+  retired: boolean | null;
+}
+
 export interface WorkoutSourceSummary {
   provider: WorkoutProvider;
   activityId: string;
@@ -138,6 +143,7 @@ export interface WorkoutSourceSummary {
   routePath: string | null;
   primaryImageUrl: string | null;
   source: WorkoutSourceMetadata | null;
+  gear?: WorkoutGear | null;
 }
 
 export interface WorkoutSourceDetails {
@@ -215,6 +221,7 @@ export interface WorkoutNote {
   summaryPolyline: string | null;
   primaryImageUrl: string | null;
   mediaThumbnailUrl?: string | null;
+  shoe?: WorkoutGear | null;
   weather: WorkoutWeather | null;
   hasStravaStreams?: boolean;
   hasRouteStreams: boolean;
