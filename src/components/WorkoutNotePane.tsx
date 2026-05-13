@@ -2,8 +2,11 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Activity,
   ArrowLeft,
+  BadgeCheck,
   CalendarCheck,
+  CalendarDays,
   CloudSun,
+  Clock,
   Droplets,
   FileText,
   Gauge,
@@ -11,7 +14,9 @@ import {
   Info,
   Mountain,
   Route,
+  Ruler,
   Thermometer,
+  Timer,
   Umbrella,
   Wind,
   type LucideIcon,
@@ -396,25 +401,11 @@ function WorkoutMetadataGrid({
   workout: WorkoutNote;
 }) {
   const weatherDetails = getWorkoutWeatherDetails(workout.weather);
-  const movingPace = formatWorkoutPace(workout.actualMovingTimeSeconds, workout.actualDistanceKm);
-  const gradeAdjustedPace = formatGradeAdjustedPace(workout.gradeAdjustedPace);
-  const sessionRows = [
-    { label: "Event type", value: WORKOUT_EVENT_TYPE_LABELS[workout.eventType] },
-    { label: "Status", value: formatCompletedTimestamp(workout.completed) },
-    { label: "All day", value: workout.allDay ? "Yes" : "No" },
-    { label: "Type", value: workout.type },
-  ];
-  const distanceRows = [
-    { label: "Expected distance", value: formatDistance(workout.expectedDistanceKm) },
-    { label: "Actual distance", value: formatDistance(workout.actualDistanceKm) },
-    movingPace ? { label: "Moving pace", value: movingPace } : null,
-    gradeAdjustedPace ? { label: "Grade-adjusted pace", value: gradeAdjustedPace } : null,
-  ].filter((row): row is MetadataRowData => row !== null);
 
   return (
     <div className={cn("space-y-3 pt-1 text-sm", className)}>
-      <MetadataGroup icon={CalendarCheck} rows={sessionRows} title="Session" />
-      <MetadataGroup icon={Route} rows={distanceRows} title="Distance & pace" />
+      <SessionMetadataGroup workout={workout} />
+      <DistancePaceMetadataGroup workout={workout} />
       {weatherDetails ? <WeatherMetadataGroup details={weatherDetails} /> : null}
       <MetadataGroup
         icon={FileText}
@@ -738,15 +729,102 @@ interface MetadataRowData {
   value: string;
 }
 
-interface WeatherMetricData extends MetadataRowData {
+interface MetadataMetricData extends MetadataRowData {
   icon: LucideIcon;
 }
 
 interface WeatherMetadataDetails {
-  metrics: WeatherMetricData[];
+  metrics: MetadataMetricData[];
   summary: string | null;
   temperature: string | null;
   temperatureContext: string | null;
+}
+
+function MetadataSectionHeader({ icon: Icon, title }: { icon: LucideIcon; title: string }) {
+  return (
+    <div className="flex items-center gap-2 border-b border-foreground/10 pb-2">
+      <span className="grid size-7 place-items-center rounded-[0.4rem] bg-primary/10 text-primary">
+        <Icon className="size-4" />
+      </span>
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+    </div>
+  );
+}
+
+function SessionMetadataGroup({ workout }: { workout: WorkoutNote }) {
+  const statusDetails = getWorkoutStatusDetails(workout.completed);
+  const sessionMetrics: MetadataMetricData[] = [
+    { icon: Info, label: "Type", value: workout.type },
+    { icon: CalendarDays, label: "All day", value: workout.allDay ? "Yes" : "No" },
+  ];
+
+  return (
+    <section className="rounded-[0.5rem] border border-foreground/10 bg-background/40 p-3">
+      <MetadataSectionHeader icon={CalendarCheck} title="Session" />
+
+      <div className="mt-3 grid grid-cols-2 items-end gap-3 border-b border-foreground/10 pb-3">
+        <div className="min-w-0">
+          <p className="eyebrow">Event</p>
+          <p className="mt-1 break-words text-base font-semibold leading-snug text-foreground">
+            {WORKOUT_EVENT_TYPE_LABELS[workout.eventType]}
+          </p>
+        </div>
+        <div className="min-w-0 text-right">
+          <p className="eyebrow">Status</p>
+          <p className="mt-1 flex items-center justify-end gap-1.5 text-sm font-semibold leading-snug text-foreground">
+            <BadgeCheck className="size-4 shrink-0 text-muted-foreground" />
+            <span>{statusDetails.label}</span>
+          </p>
+          {statusDetails.context ? (
+            <p className="mt-1 text-xs leading-snug text-muted-foreground">{statusDetails.context}</p>
+          ) : null}
+        </div>
+      </div>
+
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+        {sessionMetrics.map((metric) => (
+          <MetadataMetric key={metric.label} metric={metric} />
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+function DistancePaceMetadataGroup({ workout }: { workout: WorkoutNote }) {
+  const movingPace = formatWorkoutPace(workout.actualMovingTimeSeconds, workout.actualDistanceKm);
+  const gradeAdjustedPace = formatGradeAdjustedPace(workout.gradeAdjustedPace);
+  const primaryDistanceKm = workout.actualDistanceKm ?? workout.expectedDistanceKm;
+  const primaryDistanceLabel = workout.actualDistanceKm !== null ? "Actual distance" : "Expected distance";
+  const paceLabel = movingPace ? "Moving pace" : gradeAdjustedPace ? "Grade-adjusted pace" : "Pace";
+  const paceValue = movingPace ?? gradeAdjustedPace ?? "Pace TBD";
+  const metrics = getDistancePaceMetrics(workout, movingPace, gradeAdjustedPace);
+
+  return (
+    <section className="rounded-[0.5rem] border border-foreground/10 bg-background/40 p-3">
+      <MetadataSectionHeader icon={Route} title="Distance & pace" />
+
+      <div className="mt-3 grid grid-cols-2 items-end gap-3 border-b border-foreground/10 pb-3">
+        <div className="min-w-0">
+          <p className="eyebrow">{primaryDistanceLabel}</p>
+          <p className="mt-1 break-words text-xl font-black leading-none text-foreground">
+            {formatDistance(primaryDistanceKm)}
+          </p>
+        </div>
+        <div className="min-w-0 text-right">
+          <p className="eyebrow">{paceLabel}</p>
+          <p className="mt-1 break-words text-xl font-black leading-none text-foreground">{paceValue}</p>
+        </div>
+      </div>
+
+      {metrics.length > 0 ? (
+        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+          {metrics.map((metric) => (
+            <MetadataMetric key={metric.label} metric={metric} />
+          ))}
+        </dl>
+      ) : null}
+    </section>
+  );
 }
 
 function MetadataGroup({
@@ -760,12 +838,7 @@ function MetadataGroup({
 }) {
   return (
     <section className="rounded-[0.5rem] border border-foreground/10 bg-background/40 p-3">
-      <div className="flex items-center gap-2 border-b border-foreground/10 pb-2">
-        <span className="grid size-7 place-items-center rounded-[0.4rem] bg-primary/10 text-primary">
-          <Icon className="size-4" />
-        </span>
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-      </div>
+      <MetadataSectionHeader icon={Icon} title={title} />
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
         {rows.map((row) => (
           <MetadataRow key={row.label} label={row.label} value={row.value} />
@@ -780,12 +853,7 @@ function WeatherMetadataGroup({ details }: { details: WeatherMetadataDetails }) 
 
   return (
     <section className="rounded-[0.5rem] border border-foreground/10 bg-background/40 p-3">
-      <div className="flex items-center gap-2 border-b border-foreground/10 pb-2">
-        <span className="grid size-7 place-items-center rounded-[0.4rem] bg-primary/10 text-primary">
-          <CloudSun className="size-4" />
-        </span>
-        <h3 className="text-sm font-semibold text-foreground">Weather</h3>
-      </div>
+      <MetadataSectionHeader icon={CloudSun} title="Weather" />
 
       {hasLead ? (
         <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 border-b border-foreground/10 pb-3">
@@ -812,7 +880,7 @@ function WeatherMetadataGroup({ details }: { details: WeatherMetadataDetails }) 
       {details.metrics.length > 0 ? (
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
           {details.metrics.map((metric) => (
-            <WeatherMetric key={metric.label} metric={metric} />
+            <MetadataMetric key={metric.label} metric={metric} />
           ))}
         </dl>
       ) : null}
@@ -820,7 +888,7 @@ function WeatherMetadataGroup({ details }: { details: WeatherMetadataDetails }) 
   );
 }
 
-function WeatherMetric({ metric }: { metric: WeatherMetricData }) {
+function MetadataMetric({ metric }: { metric: MetadataMetricData }) {
   const Icon = metric.icon;
 
   return (
@@ -1006,6 +1074,41 @@ function getStravaMeasurementAnalysisSections(workout: WorkoutNote) {
   return measurements;
 }
 
+function getWorkoutStatusDetails(completed: string | null) {
+  if (!completed) {
+    return { context: null, label: "Planned" };
+  }
+
+  return { context: formatCompletedTimestamp(completed), label: "Completed" };
+}
+
+function getDistancePaceMetrics(
+  workout: WorkoutNote,
+  movingPace: string | null,
+  gradeAdjustedPace: string | null,
+): MetadataMetricData[] {
+  const metrics: MetadataMetricData[] = [];
+  if (workout.actualDistanceKm !== null && workout.expectedDistanceKm !== null) {
+    metrics.push({ icon: Ruler, label: "Expected", value: formatDistance(workout.expectedDistanceKm) });
+  }
+
+  const movingTime = formatWorkoutDuration(workout.actualMovingTimeSeconds);
+  if (movingTime) {
+    metrics.push({ icon: Timer, label: "Moving time", value: movingTime });
+  }
+
+  const elapsedTime = formatWorkoutDuration(workout.actualElapsedTimeSeconds);
+  if (elapsedTime && workout.actualElapsedTimeSeconds !== workout.actualMovingTimeSeconds) {
+    metrics.push({ icon: Clock, label: "Elapsed time", value: elapsedTime });
+  }
+
+  if (movingPace && gradeAdjustedPace) {
+    metrics.push({ icon: Mountain, label: "Grade-adjusted", value: gradeAdjustedPace });
+  }
+
+  return metrics;
+}
+
 function getWorkoutWeatherDetails(weather: WorkoutWeather | null): WeatherMetadataDetails | null {
   if (!weather) {
     return null;
@@ -1020,7 +1123,7 @@ function getWorkoutWeatherDetails(weather: WorkoutWeather | null): WeatherMetada
     weather.startTemperatureC,
     weather.endTemperatureC,
   );
-  const metrics: WeatherMetricData[] = [];
+  const metrics: MetadataMetricData[] = [];
   const apparentTemperatureValue = formatDegrees(weather.apparentTemperatureC);
   if (apparentTemperatureValue) {
     metrics.push({ icon: Thermometer, label: "Feels like", value: apparentTemperatureValue });
@@ -1307,6 +1410,14 @@ function formatDurationLabel(totalSeconds: number) {
   }
 
   return `${minutes}m`;
+}
+
+function formatWorkoutDuration(totalSeconds: number | null) {
+  if (!totalSeconds) {
+    return null;
+  }
+
+  return formatDurationLabel(totalSeconds);
 }
 
 function formatWorkoutPace(movingTimeSeconds: number | null, distanceKm: number | null) {
