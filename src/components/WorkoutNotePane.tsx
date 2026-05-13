@@ -1,5 +1,17 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Activity, ArrowLeft, Gauge, HeartPulse, Info, Mountain } from "lucide-react";
+import {
+  Activity,
+  ArrowLeft,
+  CalendarCheck,
+  CloudSun,
+  FileText,
+  Gauge,
+  HeartPulse,
+  Info,
+  Mountain,
+  Route,
+  type LucideIcon,
+} from "lucide-react";
 import {
   Area,
   CartesianGrid,
@@ -382,21 +394,29 @@ function WorkoutMetadataGrid({
   const weatherRows = getWorkoutWeatherRows(workout.weather);
   const movingPace = formatWorkoutPace(workout.actualMovingTimeSeconds, workout.actualDistanceKm);
   const gradeAdjustedPace = formatGradeAdjustedPace(workout.gradeAdjustedPace);
+  const sessionRows = [
+    { label: "Event type", value: WORKOUT_EVENT_TYPE_LABELS[workout.eventType] },
+    { label: "Status", value: formatCompletedTimestamp(workout.completed) },
+    { label: "All day", value: workout.allDay ? "Yes" : "No" },
+    { label: "Type", value: workout.type },
+  ];
+  const distanceRows = [
+    { label: "Expected distance", value: formatDistance(workout.expectedDistanceKm) },
+    { label: "Actual distance", value: formatDistance(workout.actualDistanceKm) },
+    movingPace ? { label: "Moving pace", value: movingPace } : null,
+    gradeAdjustedPace ? { label: "Grade-adjusted pace", value: gradeAdjustedPace } : null,
+  ].filter((row): row is MetadataRowData => row !== null);
 
   return (
-    <div className={cn("grid gap-4 pt-1 text-sm", className)}>
-      <MetadataRow label="Event type" value={WORKOUT_EVENT_TYPE_LABELS[workout.eventType]} />
-      <MetadataRow label="Expected distance" value={formatDistance(workout.expectedDistanceKm)} />
-      <MetadataRow label="Actual distance" value={formatDistance(workout.actualDistanceKm)} />
-      {movingPace ? <MetadataRow label="Moving pace" value={movingPace} /> : null}
-      {gradeAdjustedPace ? <MetadataRow label="Grade-adjusted pace" value={gradeAdjustedPace} /> : null}
-      <MetadataRow label="Status" value={formatCompletedTimestamp(workout.completed)} />
-      <MetadataRow label="All day" value={workout.allDay ? "Yes" : "No"} />
-      <MetadataRow label="Type" value={workout.type} />
-      {weatherRows.map((row) => (
-        <MetadataRow key={row.label} label={row.label} value={row.value} />
-      ))}
-      <MetadataRow label="Source file" value={workout.sourcePath} />
+    <div className={cn("space-y-3 pt-1 text-sm", className)}>
+      <MetadataGroup icon={CalendarCheck} rows={sessionRows} title="Session" />
+      <MetadataGroup icon={Route} rows={distanceRows} title="Distance & pace" />
+      {weatherRows.length > 0 ? <MetadataGroup icon={CloudSun} rows={weatherRows} title="Weather" /> : null}
+      <MetadataGroup
+        icon={FileText}
+        rows={[{ label: "Source file", value: workout.sourcePath }]}
+        title="Source"
+      />
     </div>
   );
 }
@@ -709,11 +729,42 @@ function AppleHealthMeasurementChart({
   );
 }
 
-function MetadataRow({ label, value }: { label: string; value: string }) {
+interface MetadataRowData {
+  label: string;
+  value: string;
+}
+
+function MetadataGroup({
+  icon: Icon,
+  rows,
+  title,
+}: {
+  icon: LucideIcon;
+  rows: MetadataRowData[];
+  title: string;
+}) {
   return (
-    <div className="grid gap-1">
+    <section className="rounded-[0.5rem] border border-foreground/10 bg-background/40 p-3">
+      <div className="flex items-center gap-2 border-b border-foreground/10 pb-2">
+        <span className="grid size-7 place-items-center rounded-[0.4rem] bg-primary/10 text-primary">
+          <Icon className="size-4" />
+        </span>
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      </div>
+      <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+        {rows.map((row) => (
+          <MetadataRow key={row.label} label={row.label} value={row.value} />
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+function MetadataRow({ label, value }: MetadataRowData) {
+  return (
+    <div className="grid min-w-0 gap-1">
       <dt className="eyebrow">{label}</dt>
-      <dd className="text-sm font-medium text-foreground">{value}</dd>
+      <dd className="break-words text-sm font-medium leading-snug text-foreground">{value}</dd>
     </div>
   );
 }
