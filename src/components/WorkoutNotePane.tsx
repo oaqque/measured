@@ -4,12 +4,16 @@ import {
   ArrowLeft,
   CalendarCheck,
   CloudSun,
+  Droplets,
   FileText,
   Gauge,
   HeartPulse,
   Info,
   Mountain,
   Route,
+  Thermometer,
+  Umbrella,
+  Wind,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -391,7 +395,7 @@ function WorkoutMetadataGrid({
   className?: string;
   workout: WorkoutNote;
 }) {
-  const weatherRows = getWorkoutWeatherRows(workout.weather);
+  const weatherDetails = getWorkoutWeatherDetails(workout.weather);
   const movingPace = formatWorkoutPace(workout.actualMovingTimeSeconds, workout.actualDistanceKm);
   const gradeAdjustedPace = formatGradeAdjustedPace(workout.gradeAdjustedPace);
   const sessionRows = [
@@ -411,7 +415,7 @@ function WorkoutMetadataGrid({
     <div className={cn("space-y-3 pt-1 text-sm", className)}>
       <MetadataGroup icon={CalendarCheck} rows={sessionRows} title="Session" />
       <MetadataGroup icon={Route} rows={distanceRows} title="Distance & pace" />
-      {weatherRows.length > 0 ? <MetadataGroup icon={CloudSun} rows={weatherRows} title="Weather" /> : null}
+      {weatherDetails ? <WeatherMetadataGroup details={weatherDetails} /> : null}
       <MetadataGroup
         icon={FileText}
         rows={[{ label: "Source file", value: workout.sourcePath }]}
@@ -734,6 +738,17 @@ interface MetadataRowData {
   value: string;
 }
 
+interface WeatherMetricData extends MetadataRowData {
+  icon: LucideIcon;
+}
+
+interface WeatherMetadataDetails {
+  metrics: WeatherMetricData[];
+  summary: string | null;
+  temperature: string | null;
+  temperatureContext: string | null;
+}
+
 function MetadataGroup({
   icon: Icon,
   rows,
@@ -757,6 +772,65 @@ function MetadataGroup({
         ))}
       </dl>
     </section>
+  );
+}
+
+function WeatherMetadataGroup({ details }: { details: WeatherMetadataDetails }) {
+  const hasLead = details.summary || details.temperature;
+
+  return (
+    <section className="rounded-[0.5rem] border border-foreground/10 bg-background/40 p-3">
+      <div className="flex items-center gap-2 border-b border-foreground/10 pb-2">
+        <span className="grid size-7 place-items-center rounded-[0.4rem] bg-primary/10 text-primary">
+          <CloudSun className="size-4" />
+        </span>
+        <h3 className="text-sm font-semibold text-foreground">Weather</h3>
+      </div>
+
+      {hasLead ? (
+        <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 border-b border-foreground/10 pb-3">
+          <div className="min-w-0">
+            <p className="eyebrow">Condition</p>
+            <p className="mt-1 break-words text-base font-semibold leading-snug text-foreground">
+              {details.summary ?? "Weather recorded"}
+            </p>
+          </div>
+          {details.temperature ? (
+            <div className="text-right">
+              <p className="eyebrow">Temp</p>
+              <p className="mt-1 text-xl font-black leading-none text-foreground">{details.temperature}</p>
+              {details.temperatureContext ? (
+                <p className="mt-1 max-w-28 text-xs leading-snug text-muted-foreground">
+                  {details.temperatureContext}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {details.metrics.length > 0 ? (
+        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+          {details.metrics.map((metric) => (
+            <WeatherMetric key={metric.label} metric={metric} />
+          ))}
+        </dl>
+      ) : null}
+    </section>
+  );
+}
+
+function WeatherMetric({ metric }: { metric: WeatherMetricData }) {
+  const Icon = metric.icon;
+
+  return (
+    <div className="grid min-w-0 grid-cols-[1.25rem_minmax(0,1fr)] gap-x-2">
+      <Icon className="mt-0.5 size-4 text-muted-foreground" />
+      <div className="min-w-0">
+        <dt className="eyebrow">{metric.label}</dt>
+        <dd className="mt-1 break-words text-sm font-medium leading-snug text-foreground">{metric.value}</dd>
+      </div>
+    </div>
   );
 }
 
@@ -932,62 +1006,70 @@ function getStravaMeasurementAnalysisSections(workout: WorkoutNote) {
   return measurements;
 }
 
-function getWorkoutWeatherRows(weather: WorkoutWeather | null) {
+function getWorkoutWeatherDetails(weather: WorkoutWeather | null): WeatherMetadataDetails | null {
   if (!weather) {
-    return [];
+    return null;
   }
 
-  const rows: Array<{ label: string; value: string }> = [];
-  if (weather.summary) {
-    rows.push({ label: "Weather", value: weather.summary });
-  }
-
-  const temperatureValue = formatTemperatureRange(
+  const temperatureValue =
+    formatDegrees(weather.averageTemperatureC) ??
+    formatDegrees(weather.startTemperatureC) ??
+    formatDegrees(weather.endTemperatureC);
+  const temperatureContext = formatTemperatureContext(
     weather.averageTemperatureC,
     weather.startTemperatureC,
     weather.endTemperatureC,
   );
-  if (temperatureValue) {
-    rows.push({ label: "Temperature", value: temperatureValue });
-  }
-
+  const metrics: WeatherMetricData[] = [];
   const apparentTemperatureValue = formatDegrees(weather.apparentTemperatureC);
   if (apparentTemperatureValue) {
-    rows.push({ label: "Feels like", value: apparentTemperatureValue });
+    metrics.push({ icon: Thermometer, label: "Feels like", value: apparentTemperatureValue });
   }
 
   const humidityValue = formatPercent(weather.humidityPercent);
   if (humidityValue) {
-    rows.push({ label: "Humidity", value: humidityValue });
+    metrics.push({ icon: Droplets, label: "Humidity", value: humidityValue });
   }
 
   const precipitationValue = formatMillimeters(weather.precipitationMm);
   if (precipitationValue) {
-    rows.push({ label: "Rain", value: precipitationValue });
+    metrics.push({ icon: Umbrella, label: "Rain", value: precipitationValue });
   }
 
   const windValue = formatWind(weather.windSpeedKph, weather.windGustKph);
   if (windValue) {
-    rows.push({ label: "Wind", value: windValue });
+    metrics.push({ icon: Wind, label: "Wind", value: windValue });
   }
 
-  return rows;
+  if (!weather.summary && !temperatureValue && metrics.length === 0) {
+    return null;
+  }
+
+  return {
+    metrics,
+    summary: weather.summary,
+    temperature: temperatureValue,
+    temperatureContext,
+  };
 }
 
-function formatTemperatureRange(
+function formatTemperatureContext(
   averageTemperatureC: number | null,
   startTemperatureC: number | null,
   endTemperatureC: number | null,
 ) {
-  const average = formatDegrees(averageTemperatureC);
   const start = formatDegrees(startTemperatureC);
   const end = formatDegrees(endTemperatureC);
 
-  if (average && start && end) {
-    return `${average} avg (${start} to ${end})`;
+  if (averageTemperatureC !== null && start && end && start !== end) {
+    return `${start} to ${end}`;
   }
 
-  return average ?? (start && end ? `${start} to ${end}` : start ?? end ?? null);
+  if (averageTemperatureC === null && start && end && start !== end) {
+    return `${start} to ${end}`;
+  }
+
+  return null;
 }
 
 function formatDegrees(value: number | null) {
