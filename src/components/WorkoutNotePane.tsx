@@ -799,11 +799,25 @@ function SessionMetadataGroup({ workout }: { workout: WorkoutNote }) {
 function DistancePaceMetadataGroup({ workout }: { workout: WorkoutNote }) {
   const movingPace = formatWorkoutPace(workout.actualMovingTimeSeconds, workout.actualDistanceKm);
   const gradeAdjustedPace = formatGradeAdjustedPace(workout.gradeAdjustedPace);
+  const measuredGradeAdjustedPace = formatGradeAdjustedPace(workout.measuredGradeAdjustedPace, {
+    includeReliability: true,
+  });
   const primaryDistanceKm = workout.actualDistanceKm ?? workout.expectedDistanceKm;
   const primaryDistanceLabel = workout.actualDistanceKm !== null ? "Actual distance" : "Expected distance";
-  const paceLabel = movingPace ? "Moving pace" : gradeAdjustedPace ? "Strava GAP" : "Pace";
-  const paceValue = movingPace ?? gradeAdjustedPace ?? "Pace TBD";
-  const metrics = getDistancePaceMetrics(workout, movingPace, gradeAdjustedPace);
+  const paceLabel = movingPace
+    ? "Moving pace"
+    : gradeAdjustedPace
+      ? "Strava GAP"
+      : measuredGradeAdjustedPace
+        ? "Measured GAP"
+        : "Pace";
+  const paceValue = movingPace ?? gradeAdjustedPace ?? measuredGradeAdjustedPace ?? "Pace TBD";
+  const metrics = getDistancePaceMetrics(
+    workout,
+    movingPace,
+    gradeAdjustedPace,
+    measuredGradeAdjustedPace,
+  );
 
   return (
     <section className="rounded-[0.5rem] border border-foreground/10 bg-background/40 p-3">
@@ -1415,6 +1429,7 @@ function getDistancePaceMetrics(
   workout: WorkoutNote,
   movingPace: string | null,
   gradeAdjustedPace: string | null,
+  measuredGradeAdjustedPace: string | null,
 ): MetadataMetricData[] {
   const metrics: MetadataMetricData[] = [];
   if (workout.actualDistanceKm !== null && workout.expectedDistanceKm !== null) {
@@ -1433,6 +1448,10 @@ function getDistancePaceMetrics(
 
   if (movingPace && gradeAdjustedPace) {
     metrics.push({ icon: Mountain, label: "Strava GAP", value: gradeAdjustedPace });
+  }
+
+  if (measuredGradeAdjustedPace) {
+    metrics.push({ icon: Mountain, label: "Measured GAP", value: measuredGradeAdjustedPace });
   }
 
   return metrics;
@@ -1769,12 +1788,20 @@ function formatWorkoutPace(movingTimeSeconds: number | null, distanceKm: number 
   return `${formatPaceSeconds(movingTimeSeconds / distanceKm)} /km`;
 }
 
-function formatGradeAdjustedPace(gradeAdjustedPace: WorkoutGradeAdjustedPace | null | undefined) {
+function formatGradeAdjustedPace(
+  gradeAdjustedPace: WorkoutGradeAdjustedPace | null | undefined,
+  options: { includeReliability?: boolean } = {},
+) {
   if (!gradeAdjustedPace) {
     return null;
   }
 
-  return `${formatPaceSeconds(gradeAdjustedPace.paceSecondsPerKm)} /km`;
+  const pace = `${formatPaceSeconds(gradeAdjustedPace.paceSecondsPerKm)} /km`;
+  if (options.includeReliability && "reliability" in gradeAdjustedPace) {
+    return `${pace} (${gradeAdjustedPace.reliability})`;
+  }
+
+  return pace;
 }
 
 function formatPaceSeconds(secondsPerKm: number) {

@@ -7,7 +7,10 @@ import { promisify } from "node:util";
 import cliProgress from "cli-progress";
 import matter from "gray-matter";
 import { resolveWorkoutsSourceDir } from "./lib/workouts-source";
-import { buildGradeAdjustedPace } from "../src/lib/workouts/grade-adjusted-pace";
+import {
+  buildGradeAdjustedPace,
+  buildMeasuredGradeAdjustedPace,
+} from "../src/lib/workouts/grade-adjusted-pace";
 import {
   getWorkoutNoteBaseName,
   hasImportedFromStravaSection,
@@ -1066,9 +1069,17 @@ function buildWorkoutNote(
   const cachedStravaGradeAdjustedPace = activityRefs.strava
     ? providerCaches.strava.activities[activityRefs.strava]?.gradeAdjustedPace
     : null;
+  const displayRouteStreams =
+    displaySource && hasRouteStreams
+      ? normalizeRouteStreams(providerCaches[displaySource.provider].activities[displaySource.activityId]?.routeStreams)
+      : null;
   const gradeAdjustedPace =
     displaySource && (document.eventType === "run" || document.eventType === "race")
       ? buildGradeAdjustedPace(displaySource, cachedStravaGradeAdjustedPace)
+      : null;
+  const measuredGradeAdjustedPace =
+    displaySource && (document.eventType === "run" || document.eventType === "race")
+      ? buildMeasuredGradeAdjustedPace(displaySource, displayRouteStreams)
       : null;
   const shoe = sources.strava?.gear ?? displaySource?.gear ?? null;
 
@@ -1087,6 +1098,7 @@ function buildWorkoutNote(
     actualMovingTimeSeconds: displaySource?.movingTimeSeconds ?? null,
     actualElapsedTimeSeconds: displaySource?.elapsedTimeSeconds ?? null,
     gradeAdjustedPace,
+    measuredGradeAdjustedPace,
     averageHeartrate: displaySource?.averageHeartrate ?? null,
     maxHeartrate: displaySource?.maxHeartrate ?? null,
     summaryPolyline: displaySource?.summaryPolyline ?? null,

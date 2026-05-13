@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildGradeAdjustedPace } from "@/lib/workouts/grade-adjusted-pace";
-import type { WorkoutSourceSummary } from "@/lib/workouts/schema";
+import {
+  buildGradeAdjustedPace,
+  buildMeasuredGradeAdjustedPace,
+} from "@/lib/workouts/grade-adjusted-pace";
+import type { WorkoutRouteStreams, WorkoutSourceSummary } from "@/lib/workouts/schema";
 
 describe("grade-adjusted pace", () => {
   it("uses Strava metric split grade-adjusted speeds", () => {
@@ -91,6 +94,53 @@ describe("grade-adjusted pace", () => {
 
     expect(result).toBeNull();
   });
+
+  it("also supports the old measured flat-route model", () => {
+    const result = buildMeasuredGradeAdjustedPace(
+      buildSummary({ distanceKm: 1, movingTimeSeconds: 300 }),
+      buildStreams({
+        altitude: [10, 10, 10, 10, 10],
+        distance: [0, 250, 500, 750, 1000],
+        velocity: [1000 / 300, 1000 / 300, 1000 / 300, 1000 / 300, 1000 / 300],
+      }),
+    );
+
+    expect(result).not.toBeNull();
+    expect(result?.modelVersion).toBe("measured-gap-v1");
+    expect(result?.source).toBe("measured");
+    expect(result?.paceSecondsPerKm).toBeCloseTo(300, 1);
+    expect(result?.actualPaceSecondsPerKm).toBeCloseTo(300, 1);
+    expect(result?.reliability).toBe("low");
+  });
+
+  it("keeps the old measured uphill adjustment", () => {
+    const result = buildMeasuredGradeAdjustedPace(
+      buildSummary({ distanceKm: 1, movingTimeSeconds: 360 }),
+      buildStreams({
+        altitude: [0, 12.5, 25, 37.5, 50],
+        distance: [0, 250, 500, 750, 1000],
+        velocity: [1000 / 360, 1000 / 360, 1000 / 360, 1000 / 360, 1000 / 360],
+      }),
+    );
+
+    expect(result).not.toBeNull();
+    expect(result?.paceSecondsPerKm).toBeLessThan(360);
+  });
+
+  it("weights the old measured adjustment by the time stream when it is available", () => {
+    const result = buildMeasuredGradeAdjustedPace(
+      buildSummary({ distanceKm: 1, movingTimeSeconds: 300 }),
+      buildStreams({
+        altitude: [0, 25, 25],
+        distance: [0, 500, 1000],
+        time: [0, 240, 300],
+        velocity: [1000 / 300, 1000 / 300, 1000 / 300],
+      }),
+    );
+
+    expect(result).not.toBeNull();
+    expect(result?.paceSecondsPerKm).toBeLessThan(280);
+  });
 });
 
 function buildSummary({
@@ -116,5 +166,27 @@ function buildSummary({
     sportType: "Run",
     startDate: "2026-05-13T00:00:00Z",
     summaryPolyline: null,
+  };
+}
+
+function buildStreams({
+  altitude,
+  distance,
+  time,
+  velocity,
+}: {
+  altitude: number[];
+  distance: number[];
+  time?: number[];
+  velocity: number[];
+}): WorkoutRouteStreams {
+  return {
+    time: time ?? null,
+    altitude,
+    distance,
+    heartrate: null,
+    latlng: null,
+    moving: distance.map(() => true),
+    velocitySmooth: velocity,
   };
 }

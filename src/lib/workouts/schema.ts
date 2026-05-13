@@ -190,7 +190,9 @@ export interface AppleHealthWorkoutMeasurements {
   series: AppleHealthMeasurementSeries[];
 }
 
-export interface WorkoutGradeAdjustedPace {
+export type GradeAdjustedPaceReliability = "high" | "medium" | "low";
+
+export interface WorkoutStravaGradeAdjustedPace {
   modelVersion: "strava-gap-v1";
   source: "strava";
   paceSecondsPerKm: number;
@@ -199,6 +201,21 @@ export interface WorkoutGradeAdjustedPace {
   distanceIncludedRatio: number;
   splitCount: number;
 }
+
+export interface WorkoutMeasuredGradeAdjustedPace {
+  modelVersion: "measured-gap-v1";
+  source: "measured";
+  paceSecondsPerKm: number;
+  equivalentFlatTimeSeconds: number;
+  actualPaceSecondsPerKm: number;
+  reliability: GradeAdjustedPaceReliability;
+  distanceIncludedRatio: number;
+  totalAscentMeters: number;
+  totalDescentMeters: number;
+  timeScale: number;
+}
+
+export type WorkoutGradeAdjustedPace = WorkoutStravaGradeAdjustedPace | WorkoutMeasuredGradeAdjustedPace;
 
 export interface WorkoutNote {
   slug: string;
@@ -214,7 +231,8 @@ export interface WorkoutNote {
   dataSource?: WorkoutDataSource | null;
   actualMovingTimeSeconds: number | null;
   actualElapsedTimeSeconds: number | null;
-  gradeAdjustedPace?: WorkoutGradeAdjustedPace | null;
+  gradeAdjustedPace?: WorkoutStravaGradeAdjustedPace | null;
+  measuredGradeAdjustedPace?: WorkoutMeasuredGradeAdjustedPace | null;
   averageHeartrate: number | null;
   maxHeartrate: number | null;
   summaryPolyline: string | null;
