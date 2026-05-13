@@ -238,6 +238,7 @@ function normalizeWorkoutNote(workout: RawWorkoutNote): WorkoutNote {
     completed: workout.completed,
     actualMovingTimeSeconds: workout.actualMovingTimeSeconds,
     actualElapsedTimeSeconds: workout.actualElapsedTimeSeconds,
+    gradeAdjustedPace: workout.gradeAdjustedPace ?? null,
     averageHeartrate: workout.averageHeartrate,
     maxHeartrate: workout.maxHeartrate,
     summaryPolyline: workout.summaryPolyline,

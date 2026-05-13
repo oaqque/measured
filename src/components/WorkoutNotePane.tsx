@@ -31,6 +31,7 @@ import type {
   AppleHealthMeasurementSeries,
   AppleHealthWorkoutMeasurements,
   StravaAnalysisMeasurement,
+  WorkoutGradeAdjustedPace,
   WorkoutEventType,
   WorkoutNoteAnalysisSection,
   WorkoutNote,
@@ -379,12 +380,16 @@ function WorkoutMetadataGrid({
   workout: WorkoutNote;
 }) {
   const weatherRows = getWorkoutWeatherRows(workout.weather);
+  const movingPace = formatWorkoutPace(workout.actualMovingTimeSeconds, workout.actualDistanceKm);
+  const gradeAdjustedPace = formatGradeAdjustedPace(workout.gradeAdjustedPace);
 
   return (
     <div className={cn("grid gap-4 pt-1 text-sm", className)}>
       <MetadataRow label="Event type" value={WORKOUT_EVENT_TYPE_LABELS[workout.eventType]} />
       <MetadataRow label="Expected distance" value={formatDistance(workout.expectedDistanceKm)} />
       <MetadataRow label="Actual distance" value={formatDistance(workout.actualDistanceKm)} />
+      {movingPace ? <MetadataRow label="Moving pace" value={movingPace} /> : null}
+      {gradeAdjustedPace ? <MetadataRow label="Grade-adjusted pace" value={gradeAdjustedPace} /> : null}
       <MetadataRow label="Status" value={formatCompletedTimestamp(workout.completed)} />
       <MetadataRow label="All day" value={workout.allDay ? "Yes" : "No"} />
       <MetadataRow label="Type" value={workout.type} />
@@ -1169,6 +1174,29 @@ function formatDurationLabel(totalSeconds: number) {
   }
 
   return `${minutes}m`;
+}
+
+function formatWorkoutPace(movingTimeSeconds: number | null, distanceKm: number | null) {
+  if (!movingTimeSeconds || !distanceKm) {
+    return null;
+  }
+
+  return `${formatPaceSeconds(movingTimeSeconds / distanceKm)} /km`;
+}
+
+function formatGradeAdjustedPace(gradeAdjustedPace: WorkoutGradeAdjustedPace | null | undefined) {
+  if (!gradeAdjustedPace) {
+    return null;
+  }
+
+  return `${formatPaceSeconds(gradeAdjustedPace.paceSecondsPerKm)} /km (${gradeAdjustedPace.reliability})`;
+}
+
+function formatPaceSeconds(secondsPerKm: number) {
+  const roundedSeconds = Math.max(0, Math.round(secondsPerKm));
+  const minutes = Math.floor(roundedSeconds / 60);
+  const seconds = roundedSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 function buildRouteMapKey(routePath: string | null | undefined, versionKey: string) {

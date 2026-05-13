@@ -182,6 +182,19 @@ export interface AppleHealthWorkoutMeasurements {
   elapsedTimeSeconds: number | null;
   series: AppleHealthMeasurementSeries[];
 }
+
+export interface WorkoutGradeAdjustedPace {
+  modelVersion: "measured-gap-v1";
+  paceSecondsPerKm: number;
+  equivalentFlatTimeSeconds: number;
+  actualPaceSecondsPerKm: number;
+  reliability: "high" | "medium" | "low";
+  distanceIncludedRatio: number;
+  totalAscentMeters: number;
+  totalDescentMeters: number;
+  timeScale: number;
+}
+
 export interface WorkoutNote {
   slug: string;
   title: string;
@@ -196,6 +209,7 @@ export interface WorkoutNote {
   dataSource?: WorkoutDataSource | null;
   actualMovingTimeSeconds: number | null;
   actualElapsedTimeSeconds: number | null;
+  gradeAdjustedPace?: WorkoutGradeAdjustedPace | null;
   averageHeartrate: number | null;
   maxHeartrate: number | null;
   summaryPolyline: string | null;

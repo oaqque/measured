@@ -7,6 +7,7 @@ import { promisify } from "node:util";
 import cliProgress from "cli-progress";
 import matter from "gray-matter";
 import { resolveWorkoutsSourceDir } from "./lib/workouts-source";
+import { buildGradeAdjustedPace } from "../src/lib/workouts/grade-adjusted-pace";
 import {
   getWorkoutNoteBaseName,
   hasImportedFromStravaSection,
@@ -1057,6 +1058,14 @@ function buildWorkoutNote(
   const slug = slugify(getWorkoutNoteBaseName(fileName));
   const hasRouteStreams = Boolean(displaySource?.hasRouteStreams && displaySource.routePath);
   const hasAppleHealthMeasurements = Boolean(activityRefs.appleHealth);
+  const displayRouteStreams =
+    displaySource && hasRouteStreams
+      ? normalizeRouteStreams(providerCaches[displaySource.provider].activities[displaySource.activityId]?.routeStreams)
+      : null;
+  const gradeAdjustedPace =
+    displaySource && (document.eventType === "run" || document.eventType === "race")
+      ? buildGradeAdjustedPace(displaySource, displayRouteStreams)
+      : null;
 
   return {
     slug,
@@ -1072,6 +1081,7 @@ function buildWorkoutNote(
     dataSource: normalizeLegacyDataSource(displaySource?.provider ?? null),
     actualMovingTimeSeconds: displaySource?.movingTimeSeconds ?? null,
     actualElapsedTimeSeconds: displaySource?.elapsedTimeSeconds ?? null,
+    gradeAdjustedPace,
     averageHeartrate: displaySource?.averageHeartrate ?? null,
     maxHeartrate: displaySource?.maxHeartrate ?? null,
     summaryPolyline: displaySource?.summaryPolyline ?? null,
