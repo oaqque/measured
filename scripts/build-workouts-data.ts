@@ -1667,6 +1667,7 @@ function normalizeRouteStreams(value: unknown): WorkoutRouteStreams | null {
 
   const candidate = value as Partial<WorkoutRouteStreams>;
   return {
+    time: normalizeNumberSeries(candidate.time),
     latlng: normalizeCoordinateSeries(candidate.latlng),
     altitude: normalizeNumberSeries(candidate.altitude),
     distance: normalizeNumberSeries(candidate.distance),

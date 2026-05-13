@@ -61,6 +61,21 @@ describe("grade-adjusted pace", () => {
     expect(result?.paceSecondsPerKm).toBeLessThan(305);
   });
 
+  it("weights grade adjustment by the time stream when it is available", () => {
+    const result = buildGradeAdjustedPace(
+      buildSummary({ distanceKm: 1, movingTimeSeconds: 300 }),
+      buildStreams({
+        altitude: [0, 25, 25],
+        distance: [0, 500, 1000],
+        time: [0, 240, 300],
+        velocity: [1000 / 300, 1000 / 300, 1000 / 300],
+      }),
+    );
+
+    expect(result).not.toBeNull();
+    expect(result?.paceSecondsPerKm).toBeLessThan(280);
+  });
+
   it("returns null when stream data is missing", () => {
     const result = buildGradeAdjustedPace(buildSummary({ distanceKm: 1, movingTimeSeconds: 300 }), null);
 
@@ -97,13 +112,16 @@ function buildSummary({
 function buildStreams({
   altitude,
   distance,
+  time,
   velocity,
 }: {
   altitude: number[];
   distance: number[];
+  time?: number[];
   velocity: number[];
 }): WorkoutRouteStreams {
   return {
+    time: time ?? null,
     altitude,
     distance,
     heartrate: null,

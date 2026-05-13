@@ -15,6 +15,7 @@ export type WorkoutMediaProvider = (typeof WORKOUT_MEDIA_PROVIDERS)[number];
 export type WorkoutMarkdown = string;
 
 export interface WorkoutRouteStreams {
+  time?: number[] | null;
   latlng: Array<[number, number]> | null;
   altitude: number[] | null;
   distance: number[] | null;

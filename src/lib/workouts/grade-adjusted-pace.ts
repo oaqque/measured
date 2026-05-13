@@ -19,15 +19,18 @@ export interface WorkoutGradeAdjustedPace {
 interface StreamPoint {
   altitudeMeters: number;
   distanceMeters: number;
+  elapsedSeconds: number | null;
   moving: boolean;
-  velocityMetersPerSecond: number;
+  velocityMetersPerSecond: number | null;
 }
 
 const ALTITUDE_SMOOTHING_WINDOW_METERS = 80;
 const FLAT_GRADE_THRESHOLD = 0.002;
 const MAX_ABSOLUTE_GRADE = 0.15;
+const MAX_REASONABLE_RUNNING_SPEED_METERS_PER_SECOND = 8;
 const MIN_SEGMENT_DISTANCE_METERS = 2;
 const MIN_MOVING_SPEED_METERS_PER_SECOND = 0.2;
+const UPHILL_ADJUSTMENT_SCALE = 0.88;
 
 export function buildGradeAdjustedPace(
   summary: WorkoutSourceSummary,
@@ -53,6 +56,7 @@ export function buildGradeAdjustedPace(
   let clippedGradeSegments = 0;
   let largeGapSegments = 0;
   let includedSegments = 0;
+  let timeBasedSegments = 0;
 
   for (let index = 1; index < points.length; index += 1) {
     const previous = points[index - 1];
@@ -67,15 +71,15 @@ export function buildGradeAdjustedPace(
     }
 
     const segmentMoving = previous.moving || current.moving;
-    const speedSamples = [previous.velocityMetersPerSecond, current.velocityMetersPerSecond].filter(
-      (speed) => speed > MIN_MOVING_SPEED_METERS_PER_SECOND,
-    );
-    if (!segmentMoving || speedSamples.length === 0) {
+    if (!segmentMoving) {
       continue;
     }
 
-    const segmentSpeedMetersPerSecond = average(speedSamples);
-    const segmentTimeSeconds = distanceDeltaMeters / segmentSpeedMetersPerSecond;
+    const segmentTime = getSegmentTimeSeconds(previous, current, distanceDeltaMeters);
+    if (!segmentTime) {
+      continue;
+    }
+
     const altitudeDeltaMeters = (smoothedAltitudes[index] ?? current.altitudeMeters) -
       (smoothedAltitudes[index - 1] ?? previous.altitudeMeters);
     const rawGrade = altitudeDeltaMeters / distanceDeltaMeters;
@@ -95,10 +99,13 @@ export function buildGradeAdjustedPace(
       totalDescentMeters += Math.abs(altitudeDeltaMeters);
     }
 
-    rawTimeSeconds += segmentTimeSeconds;
-    equivalentFlatTimeSeconds += segmentTimeSeconds * gradeToFlatTimeFactor(grade);
+    rawTimeSeconds += segmentTime.seconds;
+    equivalentFlatTimeSeconds += segmentTime.seconds * gradeToFlatTimeFactor(grade);
     includedDistanceMeters += distanceDeltaMeters;
     includedSegments += 1;
+    if (segmentTime.source === "time") {
+      timeBasedSegments += 1;
+    }
   }
 
   if (rawTimeSeconds <= 0 || equivalentFlatTimeSeconds <= 0 || includedDistanceMeters <= 0) {
@@ -113,6 +120,8 @@ export function buildGradeAdjustedPace(
     distanceIncludedRatio,
     largeGapShare: includedSegments > 0 ? largeGapSegments / includedSegments : 1,
     pointCount: points.length,
+    actualDistanceKm,
+    timeBasedSegmentShare: includedSegments > 0 ? timeBasedSegments / includedSegments : 0,
     timeScale,
   };
 
@@ -137,23 +146,34 @@ function buildStreamPoints(routeStreams: WorkoutRouteStreams | null): StreamPoin
   const distance = routeStreams.distance;
   const altitude = routeStreams.altitude;
   const velocitySmooth = routeStreams.velocitySmooth;
-  if (!Array.isArray(distance) || !Array.isArray(altitude) || !Array.isArray(velocitySmooth)) {
+  const time = routeStreams.time;
+  if (!Array.isArray(distance) || !Array.isArray(altitude)) {
     return [];
   }
 
   const moving = Array.isArray(routeStreams.moving) ? routeStreams.moving : null;
-  const maxIndex = Math.min(distance.length, altitude.length, velocitySmooth.length);
+  const maxIndex = Math.min(
+    distance.length,
+    altitude.length,
+    Array.isArray(time) ? time.length : Array.isArray(velocitySmooth) ? velocitySmooth.length : 0,
+  );
   const points: StreamPoint[] = [];
   let previousDistanceMeters = Number.NEGATIVE_INFINITY;
+  let previousElapsedSeconds = Number.NEGATIVE_INFINITY;
 
   for (let index = 0; index < maxIndex; index += 1) {
     const distanceMeters = distance[index];
     const altitudeMeters = altitude[index];
-    const velocityMetersPerSecond = velocitySmooth[index];
+    const rawVelocityMetersPerSecond = Array.isArray(velocitySmooth) ? velocitySmooth[index] : null;
+    const rawElapsedSeconds = Array.isArray(time) ? time[index] : null;
+    const velocityMetersPerSecond = Number.isFinite(rawVelocityMetersPerSecond)
+      ? rawVelocityMetersPerSecond as number
+      : null;
+    const elapsedSeconds = Number.isFinite(rawElapsedSeconds) ? rawElapsedSeconds as number : null;
     if (
       !Number.isFinite(distanceMeters) ||
       !Number.isFinite(altitudeMeters) ||
-      !Number.isFinite(velocityMetersPerSecond)
+      (velocityMetersPerSecond === null && elapsedSeconds === null)
     ) {
       continue;
     }
@@ -162,16 +182,58 @@ function buildStreamPoints(routeStreams: WorkoutRouteStreams | null): StreamPoin
       continue;
     }
 
+    if (elapsedSeconds !== null && elapsedSeconds < previousElapsedSeconds) {
+      continue;
+    }
+
     points.push({
       altitudeMeters: altitudeMeters as number,
       distanceMeters: distanceMeters as number,
+      elapsedSeconds,
       moving: moving ? moving[index] !== false : true,
-      velocityMetersPerSecond: velocityMetersPerSecond as number,
+      velocityMetersPerSecond,
     });
     previousDistanceMeters = distanceMeters as number;
+    if (elapsedSeconds !== null) {
+      previousElapsedSeconds = elapsedSeconds;
+    }
   }
 
   return points;
+}
+
+function getSegmentTimeSeconds(
+  previous: StreamPoint,
+  current: StreamPoint,
+  distanceDeltaMeters: number,
+): { seconds: number; source: "time" | "velocity" } | null {
+  if (previous.elapsedSeconds !== null && current.elapsedSeconds !== null) {
+    const elapsedDeltaSeconds = current.elapsedSeconds - previous.elapsedSeconds;
+    const impliedSpeedMetersPerSecond = distanceDeltaMeters / elapsedDeltaSeconds;
+    if (
+      Number.isFinite(elapsedDeltaSeconds) &&
+      elapsedDeltaSeconds > 0 &&
+      impliedSpeedMetersPerSecond >= MIN_MOVING_SPEED_METERS_PER_SECOND &&
+      impliedSpeedMetersPerSecond <= MAX_REASONABLE_RUNNING_SPEED_METERS_PER_SECOND
+    ) {
+      return { seconds: elapsedDeltaSeconds, source: "time" };
+    }
+  }
+
+  const speedSamples = [previous.velocityMetersPerSecond, current.velocityMetersPerSecond].filter(
+    (speed): speed is number =>
+      typeof speed === "number" &&
+      Number.isFinite(speed) &&
+      speed > MIN_MOVING_SPEED_METERS_PER_SECOND,
+  );
+  if (speedSamples.length === 0) {
+    return null;
+  }
+
+  return {
+    seconds: distanceDeltaMeters / average(speedSamples),
+    source: "velocity",
+  };
 }
 
 function smoothAltitudeByDistance(points: StreamPoint[], windowMeters: number) {
@@ -212,8 +274,9 @@ function gradeToFlatTimeFactor(grade: number) {
   }
 
   if (gradePercent > 0) {
-    const factor = 1 - 0.033 * gradePercent + 0.00075 * gradePercent * gradePercent;
-    return clamp(factor, 0.62, 1);
+    const rawFactor = 1 - 0.033 * gradePercent + 0.00075 * gradePercent * gradePercent;
+    const scaledFactor = 1 - (1 - rawFactor) * UPHILL_ADJUSTMENT_SCALE;
+    return clamp(scaledFactor, 0.66, 1);
   }
 
   const downhillPercent = Math.abs(gradePercent);
@@ -229,31 +292,40 @@ function classifyReliability({
   distanceIncludedRatio,
   largeGapShare,
   pointCount,
+  actualDistanceKm,
+  timeBasedSegmentShare,
   timeScale,
 }: {
   clippedGradeShare: number;
   distanceIncludedRatio: number;
   largeGapShare: number;
   pointCount: number;
+  actualDistanceKm: number;
+  timeBasedSegmentShare: number;
   timeScale: number;
 }): GradeAdjustedPaceReliability {
   if (
+    actualDistanceKm >= 3 &&
     pointCount >= 100 &&
-    distanceIncludedRatio >= 0.95 &&
-    timeScale >= 0.85 &&
-    timeScale <= 1.15 &&
-    clippedGradeShare <= 0.05 &&
-    largeGapShare <= 0.05
+    distanceIncludedRatio >= 0.97 &&
+    timeBasedSegmentShare >= 0.95 &&
+    timeScale >= 0.92 &&
+    timeScale <= 1.08 &&
+    clippedGradeShare <= 0.03 &&
+    largeGapShare <= 0.03
   ) {
     return "high";
   }
 
   if (
-    pointCount >= 20 &&
-    distanceIncludedRatio >= 0.8 &&
-    timeScale >= 0.65 &&
-    timeScale <= 1.5 &&
-    clippedGradeShare <= 0.2
+    actualDistanceKm >= 2 &&
+    pointCount >= 50 &&
+    distanceIncludedRatio >= 0.9 &&
+    timeBasedSegmentShare >= 0.6 &&
+    timeScale >= 0.8 &&
+    timeScale <= 1.25 &&
+    clippedGradeShare <= 0.1 &&
+    largeGapShare <= 0.1
   ) {
     return "medium";
   }
