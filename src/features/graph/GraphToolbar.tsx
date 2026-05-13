@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
-import { ChevronDown, ChevronUp, Focus, Pause, Play, SlidersHorizontal, Sparkles, Type } from "lucide-react";
+import { ChevronDown, ChevronUp, Focus, Footprints, Pause, Play, SlidersHorizontal, Sparkles, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { GraphClusterMode } from "@/lib/graph/schema";
 
@@ -9,17 +10,27 @@ const CLUSTER_MODE_LABELS: Array<{ mode: GraphClusterMode; label: string }> = [
   { mode: "status", label: "Status" },
   { mode: "month", label: "Month" },
   { mode: "trainingBlock", label: "Block" },
+  { mode: "shoe", label: "Shoe" },
   { mode: "none", label: "Free" },
 ];
+
+export interface GraphShoeFilterOption {
+  label: string;
+  nodeId: string;
+  totalDistanceKm: number;
+}
 
 export function GraphToolbar({
   clusterMode,
   paused,
   search,
+  selectedShoeNodeId,
   showAuthoredOnly,
   showAllLabels,
+  shoeFilterOptions,
   onClusterModeChange,
   onFitView,
+  onShoeFilterChange,
   onToggleAllLabels,
   onToggleAuthoredOnly,
   onTogglePaused,
@@ -27,10 +38,13 @@ export function GraphToolbar({
   clusterMode: GraphClusterMode;
   paused: boolean;
   search?: ReactNode;
+  selectedShoeNodeId: string | null;
   showAuthoredOnly: boolean;
   showAllLabels: boolean;
+  shoeFilterOptions: GraphShoeFilterOption[];
   onClusterModeChange: (mode: GraphClusterMode) => void;
   onFitView: () => void;
+  onShoeFilterChange: (nodeId: string | null) => void;
   onToggleAllLabels: () => void;
   onToggleAuthoredOnly: () => void;
   onTogglePaused: () => void;
@@ -72,6 +86,30 @@ export function GraphToolbar({
               </button>
             ))}
           </div>
+
+          {shoeFilterOptions.length > 0 ? (
+            <div className="mt-2">
+              <p className="px-1 pb-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-muted-foreground">
+                Shoe filter
+              </p>
+              <Select value={selectedShoeNodeId ?? "all"} onValueChange={(value) => onShoeFilterChange(value === "all" ? null : value)}>
+                <SelectTrigger className="h-10 rounded-[0.8rem] px-3 text-xs font-semibold">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <Footprints className="size-4 shrink-0 text-muted-foreground" />
+                    <SelectValue placeholder="All shoes" />
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All shoes</SelectItem>
+                  {shoeFilterOptions.map((option) => (
+                    <SelectItem key={option.nodeId} value={option.nodeId}>
+                      {option.label} · {formatKilometers(option.totalDistanceKm)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
 
           <div className="mt-2 grid grid-cols-2 gap-2">
             <Button
@@ -122,4 +160,8 @@ export function GraphToolbar({
       ) : null}
     </div>
   );
+}
+
+function formatKilometers(value: number) {
+  return `${value.toFixed(1).replace(/\.0$/u, "")} km`;
 }

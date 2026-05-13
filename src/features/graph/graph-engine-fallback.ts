@@ -519,6 +519,10 @@ class FallbackGraphEngine implements GraphEngineController {
       return node.clusters.trainingBlock;
     }
 
+    if (this.clusterMode === "shoe") {
+      return node.clusters.shoe ?? "Reference";
+    }
+
     return "all";
   }
 

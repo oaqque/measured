@@ -449,4 +449,86 @@ describe("deriveGraphSearchState", () => {
     expect(deriveGraphSearchState(graph, "race").directMatchNodeIds.has("race-node")).toBe(true);
     expect(deriveGraphSearchState(graph, "run").directMatchNodeIds.has("run-node")).toBe(true);
   });
+
+  it("offers shoe filter suggestions and matches shoe-linked workouts", () => {
+    const graph: NoteGraphData = {
+      ...TEST_GRAPH,
+      nodes: [
+        {
+          id: "shoe:saucony-speed-4",
+          slug: null,
+          nodeKind: "shoe",
+          title: "Saucony Speed 4",
+          date: null,
+          category: "shoe",
+          status: "reference",
+          sourcePath: null,
+          excerpt: "Saucony Speed 4 has travelled 703.9 km across 68 logged workouts.",
+          radius: 22,
+          x: 0,
+          y: 0,
+          clusters: {
+            eventType: "shoe",
+            month: "structure",
+            shoe: "Saucony Speed 4",
+            status: "reference",
+            trainingBlock: "shoes",
+          },
+          metrics: {
+            expectedDistanceKm: null,
+            actualDistanceKm: null,
+            shoeTotalDistanceKm: 703.87,
+          },
+        },
+        {
+          id: "shoe-workout",
+          slug: "shoe-workout",
+          nodeKind: "workout",
+          title: "Lunch Session",
+          date: "2026-04-10",
+          category: "run",
+          status: "completed",
+          sourcePath: "notes/lunch-session.md",
+          excerpt: null,
+          radius: 16,
+          x: 12,
+          y: 12,
+          clusters: {
+            eventType: "run",
+            month: "2026-04",
+            shoe: "Saucony Speed 4",
+            status: "completed",
+            trainingBlock: "block-a",
+          },
+          metrics: {
+            expectedDistanceKm: null,
+            actualDistanceKm: 8,
+          },
+        },
+      ],
+      links: [
+        {
+          id: "shoe:shoe:saucony-speed-4:shoe-workout",
+          source: "shoe:saucony-speed-4",
+          target: "shoe-workout",
+          kind: "shoe",
+          strength: 0.88,
+          label: "shoe used",
+          sourceType: "derived",
+        },
+      ],
+      clusters: [],
+    };
+
+    const result = deriveGraphSearchState(graph, "saucony speed 4");
+
+    expect(result.suggestions[0]).toMatchObject({
+      label: "Saucony Speed 4",
+      matchKind: "filter",
+      nodeId: null,
+      query: "Saucony Speed 4",
+    });
+    expect(result.directMatchNodeIds.has("shoe:saucony-speed-4")).toBe(true);
+    expect(result.directMatchNodeIds.has("shoe-workout")).toBe(true);
+  });
 });

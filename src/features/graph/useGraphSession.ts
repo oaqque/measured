@@ -292,7 +292,8 @@ function readStoredClusterMode(): GraphClusterMode {
     storedValue === "eventType" ||
     storedValue === "status" ||
     storedValue === "month" ||
-    storedValue === "trainingBlock"
+    storedValue === "trainingBlock" ||
+    storedValue === "shoe"
   ) {
     return storedValue;
   }

@@ -6,7 +6,7 @@ import type { GraphSearchSuggestion } from "@/features/graph/search";
 import { GraphTelemetryOverlay } from "@/features/graph/GraphTelemetryOverlay";
 import { deriveGraphSearchState } from "@/features/graph/search";
 import { graphTelemetry } from "@/features/graph/telemetry";
-import { GraphToolbar } from "@/features/graph/GraphToolbar";
+import { GraphToolbar, type GraphShoeFilterOption } from "@/features/graph/GraphToolbar";
 import { useGraphSession } from "@/features/graph/useGraphSession";
 import { graphFolderNodeIdToPath } from "@/lib/graph/ids";
 import { formatGraphFolderLabel } from "@/lib/graph/labels";
@@ -31,6 +31,7 @@ export function GraphView({
 }) {
   const [fitRequestVersion, setFitRequestVersion] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedShoeNodeId, setSelectedShoeNodeId] = useState<string | null>(null);
   const [showAllLabels, setShowAllLabels] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -61,7 +62,12 @@ export function GraphView({
     interrupt,
     sendMessage,
   } = useGraphSession(initialGraphData);
-  const searchState = useMemo(() => deriveGraphSearchState(graphData, searchQuery), [graphData, searchQuery]);
+  const shoeFilterOptions = useMemo(() => buildShoeFilterOptions(graphData), [graphData]);
+  const shoeFilteredGraphData = useMemo(
+    () => filterGraphDataByShoe(graphData, selectedShoeNodeId),
+    [graphData, selectedShoeNodeId],
+  );
+  const searchState = useMemo(() => deriveGraphSearchState(shoeFilteredGraphData, searchQuery), [shoeFilteredGraphData, searchQuery]);
   const filteredGraphData = searchState.filteredGraphData;
 
   useEffect(() => {
@@ -112,10 +118,6 @@ export function GraphView({
   }, [noteOverlay, onCloseSelection, onSelectNode, selectedNodeId]);
 
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      return;
-    }
-
     if (!selectedNodeId || searchState.visibleNodeIds.has(selectedNodeId)) {
       return;
     }
@@ -124,7 +126,7 @@ export function GraphView({
     if (noteOverlay) {
       onCloseSelection();
     }
-  }, [noteOverlay, onCloseSelection, onSelectNode, searchQuery, searchState.visibleNodeIds, selectedNodeId]);
+  }, [noteOverlay, onCloseSelection, onSelectNode, searchState.visibleNodeIds, selectedNodeId]);
 
   const selectedNodeSummary = useMemo(() => {
     if (!selectedNodeId) {
@@ -137,7 +139,8 @@ export function GraphView({
     }
 
     return {
-      canOpen: node.nodeKind !== "folder",
+      canOpen: node.nodeKind === "document" || node.nodeKind === "workout",
+      detail: node.nodeKind === "shoe" ? formatShoeNodeDetail(node) : null,
       label:
         node.nodeKind === "folder"
           ? formatGraphFolderLabel(graphFolderNodeIdToPath(node.id) ?? node.title)
@@ -168,6 +171,16 @@ export function GraphView({
     onSelectNode(suggestion.nodeId);
   };
 
+  const handleShoeFilterChange = (nodeId: string | null) => {
+    setSelectedShoeNodeId(nodeId);
+    setSearchQuery("");
+    onSelectNode(nodeId);
+    if (noteOverlay) {
+      onCloseSelection();
+    }
+    setFitRequestVersion((value) => value + 1);
+  };
+
   return (
     <div className="relative h-full min-h-0">
       <div className="relative h-full min-h-0">
@@ -195,10 +208,13 @@ export function GraphView({
               onSelectSuggestion={handleSearchSuggestionSelect}
             />
           }
+          selectedShoeNodeId={selectedShoeNodeId}
           showAllLabels={showAllLabels}
           showAuthoredOnly={showAuthoredOnly}
+          shoeFilterOptions={shoeFilterOptions}
           onClusterModeChange={setClusterMode}
           onFitView={() => setFitRequestVersion((value) => value + 1)}
+          onShoeFilterChange={handleShoeFilterChange}
           onToggleAllLabels={() => setShowAllLabels((value) => !value)}
           onToggleAuthoredOnly={() => setShowAuthoredOnly((value) => !value)}
           onTogglePaused={() => setPaused((value) => !value)}
@@ -236,4 +252,60 @@ export function GraphView({
       </div>
     </div>
   );
+}
+
+function buildShoeFilterOptions(data: NoteGraphData): GraphShoeFilterOption[] {
+  return data.nodes
+    .filter((node) => node.nodeKind === "shoe")
+    .map((node) => ({
+      label: node.title,
+      nodeId: node.id,
+      totalDistanceKm: node.metrics.shoeTotalDistanceKm ?? 0,
+    }))
+    .sort((left, right) =>
+      right.totalDistanceKm === left.totalDistanceKm
+        ? left.label.localeCompare(right.label)
+        : right.totalDistanceKm - left.totalDistanceKm,
+    );
+}
+
+function filterGraphDataByShoe(data: NoteGraphData, shoeNodeId: string | null): NoteGraphData {
+  if (!shoeNodeId) {
+    return data;
+  }
+
+  const visibleNodeIds = new Set<string>([shoeNodeId]);
+  for (const link of data.links) {
+    if (link.source === shoeNodeId || link.target === shoeNodeId) {
+      visibleNodeIds.add(link.source);
+      visibleNodeIds.add(link.target);
+    }
+  }
+
+  const nodes = data.nodes.filter((node) => visibleNodeIds.has(node.id));
+  const links = data.links.filter((link) => visibleNodeIds.has(link.source) && visibleNodeIds.has(link.target));
+  const clusters = data.clusters
+    .map((cluster) => ({
+      ...cluster,
+      nodeIds: cluster.nodeIds.filter((nodeId) => visibleNodeIds.has(nodeId)),
+    }))
+    .filter((cluster) => cluster.nodeIds.length > 0);
+
+  return {
+    ...data,
+    clusters,
+    links,
+    nodes,
+  };
+}
+
+function formatShoeNodeDetail(node: NoteGraphData["nodes"][number]) {
+  const distanceKm = node.metrics.shoeTotalDistanceKm;
+  return typeof distanceKm === "number" && Number.isFinite(distanceKm)
+    ? `${formatKilometers(distanceKm)} logged`
+    : "Shoe";
+}
+
+function formatKilometers(value: number) {
+  return `${value.toFixed(1).replace(/\.0$/u, "")} km`;
 }

@@ -41,8 +41,14 @@ pub struct LoadedLink {
 pub struct NodeClusters {
     pub eventType: String,
     pub month: String,
+    #[serde(default = "default_shoe_cluster")]
+    pub shoe: String,
     pub status: String,
     pub trainingBlock: String,
+}
+
+fn default_shoe_cluster() -> String {
+    "Reference".to_string()
 }
 
 #[derive(Clone, Deserialize, Serialize)]

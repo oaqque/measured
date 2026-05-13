@@ -15,6 +15,7 @@ impl GraphState {
                 "status" => self.nodes[*index].clusters.status.clone(),
                 "month" => self.nodes[*index].clusters.month.clone(),
                 "trainingBlock" => self.nodes[*index].clusters.trainingBlock.clone(),
+                "shoe" => self.nodes[*index].clusters.shoe.clone(),
                 _ => self.nodes[*index].clusters.eventType.clone(),
             })
             .collect::<Vec<_>>();
@@ -35,6 +36,7 @@ impl GraphState {
                 "status" => self.nodes[index].clusters.status.clone(),
                 "month" => self.nodes[index].clusters.month.clone(),
                 "trainingBlock" => self.nodes[index].clusters.trainingBlock.clone(),
+                "shoe" => self.nodes[index].clusters.shoe.clone(),
                 _ => self.nodes[index].clusters.eventType.clone(),
             };
             cluster_members.entry(key).or_default().push(index);

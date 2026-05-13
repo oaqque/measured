@@ -17,6 +17,7 @@ const CATEGORY_COLORS = {
   plan: "#2e5f73",
   race: "#c93636",
   run: "#1d2a6d",
+  shoe: "#6d4c1d",
   strength: "#2f7d51",
   welcome: "#6a6f8c",
 } as const;
@@ -52,6 +53,10 @@ function getClusterValue(node: NoteGraphData["nodes"][number], clusterMode: Grap
     return node.clusters.trainingBlock;
   }
 
+  if (clusterMode === "shoe") {
+    return node.clusters.shoe ?? "Reference";
+  }
+
   return null;
 }
 
@@ -75,6 +80,7 @@ export function GraphCanvas({
   selectedNodeId: string | null;
   selectedNodeSummary: {
     canOpen: boolean;
+    detail?: string | null;
     label: string;
     nodeKind: NoteGraphData["nodes"][number]["nodeKind"];
   } | null;
@@ -768,7 +774,7 @@ export function GraphCanvas({
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-foreground">{selectedNodeSummary.label}</p>
               <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                {selectedNodeSummary.nodeKind}
+                {selectedNodeSummary.detail ?? selectedNodeSummary.nodeKind}
               </p>
             </div>
 

@@ -1,6 +1,6 @@
 export const NOTE_GRAPH_SCHEMA_VERSION = 1 as const;
-export const GRAPH_CLUSTER_MODES = ["none", "eventType", "status", "month", "trainingBlock"] as const;
-export const GRAPH_NODE_KINDS = ["workout", "document", "folder"] as const;
+export const GRAPH_CLUSTER_MODES = ["none", "eventType", "status", "month", "trainingBlock", "shoe"] as const;
+export const GRAPH_NODE_KINDS = ["workout", "document", "folder", "shoe"] as const;
 export const GRAPH_NODE_STATUSES = ["planned", "completed", "reference", "folder"] as const;
 export const GRAPH_NODE_CATEGORIES = [
   "run",
@@ -15,6 +15,7 @@ export const GRAPH_NODE_CATEGORIES = [
   "metaanalysis",
   "changelog",
   "folder",
+  "shoe",
 ] as const;
 export const GRAPH_LINK_SOURCES = ["authored", "derived"] as const;
 export const GRAPH_LINK_KINDS = [
@@ -23,6 +24,7 @@ export const GRAPH_LINK_KINDS = [
   "goalBridge",
   "contains",
   "references",
+  "shoe",
   "derived",
   "custom",
 ] as const;
@@ -50,6 +52,7 @@ export interface AuthoredGraphLinksDocument {
 export interface NoteGraphNodeClusterRefs {
   eventType: string;
   month: string;
+  shoe?: string;
   status: GraphNodeStatus;
   trainingBlock: string;
 }
@@ -71,6 +74,7 @@ export interface NoteGraphNode {
   metrics: {
     expectedDistanceKm: number | null;
     actualDistanceKm: number | null;
+    shoeTotalDistanceKm?: number | null;
   };
 }
 

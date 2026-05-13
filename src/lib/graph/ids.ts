@@ -6,6 +6,14 @@ export function createGraphFolderNodeId(folderPath: string) {
   return `folder:${folderPath}`;
 }
 
+export function createGraphShoeNodeId(shoeName: string) {
+  const slug = shoeName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, "-")
+    .replace(/^-+|-+$/gu, "");
+  return `shoe:${slug || "unknown"}`;
+}
+
 export function graphFolderNodeIdToPath(nodeId: string) {
   return nodeId.startsWith("folder:") ? nodeId.slice("folder:".length) : null;
 }

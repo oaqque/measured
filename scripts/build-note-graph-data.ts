@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import {
   createGraphDocumentNodeId,
   createGraphFolderNodeId,
+  createGraphShoeNodeId,
   normalizeGraphHref,
   workoutHrefToSlug,
 } from "../src/lib/graph/ids";
@@ -51,9 +52,11 @@ interface GraphSourceNode {
   sourcePath: string | null;
   body: string;
   radius: number;
+  shoeName: string | null;
   metrics: {
     expectedDistanceKm: number | null;
     actualDistanceKm: number | null;
+    shoeTotalDistanceKm?: number | null;
   };
 }
 
@@ -62,6 +65,12 @@ interface FolderDescriptor {
   id: string;
   path: string;
   title: string;
+}
+
+interface ShoeSummary {
+  name: string;
+  totalDistanceKm: number;
+  workoutCount: number;
 }
 
 async function main() {
@@ -90,6 +99,7 @@ async function main() {
 
 function buildGraphSources(payload: WorkoutsPayload): GraphSourceNode[] {
   const sources: GraphSourceNode[] = [];
+  const shoeSummaries = buildShoeSummaries(payload.workouts);
 
   const pushDocument = (
     title: string,
@@ -109,6 +119,7 @@ function buildGraphSources(payload: WorkoutsPayload): GraphSourceNode[] {
       sourcePath,
       body,
       radius: getDocumentRadius(category),
+      shoeName: null,
       metrics: {
         expectedDistanceKm: null,
         actualDistanceKm: null,
@@ -130,6 +141,28 @@ function buildGraphSources(payload: WorkoutsPayload): GraphSourceNode[] {
     pushDocument(entry.title, entry.body, entry.sourcePath, "changelog", entry.date);
   }
 
+  for (const shoe of shoeSummaries) {
+    const formattedDistance = formatKilometers(shoe.totalDistanceKm);
+    sources.push({
+      id: createGraphShoeNodeId(shoe.name),
+      slug: null,
+      nodeKind: "shoe",
+      title: shoe.name,
+      date: null,
+      category: "shoe",
+      status: "reference",
+      sourcePath: null,
+      body: `${shoe.name} has travelled ${formattedDistance} across ${shoe.workoutCount} logged workouts.`,
+      radius: getShoeRadius(shoe.totalDistanceKm),
+      shoeName: shoe.name,
+      metrics: {
+        expectedDistanceKm: null,
+        actualDistanceKm: null,
+        shoeTotalDistanceKm: roundDistanceKm(shoe.totalDistanceKm),
+      },
+    });
+  }
+
   for (const workout of payload.workouts) {
     sources.push({
       id: workout.slug,
@@ -142,6 +175,7 @@ function buildGraphSources(payload: WorkoutsPayload): GraphSourceNode[] {
       sourcePath: workout.sourcePath,
       body: workout.body,
       radius: getWorkoutRadius(workout),
+      shoeName: workout.shoe?.name ?? null,
       metrics: {
         expectedDistanceKm: workout.expectedDistanceKm ?? null,
         actualDistanceKm: workout.actualDistanceKm ?? null,
@@ -232,6 +266,7 @@ function buildNodes(sources: GraphSourceNode[], folders: FolderDescriptor[]): No
       clusters: {
         eventType: "folder",
         month: "structure",
+        shoe: "Structure",
         status: "folder",
         trainingBlock: folder.path,
       },
@@ -254,14 +289,26 @@ function buildClustersForSource(source: GraphSourceNode, earliestDateMs: number)
     return {
       eventType: source.category,
       month: clusterMonth,
+      shoe: source.shoeName ?? "No shoe",
       status: source.status,
       trainingBlock: `${trainingBlockStart} to ${trainingBlockEnd}`,
+    };
+  }
+
+  if (source.nodeKind === "shoe") {
+    return {
+      eventType: "shoe",
+      month: "structure",
+      shoe: source.shoeName ?? source.title,
+      status: source.status,
+      trainingBlock: "shoes",
     };
   }
 
   return {
     eventType: source.category,
     month: source.date ? source.date.slice(0, 7) : "undated",
+    shoe: "Reference",
     status: source.status,
     trainingBlock: source.date ? "reference-dated" : "reference-undated",
   };
@@ -315,6 +362,27 @@ function buildLinks(
       kind: "contains",
       strength: 0.72,
       label: "folder contains note",
+      sourceType: "derived",
+    });
+  }
+
+  for (const source of sources) {
+    if (source.nodeKind !== "workout" || !source.shoeName) {
+      continue;
+    }
+
+    const shoeNodeId = createGraphShoeNodeId(source.shoeName);
+    if (!nodeIds.has(shoeNodeId)) {
+      continue;
+    }
+
+    upsertLink(links, {
+      id: createLinkId(shoeNodeId, source.id, "shoe"),
+      source: shoeNodeId,
+      target: source.id,
+      kind: "shoe",
+      strength: 0.88,
+      label: "shoe used",
       sourceType: "derived",
     });
   }
@@ -400,6 +468,7 @@ function buildClusters(nodes: NoteGraphNode[]): NoteGraphCluster[] {
     addClusterNode(clusters, "status", node.clusters.status, formatStatusLabel(node.clusters.status), node.id);
     addClusterNode(clusters, "month", node.clusters.month, formatMonthLabel(node.clusters.month), node.id);
     addClusterNode(clusters, "trainingBlock", node.clusters.trainingBlock, formatTrainingBlockLabel(node.clusters.trainingBlock), node.id);
+    addClusterNode(clusters, "shoe", node.clusters.shoe ?? "Reference", formatShoeClusterLabel(node.clusters.shoe ?? "Reference"), node.id);
   }
 
   return Array.from(clusters.values()).sort((left, right) => left.id.localeCompare(right.id));
@@ -426,6 +495,36 @@ function addClusterNode(
     label,
     nodeIds: [nodeId],
   });
+}
+
+function buildShoeSummaries(workouts: WorkoutNote[]) {
+  const summaries = new Map<string, ShoeSummary>();
+
+  for (const workout of workouts) {
+    const shoeName = workout.shoe?.name?.trim();
+    const distanceKm = workout.actualDistanceKm;
+    if (!shoeName || typeof distanceKm !== "number" || !Number.isFinite(distanceKm)) {
+      continue;
+    }
+
+    const existing = summaries.get(shoeName);
+    if (existing) {
+      existing.totalDistanceKm += distanceKm;
+      existing.workoutCount += 1;
+    } else {
+      summaries.set(shoeName, {
+        name: shoeName,
+        totalDistanceKm: distanceKm,
+        workoutCount: 1,
+      });
+    }
+  }
+
+  return Array.from(summaries.values()).sort((left, right) =>
+    right.totalDistanceKm === left.totalDistanceKm
+      ? left.name.localeCompare(right.name)
+      : right.totalDistanceKm - left.totalDistanceKm,
+  );
 }
 
 function getWorkoutRadius(workout: WorkoutNote) {
@@ -456,9 +555,17 @@ function getDocumentRadius(category: GraphNodeCategory) {
   return 15;
 }
 
+function getShoeRadius(totalDistanceKm: number) {
+  return Math.min(26, Math.max(18, 16 + Math.sqrt(totalDistanceKm) / 5));
+}
+
 function formatCategoryLabel(value: string) {
   if (value === "metaanalysis") {
     return "Metaanalysis";
+  }
+
+  if (value === "shoe") {
+    return "Shoes";
   }
 
   if (value === "goals") {
@@ -512,6 +619,22 @@ function formatTrainingBlockLabel(value: string) {
   }
 
   return value;
+}
+
+function formatShoeClusterLabel(value: string) {
+  return value;
+}
+
+function formatKilometers(value: number) {
+  return `${trimTrailingZero(Math.round(value * 10) / 10)} km`;
+}
+
+function roundDistanceKm(value: number) {
+  return Math.round(value * 1000) / 1000;
+}
+
+function trimTrailingZero(value: number) {
+  return value.toFixed(1).replace(/\.0$/u, "");
 }
 
 function validateAuthoredLinksDocument(document: AuthoredGraphLinksDocument) {

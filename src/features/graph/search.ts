@@ -99,14 +99,20 @@ function buildSearchableNode(node: NoteGraphNode): SearchableNode {
   const label = getNodeSearchLabel(node);
   const dateAliases = getRelativeDateAliases(node.date);
   const categoryAliases = getCategoryAliases(node);
-  const filterAliases = [...getRelativeDateFilterAliases(node.date), ...getCategoryFilterAliases(node)];
+  const filterAliases = [
+    ...getRelativeDateFilterAliases(node.date),
+    ...getCategoryFilterAliases(node),
+    ...getShoeFilterAliases(node),
+  ];
   const searchFields = [
     label,
     node.title,
+    node.excerpt,
     node.slug,
     node.sourcePath,
     node.date,
     node.category,
+    node.clusters.shoe,
     ...categoryAliases,
     ...dateAliases,
     ...filterAliases.map((alias) => alias.value),
@@ -324,6 +330,15 @@ function getCategoryFilterAliases(node: NoteGraphNode) {
       label: formatFilterLabel(alias),
       value: alias,
     }));
+}
+
+function getShoeFilterAliases(node: NoteGraphNode) {
+  const shoeName = node.clusters.shoe;
+  if (!shoeName || shoeName === "No shoe" || shoeName === "Reference" || shoeName === "Structure") {
+    return [];
+  }
+
+  return [createFilterAlias(shoeName, "Shoe")];
 }
 
 function createFilterAlias(label: string, kind: string): SearchFilterAlias {
