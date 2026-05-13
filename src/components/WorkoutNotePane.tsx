@@ -406,6 +406,7 @@ function WorkoutMetadataGrid({
     <div className={cn("space-y-3 pt-1 text-sm", className)}>
       <SessionMetadataGroup workout={workout} />
       <DistancePaceMetadataGroup workout={workout} />
+      <HeartRateMetadataGroup workout={workout} />
       {weatherDetails ? <WeatherMetadataGroup details={weatherDetails} /> : null}
       <MetadataGroup
         icon={FileText}
@@ -827,6 +828,66 @@ function DistancePaceMetadataGroup({ workout }: { workout: WorkoutNote }) {
   );
 }
 
+function HeartRateMetadataGroup({ workout }: { workout: WorkoutNote }) {
+  if (workout.averageHeartrate === null && workout.maxHeartrate === null) {
+    return null;
+  }
+
+  return (
+    <section className="rounded-[0.5rem] border border-foreground/10 bg-background/40 p-3">
+      <MetadataSectionHeader icon={HeartPulse} title="Heart rate" />
+
+      <div className="mt-3 grid grid-cols-2 items-end gap-3">
+        <HeartRateSummaryValue
+          heartRate={workout.averageHeartrate}
+          label="Average"
+        />
+        <HeartRateSummaryValue
+          align="right"
+          heartRate={workout.maxHeartrate}
+          label="Max"
+        />
+      </div>
+    </section>
+  );
+}
+
+function HeartRateSummaryValue({
+  align = "left",
+  heartRate,
+  label,
+}: {
+  align?: "left" | "right";
+  heartRate: number | null;
+  label: string;
+}) {
+  const zone = heartRate !== null ? getHeartRateZoneDetails(heartRate) : null;
+
+  return (
+    <div className={cn("min-w-0", align === "right" && "text-right")}>
+      <p className="eyebrow">{label}</p>
+      <p className="mt-1 break-words text-xl font-black leading-none text-foreground">
+        {formatHeartRate(heartRate) ?? "No data"}
+      </p>
+      {zone ? (
+        <p
+          className={cn(
+            "mt-2 flex items-center gap-1.5 text-xs leading-snug text-muted-foreground",
+            align === "right" && "justify-end",
+          )}
+        >
+          <span
+            aria-hidden="true"
+            className="size-2 shrink-0 rounded-full"
+            style={{ backgroundColor: zone.color }}
+          />
+          <span>{zone.label}</span>
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function MetadataGroup({
   icon: Icon,
   rows,
@@ -1080,6 +1141,17 @@ function getWorkoutStatusDetails(completed: string | null) {
   }
 
   return { context: formatCompletedTimestamp(completed), label: "Completed" };
+}
+
+function getHeartRateZoneDetails(heartRate: number) {
+  for (let index = LTHR_HEART_RATE_ZONE_BANDS.length - 1; index >= 0; index -= 1) {
+    const band = LTHR_HEART_RATE_ZONE_BANDS[index];
+    if (heartRate >= band.minimum) {
+      return band;
+    }
+  }
+
+  return LTHR_HEART_RATE_ZONE_BANDS[0];
 }
 
 function getDistancePaceMetrics(
@@ -1418,6 +1490,14 @@ function formatWorkoutDuration(totalSeconds: number | null) {
   }
 
   return formatDurationLabel(totalSeconds);
+}
+
+function formatHeartRate(value: number | null) {
+  if (value === null) {
+    return null;
+  }
+
+  return `${Math.round(value)} bpm`;
 }
 
 function formatWorkoutPace(movingTimeSeconds: number | null, distanceKm: number | null) {
