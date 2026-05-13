@@ -751,7 +751,7 @@ function MetadataGroup({
         </span>
         <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       </div>
-      <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
         {rows.map((row) => (
           <MetadataRow key={row.label} label={row.label} value={row.value} />
         ))}
