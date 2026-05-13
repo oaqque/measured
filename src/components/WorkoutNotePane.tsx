@@ -401,7 +401,6 @@ function WorkoutMetadataGrid({
     <div className={cn("space-y-3 pt-1 text-sm", className)}>
       <SessionMetadataGroup workout={workout} />
       <DistancePaceMetadataGroup workout={workout} />
-      <ShoeMetadataGroup shoe={workout.shoe} />
       <HeartRateMetadataGroup workout={workout} />
       {weatherDetails ? <WeatherMetadataGroup details={weatherDetails} /> : null}
       <MetadataGroup
@@ -409,6 +408,7 @@ function WorkoutMetadataGrid({
         rows={[{ label: "Source file", value: workout.sourcePath }]}
         title="Source"
       />
+      <ShoeMetadataGroup shoe={workout.shoe} />
     </div>
   );
 }
