@@ -80,6 +80,76 @@ When producing run analysis, use the fused view of the workout rather than a sin
 
 Treat this fused view as the analysis input. Do not write analysis from the note body alone when richer data exists.
 
+#### Mandatory Available Metrics Checklist
+
+Before writing completed-run analysis, explicitly check each available category below. You do not need to mention every category in the final note; mention the ones that materially change the coaching read, and briefly note important missing or stale sources when they limit confidence.
+
+- Session context and intent:
+  - planned session from `PLAN.md`
+  - expected distance versus actual distance
+  - planned date versus completed date
+  - workout type, prescription details, and whether the execution matched the intended stimulus
+  - current goal hierarchy from `GOALS.md` and relevant `data/training/goals/*.md`
+  - adjacent sessions, current week target, and changelog context
+- Provider linkage and data quality:
+  - Strava and Apple Health activity ids in `activityRefs`
+  - receiver-backed Apple Health freshness from `vault/apple-health-sync-server/receiver.sqlite3`
+  - whether route streams and Apple Health measurements exist for the run
+  - source/device metadata when it explains data quality or missing fields
+  - moving-time versus elapsed-time gaps and stream `moving` flags
+- Core run summary:
+  - actual distance, moving time, elapsed time, and derived moving pace
+  - average and max heart rate
+  - elevation gain and route profile
+  - stoppages, pauses, interruptions, or unusual GPS/stream gaps
+- Grade-adjusted pace:
+  - Strava GAP from `gradeAdjustedPace` when present
+  - measured local GAP from `measuredGradeAdjustedPace` when present
+  - measured GAP reliability, distance coverage, and whether Strava and measured GAP agree or diverge
+  - raw moving pace versus GAP, especially on hilly, windy, or uneven routes
+- Route-stream execution:
+  - `time`, `distance`, `velocitySmooth`, `heartrate`, `altitude`, and `moving` streams
+  - warm-up, work reps, recoveries, cool-downs, surges, fades, and late accelerations
+  - first-half versus second-half pace, HR, cadence, and climbing when relevant
+  - whether workout structure in the stream matches the note title or prescribed session
+- Heart-rate intensity:
+  - average/max HR against the intended effort
+  - HR drift or decoupling across the run
+  - time or pattern in HR zones when streams support it
+  - whether an easy/steady/threshold label matches the HR cost
+- Apple Health workout measurements:
+  - during-workout heart-rate samples
+  - cadence and cadence stability
+  - sparse sample counts or sensor gaps that reduce confidence
+- Apple Health recovery context:
+  - resting heart rate
+  - HRV
+  - sleep duration
+  - VO2 max
+  - respiratory rate
+  - oxygen saturation
+  - use these as context for readiness and recovery, not as deterministic explanations
+- Weather:
+  - temperature and apparent temperature
+  - humidity
+  - precipitation
+  - wind speed and gusts
+  - whether conditions make raw pace, HR, or perceived effort harder to interpret
+- Shoes and gear:
+  - shoe used on the run
+  - shoe status and known shoe mileage when available
+  - whether footwear context matters for performance, soreness, terrain, or injury risk
+- Best efforts and hidden intensity:
+  - generated best-effort results when relevant
+  - accidental PR-style segments, fast finishes, or sprint surges inside nominally easy runs
+  - whether short hard efforts changed the session cost
+- Training load and durability:
+  - current week volume before and after the run
+  - recent rolling load where available from surrounding notes
+  - intensity distribution across the week
+  - sequence of hard run days, long runs, basketball, strength, legs sessions, and recovery days
+  - whether the run increases injury risk, supports durability, or requires downstream adjustment
+
 #### Prefer Measured Claims
 
 Reference real calculated metrics instead of generic claims. Prefer statements like:
