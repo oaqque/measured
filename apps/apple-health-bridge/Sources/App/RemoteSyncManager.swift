@@ -89,7 +89,7 @@ final class RemoteSyncManager: ObservableObject {
         )
         lastError = nil
         defer { isSending = false }
-        AppDiagnosticsLogger.appendSync(
+        AppDiagnosticsLogger.appendSyncMemory(
             "Receiver sync begin baseURL=\(receiverBaseURL.absoluteString) activities=\(snapshot.activities.count) collections=\(snapshot.collections.count) deletedActivities=\(snapshot.deletedActivityIds.count)"
         )
 
@@ -158,13 +158,20 @@ final class RemoteSyncManager: ObservableObject {
                 completedUnitCount: 2,
                 totalUnitCount: 4
             )
-            AppDiagnosticsLogger.appendSync("Receiver sync preparing canonical manifest.")
+            AppDiagnosticsLogger.appendSyncMemory("Receiver sync preparing canonical manifest.")
             let preparedSync = try RemoteSyncBuilder.prepareSync(
                 snapshot: snapshot,
                 state: replicationState,
                 receiverStatus: status,
-                checkpointSequence: checkpointResponse?.lastSequence
+                checkpointSequence: checkpointResponse?.lastSequence,
+                logger: { message in
+                    AppDiagnosticsLogger.appendSyncMemory(message)
+                }
             )
+            defer {
+                preparedSync.cleanupStagedBlobs()
+                AppDiagnosticsLogger.appendSyncMemory("Receiver sync cleaned staged blob files.")
+            }
             AppDiagnosticsLogger.appendSync(
                 "Receiver sync prepared replicationId=\(preparedSync.replicationId) sequence=\(preparedSync.sequence) changed=\(preparedSync.changed) recoveredSenderState=\(preparedSync.recoveredSenderState) blobCount=\(preparedSync.blobCount) totalBlobBytes=\(preparedSync.totalBlobBytes)"
             )
@@ -225,12 +232,12 @@ final class RemoteSyncManager: ObservableObject {
                     totalUnitCount: 5
                 )
                 AppDiagnosticsLogger.appendSync(
-                    "Uploading blob \(index + 1)/\(missingBlobHashes.count) hash=\(blobHash) compressedBytes=\(blob.compressedBytes)"
+                    "Uploading blob \(index + 1)/\(missingBlobHashes.count) hash=\(blobHash) compressedBytes=\(blob.compressedBytes) file=\(blob.fileURL.lastPathComponent)"
                 )
-                let _: BlobUploadResponse = try await sendBinaryRequest(
+                let _: BlobUploadResponse = try await sendBinaryFileRequest(
                     path: "\(RemoteSyncConstants.endpointPath)/_blob/\(blobHash)",
                     method: "PUT",
-                    body: blob.data,
+                    fileURL: blob.fileURL,
                     contentType: "application/octet-stream",
                     baseURL: receiverBaseURL
                 )
@@ -534,6 +541,24 @@ final class RemoteSyncManager: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
         let (data, response) = try await urlSession.data(for: request)
+        try validateHTTPResponse(response, data: data)
+        return try JSONDecoder().decode(ResponseBody.self, from: data)
+    }
+
+    private func sendBinaryFileRequest<ResponseBody: Decodable>(
+        path: String,
+        method: String,
+        fileURL: URL,
+        contentType: String,
+        baseURL: URL
+    ) async throws -> ResponseBody {
+        var request = URLRequest(url: resolvedURL(for: path, baseURL: baseURL))
+        request.httpMethod = method
+        request.timeoutInterval = 120
+        request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let (data, response) = try await urlSession.upload(for: request, fromFile: fileURL)
         try validateHTTPResponse(response, data: data)
         return try JSONDecoder().decode(ResponseBody.self, from: data)
     }

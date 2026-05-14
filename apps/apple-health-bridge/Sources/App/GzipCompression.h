@@ -5,6 +5,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface GzipCompression : NSObject
 
 + (nullable NSData *)gzipData:(NSData *)data error:(NSError * _Nullable * _Nullable)error;
++ (BOOL)gzipFileAtURL:(NSURL *)sourceURL toURL:(NSURL *)destinationURL error:(NSError * _Nullable * _Nullable)error;
++ (nullable NSData *)gunzipData:(NSData *)data error:(NSError * _Nullable * _Nullable)error;
 
 @end
 

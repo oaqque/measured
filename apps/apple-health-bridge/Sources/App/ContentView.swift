@@ -420,11 +420,11 @@ struct ContentView: View {
 
     private func syncAndExport() async {
         AppDiagnosticsLogger.resetSyncLog()
-        AppDiagnosticsLogger.appendSync("Sync run started.")
+        AppDiagnosticsLogger.appendSyncMemory("Sync run started.")
 
         AppDiagnosticsLogger.appendSync("Starting workout sync.")
         await workoutSyncEngine.syncWorkouts(using: healthAuthorizationManager.healthStore)
-        AppDiagnosticsLogger.appendSync(
+        AppDiagnosticsLogger.appendSyncMemory(
             "Workout sync finished. workouts=\(workoutSyncEngine.workouts.count) deleted=\(workoutSyncEngine.deletedWorkoutIds.count) error=\(workoutSyncEngine.lastError ?? "none")"
         )
 
@@ -436,13 +436,13 @@ struct ContentView: View {
             deletedWorkoutIds: workoutSyncEngine.deletedWorkoutIds,
             using: healthAuthorizationManager.healthStore
         )
-        AppDiagnosticsLogger.appendSync(
+        AppDiagnosticsLogger.appendSyncMemory(
             "Route sync finished. routes=\(routeSyncEngine.routes.count) error=\(routeSyncEngine.lastError ?? "none")"
         )
 
         AppDiagnosticsLogger.appendSync("Starting health data sync.")
         await healthDataSyncEngine.syncSamples(using: healthAuthorizationManager.healthStore)
-        AppDiagnosticsLogger.appendSync(
+        AppDiagnosticsLogger.appendSyncMemory(
             "Health data sync finished. collections=\(healthDataSyncEngine.collections.count) totalSamples=\(healthDataSyncEngine.totalSampleCount) error=\(healthDataSyncEngine.lastError ?? "none")"
         )
 
@@ -452,7 +452,7 @@ struct ContentView: View {
             collections: healthDataSyncEngine.collections,
             deletedActivityIds: workoutSyncEngine.deletedWorkoutIds
         )
-        AppDiagnosticsLogger.appendSync(
+        AppDiagnosticsLogger.appendSyncMemory(
             "Snapshot built. activities=\(snapshot.activities.count) collections=\(snapshot.collections.count) deletedActivities=\(snapshot.deletedActivityIds.count)"
         )
 

@@ -9,6 +9,8 @@ enum RemoteSyncConstants {
     static let minimumSampleChunkTargetBytes = 512_000
 }
 
+typealias RemoteSyncLogHandler = (String) -> Void
+
 struct RemoteSyncStatusResponse: Decodable, Sendable {
     let protocolVersion: Int
     let schema: String
@@ -113,9 +115,13 @@ struct RemoteSyncLegacyLocalState: Codable, Sendable {
 
 struct RemoteSyncStagedBlob: Sendable {
     let hash: String
-    let data: Data
+    let fileURL: URL
     let uncompressedBytes: Int
     let compressedBytes: Int
+
+    func loadData() throws -> Data {
+        try Data(contentsOf: fileURL)
+    }
 }
 
 struct RemoteSyncPreparedSync: Sendable {
@@ -128,6 +134,31 @@ struct RemoteSyncPreparedSync: Sendable {
     let stagedBlobs: [String: RemoteSyncStagedBlob]
     let recoveredSenderState: Bool
     let changed: Bool
+    private let stagingDirectory: RemoteSyncStagingDirectory
+
+    fileprivate init(
+        replicationId: String,
+        checkpointSequence: Int?,
+        manifest: RemoteSyncSnapshotManifest,
+        manifestDigest: String,
+        sequence: Int,
+        nextState: RemoteSyncLocalState,
+        stagedBlobs: [String: RemoteSyncStagedBlob],
+        recoveredSenderState: Bool,
+        changed: Bool,
+        stagingDirectory: RemoteSyncStagingDirectory
+    ) {
+        self.replicationId = replicationId
+        self.checkpointSequence = checkpointSequence
+        self.manifest = manifest
+        self.manifestDigest = manifestDigest
+        self.sequence = sequence
+        self.nextState = nextState
+        self.stagedBlobs = stagedBlobs
+        self.recoveredSenderState = recoveredSenderState
+        self.changed = changed
+        self.stagingDirectory = stagingDirectory
+    }
 
     var blobCount: Int {
         stagedBlobs.count
@@ -135,6 +166,31 @@ struct RemoteSyncPreparedSync: Sendable {
 
     var totalBlobBytes: Int {
         stagedBlobs.values.reduce(0) { $0 + $1.compressedBytes }
+    }
+
+    func cleanupStagedBlobs() {
+        stagingDirectory.remove()
+    }
+}
+
+private final class RemoteSyncStagingDirectory: @unchecked Sendable {
+    let url: URL
+
+    init() throws {
+        let baseURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first ??
+            URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+        url = baseURL
+            .appendingPathComponent("remote-sync-staging", isDirectory: true)
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    }
+
+    func remove() {
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    deinit {
+        remove()
     }
 }
 
@@ -174,7 +230,32 @@ enum RemoteSyncBuilder {
         snapshot: AppleHealthExportSnapshot,
         state: RemoteSyncLocalState,
         receiverStatus: RemoteSyncStatusResponse,
-        checkpointSequence: Int?
+        checkpointSequence: Int?,
+        logger: RemoteSyncLogHandler? = nil
+    ) throws -> RemoteSyncPreparedSync {
+        let stagingDirectory = try RemoteSyncStagingDirectory()
+        do {
+            return try prepareSync(
+                snapshot: snapshot,
+                state: state,
+                receiverStatus: receiverStatus,
+                checkpointSequence: checkpointSequence,
+                stagingDirectory: stagingDirectory,
+                logger: logger
+            )
+        } catch {
+            stagingDirectory.remove()
+            throw error
+        }
+    }
+
+    private static func prepareSync(
+        snapshot: AppleHealthExportSnapshot,
+        state: RemoteSyncLocalState,
+        receiverStatus: RemoteSyncStatusResponse,
+        checkpointSequence: Int?,
+        stagingDirectory: RemoteSyncStagingDirectory,
+        logger: RemoteSyncLogHandler?
     ) throws -> RemoteSyncPreparedSync {
         let rebasedState = rebasedStateIfNeeded(state, minimumLastSequence: checkpointSequence ?? 0)
         let replicationId = replicationID(
@@ -182,19 +263,28 @@ enum RemoteSyncBuilder {
             receiverId: receiverStatus.receiverId,
             schema: receiverStatus.schema
         )
+        let totalSamples = snapshot.collections.values.reduce(0) { $0 + $1.samples.count }
+        logger?(
+            "Manifest prep started totalSamples=\(totalSamples) activities=\(snapshot.activities.count) collections=\(snapshot.collections.count) staging=\(stagingDirectory.url.lastPathComponent)"
+        )
 
         var stagedBlobs: [String: RemoteSyncStagedBlob] = [:]
         var controlBlobs: [RemoteSyncControlBlobReference] = []
 
         if !snapshot.activities.isEmpty {
+            logger?("Manifest prep staging activity_summaries count=\(snapshot.activities.count)")
             let activityBlob = try stageBlob(
                 lines: snapshot.activities.values
                     .sorted(by: activitySort)
                     .map(activitySummaryBlobData)
                     .map(canonicalJSONData),
-                maxBlobBytes: receiverStatus.maxBlobBytes
+                maxBlobBytes: receiverStatus.maxBlobBytes,
+                stagingDirectory: stagingDirectory
             )
             stagedBlobs[activityBlob.hash] = activityBlob
+            logger?(
+                "Manifest prep staged activity_summaries hash=\(shortHash(activityBlob.hash)) uncompressedBytes=\(activityBlob.uncompressedBytes) compressedBytes=\(activityBlob.compressedBytes)"
+            )
             controlBlobs.append(
                 RemoteSyncControlBlobReference(
                     kind: "activity_summaries",
@@ -219,11 +309,16 @@ enum RemoteSyncBuilder {
             }
 
         if !routeLines.isEmpty {
+            logger?("Manifest prep staging routes count=\(routeLines.count)")
             let routeBlob = try stageBlob(
                 lines: routeLines.map(canonicalJSONData),
-                maxBlobBytes: receiverStatus.maxBlobBytes
+                maxBlobBytes: receiverStatus.maxBlobBytes,
+                stagingDirectory: stagingDirectory
             )
             stagedBlobs[routeBlob.hash] = routeBlob
+            logger?(
+                "Manifest prep staged routes hash=\(shortHash(routeBlob.hash)) uncompressedBytes=\(routeBlob.uncompressedBytes) compressedBytes=\(routeBlob.compressedBytes)"
+            )
             controlBlobs.append(
                 RemoteSyncControlBlobReference(
                     kind: "routes",
@@ -236,6 +331,7 @@ enum RemoteSyncBuilder {
         }
 
         if !snapshot.collections.isEmpty {
+            logger?("Manifest prep staging collection_metadata count=\(snapshot.collections.count)")
             let collectionMetadataBlob = try stageBlob(
                 lines: snapshot.collections.values
                     .sorted(by: collectionSort)
@@ -251,9 +347,13 @@ enum RemoteSyncBuilder {
                         )
                     }
                     .map(canonicalJSONData),
-                maxBlobBytes: receiverStatus.maxBlobBytes
+                maxBlobBytes: receiverStatus.maxBlobBytes,
+                stagingDirectory: stagingDirectory
             )
             stagedBlobs[collectionMetadataBlob.hash] = collectionMetadataBlob
+            logger?(
+                "Manifest prep staged collection_metadata hash=\(shortHash(collectionMetadataBlob.hash)) uncompressedBytes=\(collectionMetadataBlob.uncompressedBytes) compressedBytes=\(collectionMetadataBlob.compressedBytes)"
+            )
             controlBlobs.append(
                 RemoteSyncControlBlobReference(
                     kind: "collection_metadata",
@@ -267,11 +367,16 @@ enum RemoteSyncBuilder {
 
         let deletedActivityIds = snapshot.deletedActivityIds.sorted()
         if !deletedActivityIds.isEmpty {
+            logger?("Manifest prep staging deleted_activity_ids count=\(deletedActivityIds.count)")
             let deletedBlob = try stageBlob(
                 lines: deletedActivityIds.map(canonicalJSONData),
-                maxBlobBytes: receiverStatus.maxBlobBytes
+                maxBlobBytes: receiverStatus.maxBlobBytes,
+                stagingDirectory: stagingDirectory
             )
             stagedBlobs[deletedBlob.hash] = deletedBlob
+            logger?(
+                "Manifest prep staged deleted_activity_ids hash=\(shortHash(deletedBlob.hash)) uncompressedBytes=\(deletedBlob.uncompressedBytes) compressedBytes=\(deletedBlob.compressedBytes)"
+            )
             controlBlobs.append(
                 RemoteSyncControlBlobReference(
                     kind: "deleted_activity_ids",
@@ -286,9 +391,12 @@ enum RemoteSyncBuilder {
         let sampleChunks = try buildSampleChunks(
             from: snapshot,
             maxBlobBytes: receiverStatus.maxBlobBytes,
-            stagedBlobs: &stagedBlobs
+            stagingDirectory: stagingDirectory,
+            stagedBlobs: &stagedBlobs,
+            logger: logger
         )
 
+        logger?("Manifest prep encoding snapshot manifest sampleChunks=\(sampleChunks.count) controlBlobs=\(controlBlobs.count)")
         let manifest = RemoteSyncSnapshotManifest(
             generatedAt: snapshot.generatedAt,
             registryGeneratedAt: snapshot.registryGeneratedAt,
@@ -304,7 +412,7 @@ enum RemoteSyncBuilder {
             currentManifestDigest: manifestDigest
         )
 
-        return RemoteSyncPreparedSync(
+        let prepared = RemoteSyncPreparedSync(
             replicationId: replicationId,
             checkpointSequence: checkpointSequence,
             manifest: manifest,
@@ -313,14 +421,21 @@ enum RemoteSyncBuilder {
             nextState: nextState,
             stagedBlobs: stagedBlobs,
             recoveredSenderState: (checkpointSequence ?? 0) > state.lastSequence,
-            changed: changed
+            changed: changed,
+            stagingDirectory: stagingDirectory
         )
+        logger?(
+            "Manifest prep finished sequence=\(sequence) changed=\(changed) recoveredSenderState=\((checkpointSequence ?? 0) > state.lastSequence) blobCount=\(prepared.blobCount) totalBlobBytes=\(prepared.totalBlobBytes) manifestDigest=\(shortHash(manifestDigest))"
+        )
+        return prepared
     }
 
     private static func buildSampleChunks(
         from snapshot: AppleHealthExportSnapshot,
         maxBlobBytes: Int,
-        stagedBlobs: inout [String: RemoteSyncStagedBlob]
+        stagingDirectory: RemoteSyncStagingDirectory,
+        stagedBlobs: inout [String: RemoteSyncStagedBlob],
+        logger: RemoteSyncLogHandler?
     ) throws -> [RemoteSyncSampleChunkReference] {
         let targetBytes = max(
             min(RemoteSyncConstants.sampleChunkTargetBytes, maxBlobBytes / 2),
@@ -328,22 +443,44 @@ enum RemoteSyncBuilder {
         )
 
         var sampleChunks: [RemoteSyncSampleChunkReference] = []
+        let sortedCollections = snapshot.collections.values.sorted(by: collectionSort)
+        let totalSamples = sortedCollections.reduce(0) { $0 + $1.samples.count }
+        logger?(
+            "Manifest prep sample chunking begin collections=\(sortedCollections.count) totalSamples=\(totalSamples) targetBytes=\(targetBytes)"
+        )
 
-        for collection in snapshot.collections.values.sorted(by: collectionSort) {
-            let sortedSamples = collection.samples.sorted(by: sampleSort)
+        for (collectionIndex, collection) in sortedCollections.enumerated() {
+            let sortedSampleIndices = collection.samples.indices.sorted {
+                sampleSort(collection.samples[$0], collection.samples[$1])
+            }
             var currentBucketId: String?
             var currentLines: [Data] = []
             var currentSampleCount = 0
             var currentMinStartDate: String?
             var currentMaxStartDate: String?
             var currentBytes = 0
+            var collectionChunkCount = 0
+            var collectionCompressedBytes = 0
+            var collectionUncompressedBytes = 0
+
+            logger?(
+                "Manifest prep sample collection begin index=\(collectionIndex + 1)/\(sortedCollections.count) key=\(collection.key) samples=\(collection.samples.count) sortIndexBytes=\(sortedSampleIndices.count * MemoryLayout<Int>.stride)"
+            )
 
             func flushChunk() throws {
                 guard let currentBucketId, !currentLines.isEmpty else {
                     return
                 }
 
-                let stagedBlob = try stageBlob(lines: currentLines, maxBlobBytes: maxBlobBytes)
+                let nextChunkNumber = collectionChunkCount + 1
+                logger?(
+                    "Manifest prep sample chunk stage begin key=\(collection.key) chunk=\(nextChunkNumber) bucket=\(currentBucketId) samples=\(currentSampleCount) uncompressedBytes=\(currentBytes)"
+                )
+                let stagedBlob = try stageBlob(
+                    lines: currentLines,
+                    maxBlobBytes: maxBlobBytes,
+                    stagingDirectory: stagingDirectory
+                )
                 stagedBlobs[stagedBlob.hash] = stagedBlob
                 sampleChunks.append(
                     RemoteSyncSampleChunkReference(
@@ -357,15 +494,22 @@ enum RemoteSyncBuilder {
                         maxStartDate: currentMaxStartDate
                     )
                 )
+                collectionChunkCount += 1
+                collectionCompressedBytes += stagedBlob.compressedBytes
+                collectionUncompressedBytes += stagedBlob.uncompressedBytes
+                logger?(
+                    "Manifest prep sample chunk staged key=\(collection.key) chunk=\(collectionChunkCount) bucket=\(currentBucketId) hash=\(shortHash(stagedBlob.hash)) compressedBytes=\(stagedBlob.compressedBytes) totalChunks=\(sampleChunks.count)"
+                )
 
-                currentLines = []
+                currentLines.removeAll(keepingCapacity: false)
                 currentSampleCount = 0
                 currentMinStartDate = nil
                 currentMaxStartDate = nil
                 currentBytes = 0
             }
 
-            for sample in sortedSamples {
+            for sampleIndex in sortedSampleIndices {
+                let sample = collection.samples[sampleIndex]
                 let bucketId = sampleBucketID(for: sample)
                 let line = try canonicalJSONData(sample)
                 let lineBytes = line.count + 1
@@ -385,11 +529,16 @@ enum RemoteSyncBuilder {
             }
 
             try flushChunk()
+            logger?(
+                "Manifest prep sample collection finished key=\(collection.key) chunks=\(collectionChunkCount) uncompressedBytes=\(collectionUncompressedBytes) compressedBytes=\(collectionCompressedBytes)"
+            )
         }
 
-        return sampleChunks.sorted {
+        let sortedSampleChunks = sampleChunks.sorted {
             ($0.collectionKey, $0.bucketId, $0.blobHash) < ($1.collectionKey, $1.bucketId, $1.blobHash)
         }
+        logger?("Manifest prep sample chunking finished chunks=\(sortedSampleChunks.count)")
+        return sortedSampleChunks
     }
 }
 
@@ -409,27 +558,72 @@ private func activitySummaryBlobData(_ activity: AppleHealthExportActivity) -> R
     )
 }
 
-private func stageBlob(lines: [Data], maxBlobBytes: Int) throws -> RemoteSyncStagedBlob {
-    var uncompressed = Data()
-    for line in lines {
-        uncompressed.append(line)
-        uncompressed.append(0x0A)
+private func stageBlob(
+    lines: [Data],
+    maxBlobBytes: Int,
+    stagingDirectory: RemoteSyncStagingDirectory
+) throws -> RemoteSyncStagedBlob {
+    let fileManager = FileManager.default
+    let uncompressedURL = stagingDirectory.url
+        .appendingPathComponent("\(UUID().uuidString).ndjson")
+    let compressedTemporaryURL = stagingDirectory.url
+        .appendingPathComponent("\(UUID().uuidString).ndjson.gz.tmp")
+    var didMoveCompressedFile = false
+
+    defer {
+        try? fileManager.removeItem(at: uncompressedURL)
+        if !didMoveCompressedFile {
+            try? fileManager.removeItem(at: compressedTemporaryURL)
+        }
     }
 
-    let hash = try sha256Hex(for: uncompressed)
-    let compressed = try GzipCompression.gzipData(uncompressed)
+    guard fileManager.createFile(atPath: uncompressedURL.path, contents: nil) else {
+        throw NSError(domain: "RemoteSync", code: 10, userInfo: [
+            NSLocalizedDescriptionKey: "Failed to create a temporary sync blob file.",
+        ])
+    }
 
-    if compressed.count > maxBlobBytes {
+    let newline = Data([0x0A])
+    var hasher = SHA256()
+    var uncompressedBytes = 0
+    let handle = try FileHandle(forWritingTo: uncompressedURL)
+    do {
+        for line in lines {
+            try handle.write(contentsOf: line)
+            hasher.update(data: line)
+            try handle.write(contentsOf: newline)
+            hasher.update(data: newline)
+            uncompressedBytes += line.count + newline.count
+        }
+        try handle.close()
+    } catch {
+        try? handle.close()
+        throw error
+    }
+
+    let hash = hexString(for: hasher.finalize())
+    try GzipCompression.gzipFile(at: uncompressedURL, to: compressedTemporaryURL)
+    let compressedBytes = try fileSize(at: compressedTemporaryURL)
+
+    if compressedBytes > maxBlobBytes {
         throw NSError(domain: "RemoteSync", code: 2, userInfo: [
             NSLocalizedDescriptionKey: "A sync blob exceeded the receiver's maximum blob size.",
         ])
     }
 
+    let compressedURL = stagingDirectory.url
+        .appendingPathComponent("\(hash).ndjson.gz")
+    if fileManager.fileExists(atPath: compressedURL.path) {
+        try fileManager.removeItem(at: compressedURL)
+    }
+    try fileManager.moveItem(at: compressedTemporaryURL, to: compressedURL)
+    didMoveCompressedFile = true
+
     return RemoteSyncStagedBlob(
         hash: hash,
-        data: compressed,
-        uncompressedBytes: uncompressed.count,
-        compressedBytes: compressed.count
+        fileURL: compressedURL,
+        uncompressedBytes: uncompressedBytes,
+        compressedBytes: compressedBytes
     )
 }
 
@@ -525,7 +719,25 @@ private func canonicalJSONData<T: Encodable>(_ value: T) throws -> Data {
 
 private func sha256Hex(for data: Data) throws -> String {
     let digest = SHA256.hash(data: data)
-    return digest.map { String(format: "%02x", $0) }.joined()
+    return hexString(for: digest)
+}
+
+private func hexString<Digest: Sequence>(for digest: Digest) -> String where Digest.Element == UInt8 {
+    digest.map { String(format: "%02x", $0) }.joined()
+}
+
+private func shortHash(_ hash: String) -> String {
+    String(hash.prefix(12))
+}
+
+private func fileSize(at url: URL) throws -> Int {
+    let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+    guard let fileSize = attributes[.size] as? NSNumber else {
+        throw NSError(domain: "RemoteSync", code: 11, userInfo: [
+            NSLocalizedDescriptionKey: "Failed to read staged sync blob size.",
+        ])
+    }
+    return fileSize.intValue
 }
 
 func replicationID(senderId: String, receiverId: String, schema: String) -> String {

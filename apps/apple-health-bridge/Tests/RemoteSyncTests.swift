@@ -164,7 +164,7 @@ final class RemoteSyncTests: XCTestCase {
 
         XCTAssertLessThan(activityBlob.uncompressedBytes, routeBlob.uncompressedBytes)
 
-        let activityLine = try XCTUnwrap(firstLine(from: activityBlob.data))
+        let activityLine = try XCTUnwrap(firstLine(from: try activityBlob.loadData()))
         let decoded = try decoder.decode(ActivitySummaryBlobLine.self, from: activityLine)
         XCTAssertEqual(decoded.activityId, "activity-1")
         XCTAssertEqual(decoded.source?.bundleIdentifier, "com.example.runner")
@@ -246,34 +246,12 @@ final class RemoteSyncTests: XCTestCase {
     }
 
     private func firstLine(from gzipData: Data) throws -> Data? {
-        let tempDirectory = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
-        defer {
-            try? FileManager.default.removeItem(at: tempDirectory)
+        let output = try GzipCompression.gunzipData(gzipData)
+        guard let newlineIndex = output.firstIndex(of: UInt8(0x0A)) else {
+            return output.isEmpty ? nil : output
         }
-
-        let gzipURL = tempDirectory.appendingPathComponent("blob.gz")
-        try gzipData.write(to: gzipURL)
-
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/gunzip")
-        process.arguments = ["-c", gzipURL.path]
-        let outputPipe = Pipe()
-        let errorPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = errorPipe
-        try process.run()
-        process.waitUntilExit()
-
-        XCTAssertEqual(
-            process.terminationStatus,
-            0,
-            String(data: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? "gunzip failed"
-        )
-
-        let output = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        return output.split(separator: 0x0A, maxSplits: 1, omittingEmptySubsequences: true).first.map(Data.init)
+        let line = output[..<newlineIndex]
+        return line.isEmpty ? nil : Data(line)
     }
 }
 
