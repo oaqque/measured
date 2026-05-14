@@ -4,13 +4,74 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-14",
-  "completed": false,
+  "completed": "2026-05-13T21:25:19Z",
   "eventType": "run",
   "expectedDistance": "12 km",
   "sections": [
     {
       "kind": "program",
       "markdown": "- 12 km steady run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This matched the planned `12 km` steady run on the planned day: `12.029 km` completed against a `12 km` prescription. Strava recorded `1:08:27` moving time (`1:10:24` elapsed), and the Apple Health workout is linked to the same start time and route window.\n- The execution was a genuine steady aerobic load, but on the upper side of the pre-run prescription. Raw moving pace averaged `5:41 /km`, while Strava GAP was `5:33 /km` and the local measured GAP was `5:34 /km`, so the hilly route made the effort read sharper than the raw pace alone. Heart rate stayed mostly below threshold territory, with Strava averaging `152.1 bpm` and maxing at `171 bpm`."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The current week is now at `40.238 km` across four runs before Friday, plus Monday night basketball and Tuesday's `4 x 2 km` threshold workout. This was not a throwaway support jog; it is the second meaningful aerobic session after the threshold day.\n- Keep Friday's planned `6 km` recovery run genuinely easy and avoid backfilling any heavy lower-body work before Saturday basketball. If the Wednesday legs session did not happen, leave it rather than forcing heavy legs into Thursday, Friday, or Saturday. Sunday long-run quality depends on Friday being quiet and Saturday basketball not turning into extra lower-body fatigue."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, this is useful because it adds controlled steady volume after a successful threshold workout without reproducing threshold HR. The best sign is that the run absorbed `161.6 m` of climbing while keeping the average HR around low-to-mid aerobic effort.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, the value is durability: four consecutive run days have built the week to `40.238 km` while still leaving the planned recovery, basketball, and long-run sequence available. The caution is cumulative load management, especially with basketball and strength work also supporting the vertical and muscle-maintenance goals."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:41 /km` across `12.029 km`; elapsed pace was `5:51 /km` because stoppage cost was `1:57`.\n- The route was controlled but not conservative. The first half averaged about `5:41 /km`, the second half about `5:44 /km`; the middle `3-10 km` stayed mostly between about `5:25` and `5:49 /km`, before the uphill eleventh kilometre slowed to about `6:21 /km`."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `152.1 bpm` with a `171 bpm` max; Apple Health was nearly identical at `151.5 bpm` average and `170.3 bpm` max.\n- Using the current LTHR app bands, the route stream spent about `12:50` in Z1, `35:00` in Z2, `17:24` in Z3, `5:10` in Z4, and no time in Z5/Z6. HR rose from about `147.6 bpm` in the first half to `155.8 bpm` in the second, which fits steady aerobic work plus the hillier return rather than a threshold session."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `1:08:27` out of `1:10:24` elapsed, so the session was mostly continuous.\n- The route stream has `10` non-moving samples across `9` short stop groups, with only one stop longer than `10 s`. Most of the elapsed-time cost came late, around the final kilometre, and does not materially change the training read."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `161.6 m` of elevation gain. The first two kilometres were net downhill by about `55 m`, while the eleventh kilometre climbed about `42.6 m`, which explains the late pace drop and HR lift better than fatigue alone.\n- The generated GAP fields agree: Strava GAP was `5:33 /km`, while measured local GAP was `5:34 /km` with `medium` reliability, `99.9%` distance coverage, and about `148.3 m` measured ascent. This is enough agreement to treat the run as harder than a flat `5:41 /km` steady run."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health cadence averaged `167 spm` across `1619` samples. The working distribution was stable enough for a steady day: roughly `158.5 spm` at the 10th percentile, `172 spm` median, and `177.3 spm` at the 90th percentile.\n- There is no obvious cadence collapse late in the generated measurement summary. The low endpoint values are consistent with start-stop artefacts rather than a mechanical breakdown."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather And Gear",
+          "markdown": "- Weather was cool and humid but not a major limiter: overcast, about `12.8 C` apparent average, `100%` humidity, no recorded precipitation, `5.7 kph` wind, and `13.7 kph` gusts.\n- Shoes were `HOKA Bondi 9`, not retired. Strava's gear record reports about `520.1 km` on the shoe; the generated graph's authored-workout shoe root currently shows `511.6 km` across `64` logged workouts."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Recovery Context",
+          "markdown": "- Apple Health recovery context was available for this analysis. Recent resting HR averaged `50.6 bpm`, HRV averaged `62.7 ms`, VO2 max averaged `52.3 ml/kg/min`, and the sleep-duration projection averaged `5.7 h` in the sampled window.\n- Treat those as context rather than deterministic explanations. They do not override the workout evidence: this run was controlled enough to keep the week on track, but it adds real load before Friday recovery, Saturday basketball, and Sunday's planned `18 km` long run."
+        }
+      ]
     }
-  ]
+  ],
+  "stravaId": 18496733262,
+  "activityRefs": {
+    "strava": "18496733262",
+    "appleHealth": "6166183F-CB2C-49BE-A7DB-CA8AD279A8DE"
+  }
 }
