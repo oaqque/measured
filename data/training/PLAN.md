@@ -140,8 +140,8 @@ From `2026-04-21` through `2026-08-30`, treat the morning mobility routine in `n
 ```json plan-analysis-timeline
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-09",
-  "sourceSummary": "Built from Strava activity history through the cache synced at 2026-05-09T12:10:21Z, the receiver-backed Apple Health snapshot generated at 2026-05-09T11:34:35Z, workout notes, goal notes, and changelog history through 2026-05-09.",
+  "updatedAt": "2026-05-18",
+  "sourceSummary": "Built from Strava activity history through the cache synced at 2026-05-17T20:44:04Z, the receiver-backed Apple Health snapshot generated at 2026-05-17T20:28:23Z, workout notes, goal notes, and changelog history through 2026-05-18.",
   "entries": [
     {
       "id": "2026-01-12-week-restart",
@@ -497,6 +497,55 @@ From `2026-04-21` through `2026-08-30`, treat the morning mobility routine in `n
         "futureHighVolumeWeekKm": 80
       },
       "analysis": "The dedicated goal notes now make Parramatta `2026-06-21` at `1:45:00` and Sydney Marathon `2026-08-30` at `3:30:00` the live performance targets. HOKA's `1:50:24` says the half-marathon direction is credible, but the April and early-May timeline says the limiter is still repeatability: missed long-run progression, ankle-management resets, and easy days that can quietly become moderate load.\n\nThe next block should therefore rebuild normally instead of trying to compensate for the missed `30 km` week or the reduced recovery week. The planned `68 km` week from `2026-05-11` to `2026-05-17` is the right kind of bridge only if the easy days stay genuinely easy and basketball does not compromise Tuesday, Thursday, or Sunday. For Sydney's later `80 km`-plus weeks to become realistic, the immediate win is cleaner distribution of load, not a bigger single-session statement."
+    },
+    {
+      "id": "2026-05-17-week-parramatta-bridge-controlled-but-short",
+      "date": "2026-05-17",
+      "period": {
+        "start": "2026-05-11",
+        "end": "2026-05-17"
+      },
+      "category": "weekly summary",
+      "title": "Parramatta bridge week was controlled but short",
+      "summary": "61.003 km across six runs against a planned 68 km, with threshold and steady work completed but the 18 km long run cut to 14.104 km.",
+      "metrics": {
+        "plannedDistanceKm": 68,
+        "completedDistanceKm": 61.003,
+        "deficitKm": 6.997,
+        "runs": 6,
+        "plannedRuns": 7,
+        "distanceWeightedAverageHeartRateBpm": 149.9,
+        "thresholdRunKm": 14.012,
+        "thresholdAverageHeartRateBpm": 161,
+        "steadyRunKm": 12.029,
+        "steadyStravaGapSecondsPerKm": 332.538,
+        "saturdayRunKm": 6.661,
+        "saturdayBasketballElapsedSeconds": 6329,
+        "longRunPlannedKm": 18,
+        "longRunActualKm": 14.104,
+        "longRunAverageHeartRateBpm": 145.1,
+        "longRunStravaGapSecondsPerKm": 345.332
+      },
+      "analysis": "The week did the most important thing: it restored normal training rhythm after HOKA and the recovery bridge. Monday easy plus basketball opened the week, Tuesday landed the `14.012 km` threshold workout with the intended `4 x 2 km` structure, Wednesday added `8.055 km`, and Thursday delivered a controlled but upper-steady `12.029 km`. Saturday and Sunday were more mixed: the `4 km` shakeout became `6.661 km` before `1:45:29` of basketball, then the planned `18 km` long run stopped at `14.104 km`.\n\nThe total, `61.003 km`, is below the planned `68 km`, but the average cost was better distributed than earlier problem weeks. Distance-weighted run HR was about `149.9 bpm`, Saturday's easy run was genuinely low cost, and Sunday's long run stayed controlled at `145.1 bpm` with Strava and measured GAP both near `5:45 /km`. The miss is not aerobic control; it is long-run completion and keeping Saturday from adding too much before Sunday."
+    },
+    {
+      "id": "2026-05-18-current-block-quality-protection",
+      "date": "2026-05-18",
+      "category": "current block",
+      "title": "Next build needs quality protection, not make-up volume",
+      "summary": "The planned 76 km week is only sensible if Monday stays easy and Tuesday quality is protected.",
+      "metrics": {
+        "daysToParramatta": 34,
+        "daysToSydney": 104,
+        "previousPlannedWeekKm": 68,
+        "previousCompletedWeekKm": 61.003,
+        "previousWeekDeficitKm": 6.997,
+        "nextPlannedWeekKm": 76,
+        "tuesdayPlannedWorkoutKm": 16,
+        "sundayPlannedLongRunKm": 18,
+        "futureHighVolumeWeekKm": 80
+      },
+      "analysis": "The current block remains viable for Parramatta because the week banked threshold and steady work without the HR instability that caused earlier concern. The problem is that the long-run step from `14.104 km` back to `18 km` still has to be proven, and the next planned week jumps to `76 km`, which is large relative to the completed `61.003 km`.\n\nThe right response is not to chase the `6.997 km` deficit on Monday. Monday should stay genuinely easy around the planned `7 km`, and basketball should decide whether Tuesday's `16 km` half-marathon-pace workout is full, softened, or shortened. If something has to give, trim optional Friday/Saturday volume or gym load before sacrificing Tuesday quality or Sunday's long-run execution. For Sydney, this is still a cleaner path than panic mileage: long-run repeatability is the limiter, not one missing Friday recovery run."
     }
   ]
 }

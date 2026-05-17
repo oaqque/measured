@@ -21,4 +21,4 @@ The Saturday basketball note is now linked to Apple Health workout `0F163CEA-7EA
 
 The Sunday `2026-05-17` long run is now complete and linked to Strava activity `18536554765` and Apple Health workout `A266E2CE-E3C8-444C-8E0A-AA65CE661C0D`. It was planned as `18 km` but landed at `14.104 km` in `1:22:52` moving time, with average HR `145.1 bpm`, max HR `159 bpm`, and Strava GAP around `5:45 /km`.
 
-The downstream coaching read is that the week closed at `61.003 km` across five completed runs against the planned `68 km`. The result was controlled enough to continue the next week, but the missing long-run distance should not be chased on Monday; the priority is keeping Monday easy enough that Tuesday's half-marathon-pace workout remains viable.
+The downstream coaching read is that the week closed at `61.003 km` across six completed runs against the planned `68 km`. The result was controlled enough to continue the next week, but the missing long-run distance should not be chased on Monday; the priority is keeping Monday easy enough that Tuesday's half-marathon-pace workout remains viable.
