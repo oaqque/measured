@@ -4,13 +4,74 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-17",
-  "completed": false,
+  "completed": "2026-05-17T00:15:33Z",
   "eventType": "run",
   "expectedDistance": "18 km",
   "sections": [
     {
       "kind": "program",
       "markdown": "- 18 km easy long run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was planned as an `18 km` easy long run, but the completed run was `14.104 km`, so the full long-run prescription did not land. Strava recorded `1:22:52` moving time and `1:24:32` elapsed time, with Apple Health linked to the same start time and distance window.\n- The execution was easy-aerobic rather than forced. Strava averaged `145.1 bpm` with a `159 bpm` max, Apple Health averaged `144.5 bpm` with a `158 bpm` max, and the route stream spent no time in Z4 or higher. The limitation was distance completion, not intensity control."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The week closed at `61.003 km` across five completed runs against a planned `68 km` week. The main misses were Friday's open `6 km` recovery run and this long run finishing `3.896 km` short, partly offset by Saturday's `4 km` shakeout becoming `6.661 km`.\n- Do not chase the missing kilometres on Monday. The next week already starts with a planned `7 km` easy run plus Monday basketball, then a Tuesday `16 km` half-marathon-pace workout. Keep Monday genuinely easy or shorten it if the legs are heavy, because Tuesday quality matters more than forcing a cosmetic volume correction."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, this is still useful because it added controlled aerobic volume two days after the steady run and one day after basketball without HR drift. It supports repeatability, but it does not add a new long-run confidence marker.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, the long-run progression is the gap. A controlled `14.104 km` is not a problem by itself, but the plan needed an `18 km` durability step here. The next answer should be cleaner execution of the next long run, not adding hidden load around basketball or strength work."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:53 /km`; elapsed pace was about `6:00 /km` after `1:40` of total stoppage cost.\n- The first half averaged about `5:46 /km` and the second half about `6:01 /km`. The three thirds were about `5:45`, `5:47`, and `6:09 /km`, so the late section slowed, but not with a matching HR spike."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `145.1 bpm` with a `159 bpm` max; Apple Health averaged `144.5 bpm` with a `158 bpm` max.\n- Using the current LTHR app bands, the route stream spent about `42:50` in Z1, `38:46` in Z2, `2:56` in Z3, and no time in Z4/Z5/Z6. HR was slightly lower in the second half (`144.1 bpm`) than the first (`144.6 bpm`), so the late slowdown reads more like terrain, choice, or accumulated weekend load than cardiovascular fade."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `1:22:52` out of `1:24:32` elapsed. The route stream shows `9` stop groups, with only one longer than `10 s`.\n- The stoppage cost is visible but not decisive. This was a mostly continuous easy run, not a stop-start session that invalidates the pacing read."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `167.2 m` of elevation gain, and the measured route model found `163.2 m` of ascent with `high` reliability and `99.9%` distance coverage.\n- GAP agrees closely across both models: raw moving pace was `5:53 /km`, Strava GAP was `5:45 /km`, and measured local GAP was also about `5:45 /km`. The route was meaningfully hillier than the raw pace suggests, especially with about `34.4 m` of climbing in the first kilometre and another climbing-heavy block around kilometre 13."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health cadence averaged `168.3 spm` across `1955` samples, with a median of `171.5 spm` and a 10th-to-90th percentile range of about `161.6-177 spm`.\n- There is no obvious cadence collapse in the measurement summary. Mechanics look stable enough; the issue is that the long-run distance stopped short of plan."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Hidden Intensity",
+          "markdown": "- Conditions were usable: overcast, about `18.6 C` average temperature, `20.1 C` apparent temperature, `84%` humidity, no recorded precipitation, `3.4 kph` wind, and `16.9 kph` gusts.\n- Shoes were `Saucony Speed 4`, not retired, with about `724.4 km` in Strava's gear record and `724.6 km` in the generated shoe graph. Strava did record one small segment PR, but it came on a `578.9 m` segment at about `140.9 bpm` average HR, so it reads as incidental rather than hidden hard running."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Recovery Context",
+          "markdown": "- Apple Health recovery context was available: recent resting HR averaged `48.1 bpm`, HRV averaged `61.9 ms`, VO2 max averaged `52.6 ml/kg/min`, and the sleep-duration projection averaged `5.3 h` in the sampled window.\n- The recovery data does not point to a failed run; the workout data says the aerobic cost stayed controlled. The coaching implication is simpler: this was a decent easy aerobic run, but not the planned long-run progression."
+        }
+      ]
     }
-  ]
+  ],
+  "stravaId": 18536554765,
+  "activityRefs": {
+    "strava": "18536554765",
+    "appleHealth": "A266E2CE-E3C8-444C-8E0A-AA65CE661C0D"
+  }
 }

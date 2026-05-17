@@ -4,7 +4,7 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-16",
-  "completed": false,
+  "completed": "2026-05-15T22:44:14Z",
   "eventType": "basketball",
   "expectedDistance": "0 km",
   "sections": [
@@ -12,5 +12,8 @@
       "kind": "program",
       "markdown": "- Basketball, Saturday morning.\n- Treat this as hard court load, not a casual recovery session.\n- Keep the session controlled enough that Sunday long-run quality is still protected."
     }
-  ]
+  ],
+  "activityRefs": {
+    "appleHealth": "0F163CEA-7EA7-4168-AA97-87BF78C5FF91"
+  }
 }
