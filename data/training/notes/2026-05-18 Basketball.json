@@ -4,7 +4,7 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-18",
-  "completed": false,
+  "completed": "2026-05-18T08:40:33Z",
   "eventType": "basketball",
   "expectedDistance": "0 km",
   "sections": [
@@ -12,5 +12,8 @@
       "kind": "program",
       "markdown": "- Basketball, Monday night.\n- Treat this as hard court load for the week, especially for calves, ankles, adductors, and change-of-direction fatigue.\n- Tuesday quality running stays the priority; cut optional extras if the legs feel heavy after this session."
     }
-  ]
+  ],
+  "activityRefs": {
+    "appleHealth": "3401EAB4-81B8-4721-9F8D-61CB1DEC710A"
+  }
 }
