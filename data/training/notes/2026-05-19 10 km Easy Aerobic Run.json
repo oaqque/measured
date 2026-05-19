@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "title": "10 km Easy Aerobic Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-05-19",
+  "completed": "2026-05-18T21:40:47Z",
+  "eventType": "run",
+  "expectedDistance": "10 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 10 km easy aerobic run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was originally scheduled as Wednesday's `10 km` easy aerobic run, but it moved to Tuesday, `2026-05-19`, after the planned `16 km` threshold/half-marathon-pace workout was interrupted during the first quality lap. The completed run matched the substitute session well by distance: `10.070 km` against the intended `10 km`.\n- It was not a completed threshold session, and it should not be counted as one. The route data shows a short faster section around kilometre 4 at about `5:05 /km` with HR around `160 bpm`, then the run settled back toward aerobic running. Given the lost gel and water flask, converting the day to aerobic volume was the right training decision."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The week is now `17.248 km` complete across Monday and Tuesday running, plus Monday push strength and Monday basketball. The running volume is on track, but Tuesday carried more intensity than a pure easy day because of the aborted quality attempt and the hilly route.\n- Move the `16 km` threshold/half-marathon-pace session to Wednesday, but do not stack heavy legs on top of it. Wednesday legs are now light and optional, Thursday's medium-long run loses the marathon-pace finish, and Thursday push is light or skippable because Monday already covered push strength."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, this protects the quality stimulus rather than wasting it under poor fueling conditions. The useful work today is aerobic volume plus a small touch of faster running; the real half-marathon-specific stimulus still needs to come from the deferred Wednesday workout.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, the decision is sensible: unsupported quality work is not worth forcing when the week still has enough room to move the session. The key is to keep the rest of the week controlled so the swap does not become three hard days in a row."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- I was going to do the threshold run today, but a bush turkey stole my gel and water flask in my first threshold lap, so I did not want to continue without fuel. I ended up doing tomorrow's `10 km` easy run instead and will do the threshold run tomorrow."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving time was `1:02:07` for `10.070 km`, averaging `6:10 /km`; elapsed pace was about `6:18 /km` after `1:24` of stoppage cost.\n- The first half averaged about `5:59 /km` and the second half about `6:18 /km`. The fastest kilometre was kilometre 4 at about `5:05 /km`, which is the main evidence of the attempted quality lap before the session became aerobic."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `148 bpm` with a `167 bpm` max; Apple Health averaged `147.7 bpm` with the same `167 bpm` max.\n- Using the current LTHR app bands, the route stream spent about `25:16` in Z1, `25:06` in Z2, `10:12` in Z3, and `2:57` in Z4, with no Z5/Z6 time. That is acceptable for a disrupted quality attempt, but it is too much intensity to call this a completely clean easy day."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `1:02:07` out of `1:03:31` elapsed. The route stream shows about `1:39` stopped across `9` stop groups, with `3` longer than `10 s`.\n- The stoppage pattern fits the interrupted-session context, but the total stopped time is small enough that the run's pace and HR profile are still readable."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `112.2 m` of elevation gain, while the measured route model found `102.3 m` of ascent and `102.1 m` of descent with `medium` reliability and `99.6%` distance coverage.\n- GAP lines up tightly across both sources: raw moving pace was `6:10 /km`, Strava GAP was `6:03 /km`, and measured local GAP was also about `6:03 /km`. The late kilometres were slower partly because kilometres 9 and 10 carried about `43 m` of climbing between them."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health cadence averaged `168.6 spm` across `1469` samples, with a max of `188 spm`.\n- The generated Apple Health workout measurements expose HR and cadence for this run, but not power or stride-form series. Cadence does not show a major collapse; the workout issue was the interrupted fueling setup, not an obvious mechanics failure."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Hidden Intensity",
+          "markdown": "- Conditions were cool but humid: overcast, about `15.0 C` average temperature, `15.6 C` apparent temperature, `100%` humidity, no recorded precipitation, `7.2 kph` wind, and `15.1 kph` gusts.\n- Shoes were `Saucony Speed 4`, not retired, with about `734.5 km` in Strava's gear record and `734.7 km` in the generated public shoe graph. Strava recorded no PR-ranked best efforts or segment PRs; the hidden-intensity read is the short faster kilometre and brief Z4 time, not a full hard workout."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Recovery Context",
+          "markdown": "- Apple Health recovery context was available: recent resting HR averaged `48.9 bpm`, HRV averaged `64.1 ms`, VO2 max averaged `52.8 ml/kg/min`, respiratory rate averaged `17 br/min`, blood oxygen averaged `97%`, and the sleep-duration projection averaged `4.0 h` in the sampled window.\n- The low sleep context reinforces the scheduling adjustment: keep Wednesday's quality run focused, make legs light or skip them, and keep Thursday aerobic rather than trying to recover the missed threshold stimulus and the original marathon-pace finish at the same time."
+        }
+      ]
+    }
+  ],
+  "stravaId": 18560968968,
+  "activityRefs": {
+    "strava": "18560968968",
+    "appleHealth": "77638D28-5069-42D8-A2C0-276CA8DD9C74"
+  }
+}
