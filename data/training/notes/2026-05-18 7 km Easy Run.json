@@ -21,7 +21,7 @@
         },
         {
           "kind": "shortTermGoal",
-          "markdown": "- The week is now `7.178 km` complete against the planned `76 km`, with Monday's running volume landed without borrowing from Tuesday's `16 km` half-marathon-pace workout.\n- The fuller day-load picture includes the earlier Morning Mobility/strength-control activity and the later Monday basketball session. Apple Health recorded the morning activity as `1:06:11` with `71.8 bpm` average HR and `96 bpm` max HR, then basketball as `58:56`, `3.682 km`, `149.6 bpm` average HR, and a `193 bpm` max. Keep Tuesday's workout protected, but do not add any catch-up volume or leg work around it; if the court session left the calves, adductors, or ankles flat, preserve the quality by keeping the warm-up conservative and cutting optional extras first."
+          "markdown": "- The week is now `7.178 km` complete against the planned `76 km`, with Monday's running volume landed without borrowing from Tuesday's `16 km` half-marathon-pace workout.\n- The fuller day-load picture includes the earlier push strength session and the later Monday basketball session. Apple Health recorded the push session as `1:06:11` with `71.8 bpm` average HR and `96 bpm` max HR, then basketball as `58:56`, `3.682 km`, `149.6 bpm` average HR, and a `193 bpm` max. Keep Tuesday's workout protected, and if Monday's push session already covered the week's push work, make Thursday's planned push session light or skip it rather than doubling the upper-body load."
         },
         {
           "kind": "longTermGoal",
@@ -63,8 +63,8 @@
         },
         {
           "kind": "markdown",
-          "heading": "Strength Mobility And Daily Load",
-          "markdown": "- The omitted strength/mobility context is now linked through the `2026-05-18` Morning Mobility note: Apple Health workout `4D439E1F-64D3-4441-8F99-A6724C34A1F0`, starting `09:24` local, lasted `1:06:11`, with `71.8 bpm` average HR and `96 bpm` max HR.\n- Apple Health does not expose a route, distance, stream, or sport-type label for that activity in the current cache, so the conservative read is low cardiovascular cost but real added tissue/control time before the run and basketball. It reinforces the same prescription: keep Tuesday quality as the priority and only keep Wednesday legs heavy-low-volume if Tuesday comes out clean."
+          "heading": "Push Strength And Daily Load",
+          "markdown": "- The omitted strength context is now linked through the `2026-05-18` Push Strength Session note: Apple Health workout `4D439E1F-64D3-4441-8F99-A6724C34A1F0`, starting `09:24` local, lasted `1:06:11`, with `71.8 bpm` average HR and `96 bpm` max HR.\n- Apple Health does not expose a route, distance, stream, or sport-type label for that activity in the current cache, so the cardiovascular cost reads low, but the session still counts as push strength load. Treat it as relevant to the weekly gym split: if it was a full push session, Thursday's planned push should become light technique/accessory work or be skipped."
         },
         {
           "kind": "markdown",

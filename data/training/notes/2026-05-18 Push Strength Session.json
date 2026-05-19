@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "title": "Push Strength Session",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-05-18",
+  "completed": "2026-05-17T23:24:06Z",
+  "eventType": "strength",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Push strength session, completed as an unplanned Monday session.\n- Horizontal press: bench press, dumbbell press, or weighted push-up, `3 to 5 x 3 to 6`.\n- Vertical press or landmine press: `3 x 5 to 8`.\n- Accessory push: incline dumbbell press, dips, or push-up variation, `2 to 3 x 6 to 10`.\n- Shoulder durability: serratus, rotator cuff, and scapular control, `2 to 3` controlled sets.\n- Stop before failure so Tuesday running quality and the rest of the week's push/pull/legs split stay clean."
+    }
+  ],
+  "activityRefs": {
+    "appleHealth": "4D439E1F-64D3-4441-8F99-A6724C34A1F0"
+  }
+}
