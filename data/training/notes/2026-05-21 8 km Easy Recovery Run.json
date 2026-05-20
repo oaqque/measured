@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "8 km Easy Recovery Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-05-21",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "8 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 8 km easy recovery run\n- This replaces the planned medium-long aerobic run after Wednesday became a 21 km hard interval session.\n- Keep this genuinely easy; no marathon-pace finish, no steady progression, and cut it shorter if the legs are carrying fatigue."
+    }
+  ]
+}
