@@ -4,13 +4,69 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-28",
-  "completed": false,
+  "completed": "2026-05-28T05:43:01Z",
   "eventType": "run",
   "expectedDistance": "10 km",
+  "activityRefs": {
+    "strava": "18685140929",
+    "appleHealth": "D1E2EDBF-3DC5-4B49-99BD-ABEBA88B0C54"
+  },
+  "stravaId": 18685140929,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 10 km steady run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This matched the planned `10 km` steady-run shape on distance, but it landed at the hard end of steady. Strava recorded `10.318 km` in `51:49` moving time, `51:59` elapsed time, `68.4 m` elevation gain, `160.6 bpm` average HR, and `179 bpm` max HR.\n- Because Tuesday's planned threshold run became only `7.041 km`, this effectively became the week's main quality run. The route stream shows a controlled opening, then a long middle block around upper steady to threshold effort rather than a relaxed aerobic cruise."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The immediate job after this run was recovery. It supplied enough intensity for the week, so Friday needed to stay genuinely easy and should not be used to make up Monday's missed run or Tuesday's shortened threshold work.\n- The session also raises the cost of Saturday basketball and Sunday's long run. If the legs are flat after the court session, keep Sunday easy and reduce distance rather than chasing the original weekly `60 km` target."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, this is a useful fitness signal: the generated best-effort table now ranks this run as `#4` for `3 km`, `#5` for `5 km`, and `#2` for `10 km` in the local history.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, the value is aerobic strength under sustained effort. The caution is that a steady day this hard has to be treated like quality load, especially in a week that also contains basketball."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:01 /km`; Strava GAP was about `5:00 /km`, while measured local GAP was about `4:58 /km` with `medium` reliability and full route coverage.\n- The first `2 km` averaged about `5:20 /km` at `143.2 bpm`, then the run moved into a much firmer block. The first half averaged about `5:04 /km` at `154.6 bpm`; the second half averaged about `5:00 /km` at `166.7 bpm`."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `160.6 bpm` with a `179 bpm` max; Apple Health averaged `160.1 bpm` with a `179 bpm` max.\n- Using the current LTHR app bands, the route stream spent about `5:34` in Z1, `5:01` in Z2, `20:38` in Z3, `14:57` in Z4, `5:31` in Z5, and `0:13` in Z6. That is quality-session territory, not just ordinary steady running."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `51:49` from `51:59` elapsed, and route moving flags show only about `0:08` not moving.\n- The read is clean: this was continuous sustained running, with no meaningful pause distortion."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `68.4 m` elevation gain, while the measured route model found `58.7 m` ascent and `55.8 m` descent.\n- Terrain mattered slightly but did not explain the whole effort. The main signal is the long HR exposure in Z3-Z5 while holding around `5:00 /km`."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health cadence averaged `180.0 spm` across `1,219` step-count samples, with `9,352` total steps and a `198 spm` max.\n- After excluding start-stop values below `100 spm`, sampled cadence averaged about `178.5 spm` in the first half and `181.5 spm` in the second half, so leg turnover stayed strong even as HR climbed."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Recovery Context",
+          "markdown": "- Conditions were not completely neutral: light drizzle, about `19.1 C` average temperature, `19.5 C` apparent temperature, `85.5%` humidity, `0.2 mm` precipitation, `13.0 kph` wind, and `34.9 kph` gusts.\n- Shoes were `Saucony Speed 4`, not retired. Apple Health recovery context was available: recent resting HR averaged `48.4 bpm`, HRV `64.1 ms`, VO2 max `54.0 ml/kg/min`, respiratory rate `16.1 br/min`, blood oxygen `97.1%`, and sleep duration `5.8 h` in the sampled window."
+        }
+      ]
     }
   ]
 }

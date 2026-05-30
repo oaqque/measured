@@ -4,13 +4,69 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-29",
-  "completed": false,
+  "completed": "2026-05-29T05:30:09Z",
   "eventType": "run",
   "expectedDistance": "6 km",
+  "activityRefs": {
+    "strava": "18698476561",
+    "appleHealth": "256BDC4D-E177-40A9-AC7E-B6687AB22361"
+  },
+  "stravaId": 18698476561,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 6 km easy recovery run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was planned as a `6 km` easy recovery run after Thursday's steady session, but the completed run was much longer: Strava recorded `10.057 km` in `57:57` moving time, `1:00:06` elapsed time, `97.4 m` elevation gain, `141.9 bpm` average HR, and `153 bpm` max HR.\n- The intensity was genuinely easy, but the distance was not recovery-sized. It added `4.057 km` over plan the day after a hard steady run."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- Through Friday, the week has `27.416 km` across three completed runs, with Monday's `6 km` easy run and Wednesday's `8 km` easy aerobic run still missed. The answer is still not to chase all of that back at once.\n- Keep Saturday basketball as hard load, then make Sunday's `18 km` long run conditional: full distance only if the legs feel normal; otherwise reduce it and keep the effort easy."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, this supports aerobic durability as long as it does not blunt the next quality day. The low HR is encouraging, but recovery days still need to stay cheap enough to preserve workout quality.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, over-distance easy volume is useful, but the marathon build depends on repeatability. The pattern to avoid is turning every easy/recovery slot into a medium run and then losing the key Tuesday/Thursday/Sunday sessions."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:46 /km`; Strava GAP was about `5:41 /km`, and measured local GAP was about `5:40 /km` with `medium` reliability and near-full route coverage.\n- The pacing stayed easy and drifted slower rather than faster: the first half averaged about `5:40 /km` at `139.3 bpm`, while the second half averaged about `5:54 /km` at `142.7 bpm`."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `141.9 bpm` with a `153 bpm` max; Apple Health averaged `140.4 bpm` with the same `153 bpm` max.\n- Using the current LTHR app bands, the route stream spent about `46:35` in Z1 and `13:31` in Z2, with no Z3-Z6 time. The recovery label holds on intensity; the only issue is the extra distance."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `57:57` from `1:00:06` elapsed. Route moving flags show about `2:48` not moving, which is noticeable but not enough to change the coaching read.\n- The run still reads as easy aerobic volume, not hidden quality or an interrupted workout."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `97.4 m` elevation gain, while the measured route model found `98.1 m` ascent and `103.0 m` descent.\n- GAP being faster than raw pace is expected on this route, but the easy HR profile matters more than the grade correction."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health cadence averaged `169.6 spm` across `1,371` step-count samples, with `10,198` total steps and a `188 spm` max.\n- After excluding start-stop values below `100 spm`, cadence was stable at about `173.8 spm` in the first half and `174.1 spm` in the second half. There is no obvious cadence collapse."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Recovery Context",
+          "markdown": "- Conditions were manageable: partly cloudy, about `18.4 C` average temperature, `18.1 C` apparent temperature, `75%` humidity, no recorded precipitation, `10.6 kph` wind, and `26.3 kph` gusts.\n- Shoes were `HOKA Bondi 9`, not retired. Apple Health recovery context was available: recent resting HR averaged `48.7 bpm`, HRV `66.4 ms`, VO2 max `54.2 ml/kg/min`, respiratory rate `16.2 br/min`, blood oxygen `97.1%`, and sleep duration `5.5 h` in the sampled window."
+        }
+      ]
     }
   ]
 }
