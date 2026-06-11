@@ -4,13 +4,44 @@
   "allDay": true,
   "type": "single",
   "date": "2026-06-09",
-  "completed": false,
+  "completed": "2026-06-08T21:40:33Z",
   "eventType": "run",
   "expectedDistance": "18 km",
+  "activityRefs": {
+    "strava": "18843133923",
+    "appleHealth": "23245783-5BDB-4054-ACD4-84E35978DB88"
+  },
+  "stravaId": 18843133923,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 18 km run including 3 x 4 km at half-marathon pace"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This did not execute the planned half-marathon-pace workout. The Tuesday note was completed on Tuesday morning local time as `10.883 km` easy aerobic running in `59:50` moving time and `59:53` elapsed, with `56.6 m` elevation gain, `147.5 bpm` average HR, and `157 bpm` max HR.\n- The stream shows an even aerobic run rather than `3 x 4 km` at half-marathon pace: the first `5.494 km` averaged about `5:25 /km` at `147.3 bpm`, and the final `5.373 km` averaged about `5:32 /km` at `147.6 bpm`."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- This left the week's main quality stimulus unused rather than completed. That created room to shift quality to Wednesday, but it also meant the Wednesday session would need to replace the easy aerobic day rather than sit beside it.\n- Once the quality work shifted, Thursday's planned marathon-pace run should be treated as flexible. The week should not contain Tuesday aerobic volume, Wednesday hard half-marathon work, and Thursday marathon pace as full sessions."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, this run did not provide the intended pace-specific rehearsal, but it did preserve aerobic frequency without adding much fatigue.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, this is acceptable only if it remains a low-cost support run. The marathon block benefits from aerobic volume, but only when the hard days are still protected."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Provider And Context",
+          "markdown": "- Strava activity `18843133923` and Apple Health workout `23245783-5BDB-4054-ACD4-84E35978DB88` match the same run. Apple Health measured `10.883 km`, `59:52`, and `147.1 bpm` average HR.\n- Raw moving pace was `5:30 /km`; Strava GAP was about `5:27 /km`. Conditions were cool but humid: partly cloudy, about `10.1 C` average temperature, `9.3 C` apparent temperature, `97.5%` humidity, and light wind.\n- Shoes were `Adidas Adizero EVO SL Red`. HR-zone time stayed low-cost, with about `18:12` in Z1, `39:04` in Z2, and only `2:17` in Z3 by the current LTHR app bands."
+        }
+      ]
     }
   ]
 }

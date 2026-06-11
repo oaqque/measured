@@ -4,13 +4,44 @@
   "allDay": true,
   "type": "single",
   "date": "2026-06-10",
-  "completed": false,
+  "completed": "2026-06-09T21:17:39Z",
   "eventType": "run",
   "expectedDistance": "10 km",
+  "activityRefs": {
+    "strava": "18857423112",
+    "appleHealth": "DFEBAA61-259D-47F0-BA2C-F786F2B1EC14"
+  },
+  "stravaId": 18857423112,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 10 km easy aerobic run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was planned as a `10 km` easy aerobic support run, but it became the displaced Tuesday quality session: `18.066 km` in `1:29:44` moving time and `1:30:10` elapsed, with `65.2 m` elevation gain, `169.1 bpm` average HR, and `191 bpm` max HR.\n- The run did not show a clean `3 x 4 km` structure. The observed pattern was closer to a hard warm-up-plus-block session: `0-3 km` at about `5:36 /km` and `152.2 bpm`, `3-6 km` at `4:43 /km` and `166.4 bpm`, `6-7 km` at `5:12 /km`, `7-10 km` at `4:51 /km`, then a very hard `10-16 km` block at `4:46 /km` and `184.0 bpm`."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- This was the decisive training load of the week. It replaced the easy Wednesday support day and should also cancel the idea of forcing Thursday's planned `16 km` marathon-pace run as written.\n- The immediate job is absorption: Thursday should be short/easy if run at all, Friday should stay genuinely recovery-focused, and the Sunday long run should be conditional rather than a make-up attempt for missed weekly kilometres."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For Parramatta, this is a meaningful fitness signal because the raw moving pace was `4:58 /km`, almost exactly `1:45` half-marathon pace. The caution is cost: the final long work block averaged `184.0 bpm`, so it proves willingness and speed endurance more than controlled race readiness.\n- For Sydney Marathon, the session supports threshold durability, but it also shows why the Thursday/Sunday load must be managed. Marathon progress depends on being able to repeat these weeks, not just survive one hard 18 km run."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Provider And Context",
+          "markdown": "- Strava activity `18857423112` and Apple Health workout `DFEBAA61-259D-47F0-BA2C-F786F2B1EC14` agree on the same June 10 local run. Apple Health measured `18.066 km`, `1:30:09`, `168.8 bpm` average HR, and `191 bpm` max HR.\n- Raw moving pace was `4:58 /km`; Strava GAP was about `4:56 /km`. HR-zone time by the current LTHR app bands was heavy: about `31:40` in Z4, `1:04` in Z5, and `26:58` in Z6.\n- Conditions were favourable for pace but humid: clear sky, about `11.7 C` average temperature, `11.3 C` apparent temperature, `97%` humidity, and light wind. Shoes were `Saucony Speed 4`. Recent recovery context from June 8-11 showed resting HR about `49.7 bpm`, HRV about `68.3 ms`, VO2 max about `56.9 ml/kg/min`, blood oxygen about `97%`, body mass `68.25 kg`, and grouped sleep duration about `5.0 h` per day."
+        }
+      ]
     }
   ]
 }
