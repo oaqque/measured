@@ -4,13 +4,44 @@
   "allDay": true,
   "type": "single",
   "date": "2026-06-12",
-  "completed": false,
+  "completed": "2026-06-11T21:15:08Z",
   "eventType": "run",
   "expectedDistance": "7 km",
+  "stravaId": 18883952291,
+  "activityRefs": {
+    "strava": "18883952291",
+    "appleHealth": "2BA93711-4551-4FBF-A5FF-8D5EB40DDE29"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- 7 km easy recovery run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This did not match the planned `7 km` easy recovery purpose. It became a `16.036 km` medium-long progression in `1:26:13` moving time and `1:26:20` elapsed, with `67.4 m` elevation gain, `156.1 bpm` average HR, and `188 bpm` max HR.\n- The route stream shows why the average HR understates the cost: the first `8 km` averaged about `5:40 /km` at `144.5 bpm`, but the next `8 km` averaged about `5:04 /km` at `169.1 bpm`. The final `4 km` averaged about `5:02 /km` at `179.5 bpm`, so this finished as hard aerobic-to-threshold work rather than recovery running."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- Current-week running volume is now `50.111 km` across four runs from Tuesday through Friday local time, versus an `84 km` plan for `2026-06-08` to `2026-06-14`. That sounds under plan, but the load is not light because Wednesday was `18.066 km` at `169.1 bpm` average HR and today added another long progressive finish.\n- Treat Saturday's `4 km` run as optional. If basketball happens or the legs feel flat, skip the run. Sunday's `22 km` long run should stay easy and conditional: full distance only if the first half is calm and HR stays controlled; otherwise cap it around easy endurance rather than chasing the planned weekly total."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, this is a useful durability signal because the back half was close to goal-race effort territory after three prior run days. The caution is that it was not the intended low-cost recovery day, and the `188 bpm` max HR plus `14:45` in Z6 means the next week should prioritize freshness over extra sharpening.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, the week is a strong reload out of the prior lower-volume week: last week logged `35.809 km`, while this week is already at `50.111 km`. That supports marathon durability only if the weekend is absorbed cleanly instead of turning into a make-up-mileage push."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Provider And Context",
+          "markdown": "- Strava activity `18883952291` and Apple Health workout `2BA93711-4551-4FBF-A5FF-8D5EB40DDE29` match the same June 12 local run. Apple Health measured `16.036 km`, `1:26:19`, `155.8 bpm` average HR, and `188 bpm` max HR from Apple Watch.\n- Raw moving pace was `5:23 /km`; Strava GAP was about `5:20 /km`. Conditions were mainly clear but very humid: about `13.2 C` average temperature, `13.1 C` apparent temperature, `95.5%` humidity, no recorded precipitation, and light wind. Shoes were `Saucony Speed 4`.\n- HR-zone time by the current LTHR app bands was split between easy early running and a costly finish: about `27:35` in Z1, `18:25` in Z2, `21:39` in Z3, `3:12` in Z4, `0:05` in Z5, and `14:45` in Z6. Recent Apple Health recovery context from June 8 onward showed resting HR averaging about `51 bpm`, HRV averaging about `67.8 ms`, VO2 max stable around `56.9 ml/kg/min`, blood oxygen about `97%`, body mass `68.25 kg`, and recorded sleep averaging about `5.3 h` per wake day through June 11."
+        }
+      ]
     }
   ]
 }
