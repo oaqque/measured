@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Hike",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-06-13",
+  "completed": false,
+  "eventType": "mobility",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Hike instead of the planned short run and basketball.\n- Keep this as low-intensity aerobic cross-training, not a hidden workout.\n- Watch downhill and time-on-feet load through the calves, quads, feet, and ankles so Sunday's long run stays optional-to-available rather than compromised."
+    }
+  ]
+}
