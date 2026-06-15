@@ -4,13 +4,44 @@
   "allDay": true,
   "type": "single",
   "date": "2026-06-14",
-  "completed": false,
+  "completed": "2026-06-13T22:47:15Z",
   "eventType": "run",
   "expectedDistance": "22 km",
+  "activityRefs": {
+    "strava": "18910236778",
+    "appleHealth": "D1F9ECF6-16BD-4B7F-92C0-FAFD44E2658A"
+  },
+  "stravaId": 18910236778,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 22 km easy long run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This did not complete the planned `22 km` easy long run. The actual June 14 local run was `15.179 km` in `1:27:58` moving time and `1:30:15` elapsed, with `177.8 m` elevation gain, `150.6 bpm` average HR, and `166 bpm` max HR.\n- The shortened distance makes sense in context: Saturday became an `11.759 km` hike in Apple Health with `3:32:35` elapsed time, so the weekend still carried meaningful time-on-feet before this run started."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- Do not chase the missing `6-7 km` inside race week. The June 8-14 week finished at `65.290 km` of running after the hard June 10 half-marathon-pace effort, the June 12 progression, the Saturday hike, and this hilly Sunday run.\n- The route stream stayed controlled but not completely free: the first `7.579 km` averaged about `5:53 /km` at `147.9 bpm`, then the next `7.578 km` averaged about `6:00 /km` at `152.9 bpm`. The useful move is to absorb it and keep Monday/Tuesday light enough that Parramatta week still sharpens rather than accumulates fatigue."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, this is a sensible compromise: enough aerobic volume to keep the week honest, but not a forced `22 km` long run seven days before the race.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, the run supports durability through hilly aerobic work, but it should not be counted as full long-run completion. The marathon signal is discipline under load, not making up distance when the previous two days already carried hike and run stress."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Provider And Context",
+          "markdown": "- Strava activity `18910236778` and Apple Health workout `D1F9ECF6-16BD-4B7F-92C0-FAFD44E2658A` match the same June 14 local run. Apple Health measured `15.179 km`, `1:30:14`, `149.7 bpm` average HR, and `166 bpm` max HR, with `1071` during-workout heart-rate samples.\n- Raw moving pace was `5:48 /km`; Strava GAP was about `5:41 /km`, so the climbing mattered. The final quarter slowed to about `6:11 /km` at `153.0 bpm` while climbing, which reads as mild fatigue/terrain cost rather than a late push.\n- Conditions were overcast at about `17.2 C`, `77%` humidity, no recorded precipitation, `8.0 kph` wind, and `20.5 kph` gusts. Shoes were `Saucony Speed 4`. Recent Apple Health recovery context since June 8 showed resting HR averaging about `48.9 bpm`, HRV about `68.6 ms`, VO2 max around `57.0 ml/kg/min`, oxygen saturation about `97.1%`, and AutoSleep sleep averaging about `5.79 h`."
+        }
+      ]
     }
   ]
 }
