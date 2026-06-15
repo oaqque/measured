@@ -62,6 +62,7 @@ const providerDisplayOrder: WorkoutProvider[] = ["strava", "appleHealth"];
 const appleHealthPublicIdSalt = normalizeNullableString(process.env.APPLE_HEALTH_PUBLIC_ID_SALT);
 const changelogDirName = "changelog";
 const goalsDirName = "goals";
+const metaanalysisDirName = "metaanalysis";
 const notesDirName = "notes";
 const planAnalysisTimelineSectionPattern =
   /\n*## Analysis Timeline\s*\n+```(?:json\s+)?plan-analysis-timeline\s*\n([\s\S]*?)\n```\s*$/u;
@@ -167,11 +168,16 @@ async function main() {
   const dataDir = await resolveWorkoutsDir();
   const notesDir = path.join(dataDir, notesDirName);
   const goalsDir = path.join(dataDir, goalsDirName);
+  const metaanalysisDir = path.join(dataDir, metaanalysisDirName);
   const changelogDir = path.join(dataDir, changelogDirName);
   await assertNotesDirectory(notesDir);
   await assertGoalNotesDirectory(goalsDir);
+  await assertMetaanalysisDirectory(metaanalysisDir);
   const fileNames = listWorkoutNoteFileNames(await fs.readdir(notesDir));
   const goalFileNames = (await fs.readdir(goalsDir))
+    .filter((fileName) => fileName.endsWith(".md"))
+    .sort((left, right) => left.localeCompare(right));
+  const metaanalysisFileNames = (await fs.readdir(metaanalysisDir))
     .filter((fileName) => fileName.endsWith(".md"))
     .sort((left, right) => left.localeCompare(right));
   const noteInputs = await Promise.all(
@@ -218,6 +224,7 @@ async function main() {
 
   const workouts: WorkoutNote[] = [];
   const goalNotes: GoalNote[] = [];
+  const metaanalysisDocuments: PlanDocument[] = [];
   let welcome: PlanDocument | null = null;
   let goals: PlanDocument | null = null;
   let heartRate: PlanDocument | null = null;
@@ -229,6 +236,9 @@ async function main() {
   goals = await readDocument(path.join(dataDir, "GOALS.md"), dataDir);
   heartRate = await readDocument(path.join(dataDir, "metaanalysis", "HEART_RATE.md"), dataDir);
   morningMobility = await readDocument(path.join(dataDir, "metaanalysis", "MORNING_MOBILITY.md"), dataDir);
+  for (const fileName of metaanalysisFileNames) {
+    metaanalysisDocuments.push(await readDocument(path.join(metaanalysisDir, fileName), dataDir));
+  }
   plan = await readDocument(path.join(dataDir, "PLAN.md"), dataDir);
 
   progress.step("Building workout payload");
@@ -299,6 +309,7 @@ async function main() {
     goals,
     heartRate,
     morningMobility,
+    metaanalysis: metaanalysisDocuments,
     bestEfforts,
     goalNotes,
     plan,
@@ -828,6 +839,23 @@ async function assertGoalNotesDirectory(goalsDir: string) {
         `Unable to read goal notes directory: ${goalsDir}`,
         `Expected structure: <data-root>/${goalsDirName}/*.md`,
         `Details: ${detail}`,
+      ].join("\n"),
+    );
+  }
+}
+
+async function assertMetaanalysisDirectory(metaanalysisDir: string) {
+  try {
+    const stats = await fs.stat(metaanalysisDir);
+    if (!stats.isDirectory()) {
+      throw new Error(`Metaanalysis path is not a directory: ${metaanalysisDir}`);
+    }
+  } catch (error) {
+    throw new Error(
+      [
+        `Unable to read metaanalysis directory: ${metaanalysisDir}`,
+        `Expected structure: <data-root>/${metaanalysisDirName}/*.md`,
+        error instanceof Error ? error.message : String(error),
       ].join("\n"),
     );
   }

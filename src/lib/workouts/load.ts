@@ -36,6 +36,9 @@ export const welcomeDocument = rawWorkoutsData.welcome;
 export const goalsDocument = rawWorkoutsData.goals;
 export const heartRateDocument = rawWorkoutsData.heartRate;
 export const morningMobilityDocument = rawWorkoutsData.morningMobility;
+export const allMetaanalysisDocuments = [
+  ...(rawWorkoutsData.metaanalysis ?? [rawWorkoutsData.heartRate, rawWorkoutsData.morningMobility]),
+].sort((left, right) => left.title.localeCompare(right.title));
 export const bestEffortsSummary = normalizeBestEffortsSummary(rawWorkoutsData.bestEfforts);
 export const allGoalNotes = goalNotes;
 export const trainingPlan = rawWorkoutsData.plan;

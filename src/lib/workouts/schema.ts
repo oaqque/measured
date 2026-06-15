@@ -330,6 +330,7 @@ export interface WorkoutsData {
   goals: PlanDocument;
   heartRate: PlanDocument;
   morningMobility: PlanDocument;
+  metaanalysis: PlanDocument[];
   bestEfforts: WorkoutBestEffortsSummary;
   goalNotes: GoalNote[];
   plan: PlanDocument;
