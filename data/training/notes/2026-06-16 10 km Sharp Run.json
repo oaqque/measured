@@ -4,13 +4,69 @@
   "allDay": true,
   "type": "single",
   "date": "2026-06-16",
-  "completed": false,
+  "completed": "2026-06-16T08:21:32Z",
   "eventType": "run",
   "expectedDistance": "10 km",
+  "activityRefs": {
+    "strava": "18940181088",
+    "appleHealth": "1042108F-E970-4D63-9D16-313B35969FEE"
+  },
+  "stravaId": 18940181088,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 10 km run including 6 x 400 m sharp efforts"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This partly matched the race-week intent but not the exact structure. The plan was `10 km` including `6 x 400 m` sharp efforts; the completed run was `9.000 km` in `50:11` moving time and `51:11` elapsed, with `26.6 m` Strava elevation gain, `156.8 bpm` average HR, and `165 bpm` max HR.\n- The route stream does not show six distinct 400 m surges. It reads more like a controlled aerobic-to-steady run: roughly `5:33 /km` for `0-2 km` at `145.6 bpm`, `5:36 /km` for `2-5 km` at `157.8 bpm`, `5:32 /km` for `5-8 km` at `161.4 bpm`, then `5:40 /km` for the final kilometre at `162.2 bpm`."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- This was a useful low-drama race-week session because it stayed below threshold and avoided a hard max-HR finish, but it did not provide much true neuromuscular sharpness.\n- With the Monday run already `1.785 km` over plan and Monday basketball likely adding court load, the right response is not to repeat the missed 400 m stimulus. Keep the rest of race week fresh and let short relaxed strides, not another workout, carry the leg-speed cue."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, this is acceptable because it touched controlled aerobic-to-steady rhythm without spending time near the `173 bpm` working LTHR.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, the main value is discipline: a race-week quality slot can be softened when the goal is to arrive ready, not to prove extra fitness four or five days before the race."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:35 /km`; Strava GAP was about `5:33 /km`, and measured GAP was also about `5:33 /km` with `medium` reliability and full route coverage.\n- Kilometre splits were very even, mostly `5:32-5:42 /km`, with the fastest split only around `5:23 /km`. Strava's best 400 m was `2:04`, so the advertised `6 x 400 m` sharp-effort shape did not really appear."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `156.8 bpm` with a `165 bpm` max; Apple Health closely matched it at about `156.4 bpm` average and `165 bpm` max.\n- Against the current LTHR app bands, this sat mostly around Z3 with only light Z4 touch, not race-effort intensity. The gradual rise from `145.6 bpm` in the opening `2 km` to `162.2 bpm` late shows normal aerobic drift plus steady pacing rather than a set of hard reps."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `50:11` from `51:11` elapsed, so the elapsed gap was exactly `1:00`.\n- The generated route stream had only `0.4%` non-moving samples, so this was essentially continuous running. The missing planned distance is not explained by pauses; it was simply a `9 km` version of the session."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `26.6 m` elevation gain; the measured route model found about `27.6 m` ascent and `29.5 m` descent.\n- Terrain was not a major limiter here. The near-match between raw pace and GAP means the session cost is best read from HR and race-week context rather than from hills."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health generated `242` during-workout HR points and `242` cadence points. Cadence averaged about `174.3 spm`, with most values between `105` and `184 spm` after the start/finish noise.\n- That cadence profile fits a controlled rhythm run, not an aggressive turnover session. It is steady enough for race-week maintenance, but it does not replace a clean stride set if the legs still need a light pop."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Recovery Context",
+          "markdown": "- Conditions were benign: clear sky, about `16.3 C` average temperature, `16.7 C` apparent temperature, `80.5%` humidity, no recorded precipitation, `4.0 kph` wind, and `11.5 kph` gusts.\n- Shoes were `HOKA Bondi 9`, not retired, with about `571 km` logged in Strava after this activity.\n- Apple Health recovery context was available: resting HR averaged about `48.9 bpm`, HRV `76.3 ms`, VO2 max `57.0 ml/kg/min`, respiratory rate `17.2 br/min`, oxygen saturation `97.0%`, and sleep duration `4.3 h` in the sampled window. The low sleep average is a reason to protect freshness, not to add missed sharp work."
+        }
+      ]
     }
   ]
 }

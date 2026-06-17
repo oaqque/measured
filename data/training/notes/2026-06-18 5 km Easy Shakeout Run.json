@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "5 km Easy Shakeout Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-06-18",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "5 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 5 km easy shakeout run\n- Keep this genuinely easy; no steady block.\n- If the legs feel flat after Wednesday's over-distance progression, skip the run and keep only light mobility.\n- Optional relaxed strides belong only if the legs feel springy, not as a workout replacement."
+    }
+  ]
+}

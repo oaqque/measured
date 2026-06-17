@@ -4,13 +4,69 @@
   "allDay": true,
   "type": "single",
   "date": "2026-06-17",
-  "completed": false,
+  "completed": "2026-06-16T21:22:15Z",
   "eventType": "run",
   "expectedDistance": "8 km",
+  "activityRefs": {
+    "strava": "18950161740",
+    "appleHealth": "8FD34AC8-3FA3-40F7-946B-AD8C62FDC66C"
+  },
+  "stravaId": 18950161740,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 8 km easy aerobic run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This missed the easy-aerobic intent. The planned `8 km` became `10.170 km` in `53:34` moving time and `53:37` elapsed, with `35.8 m` Strava elevation gain, `158.7 bpm` average HR, and `181 bpm` max HR.\n- The first half was reasonable enough, but the run then became a meaningful progression: `0-3 km` averaged about `5:28 /km` at `147.7 bpm`, `3-5 km` about `5:15 /km` at `153.1 bpm`, then `5-9 km` about `5:03 /km` at `169.1 bpm`."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- Race week is now front-loaded. Monday, Tuesday, and Wednesday total `26.955 km` against `24 km` planned through Wednesday, and this run added intensity four days before Parramatta.\n- The Thursday steady run should be downgraded to an easy shakeout or skipped if the legs are flat. Friday should stay genuinely easy, and Saturday basketball remains the obvious race-eve risk to avoid if possible."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, this is a mixed signal: the fitness is clearly there to move near target rhythm, but spending the middle `4 km` at `169.1 bpm` inside an easy day is not ideal four days out.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, the aerobic durability signal is positive, but the pattern is the limiter. The marathon build needs easy days to stay cheap so that future volume and quality can be repeated without turning support runs into hidden workouts."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:16 /km`; Strava GAP was about `5:14 /km`, while measured GAP was about `5:14 /km` with `low` reliability and near-full route coverage.\n- The strongest section was not just a small drift: kilometres `6-9` moved around `5:00-5:06 /km`, and Strava recorded best-effort windows of `400 m` in `1:57`, `1 km` in `4:58`, `5 km` in `25:20`, and `10 km` in `52:36`."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `158.7 bpm` with a `181 bpm` max; Apple Health was similar at about `158.4 bpm` average and `180.3 bpm` max.\n- The HR profile is the reason this should not be logged as easy. Strava split HR climbed from about `141.6 bpm` for kilometre 1 to `163.3`, `168.9`, `170.3`, and `173.7 bpm` across kilometres 6-9, putting the middle-late block around Z4/Z5 in the current LTHR app bands."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `53:34` from `53:37` elapsed, only a `0:03` gap.\n- The generated route stream had only `0.4%` non-moving samples, so the intensity read is clean. This was not a stop-start artifact; it was a continuous over-distance progression."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `35.8 m` elevation gain, while the measured route model found about `43.7 m` ascent and `45.1 m` descent.\n- Terrain does not explain the elevated HR. The hardest `5-9 km` section included some climbing, but the GAP and raw pace both show the run still became faster and more costly than planned."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health generated `242` during-workout HR points and `242` cadence points. Cadence averaged about `175.4 spm`, with a `186 spm` max and low end mostly explained by start/finish noise.\n- Cadence held up while pace rose, which supports the read that the run became a deliberate progression rather than a fatigue shuffle."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Recovery Context",
+          "markdown": "- Conditions were cool but damp: overcast, about `11.4 C` average temperature, `10.7 C` apparent temperature, `96.5%` humidity, no recorded precipitation, `6.7 kph` wind, and `14.8 kph` gusts.\n- Shoes were `HOKA Bondi 9`, not retired, with about `581 km` logged in Strava after this activity.\n- Apple Health recovery context was available: resting HR averaged about `48.3 bpm`, HRV `67.1 ms`, VO2 max `57.0 ml/kg/min`, respiratory rate `17.4 br/min`, oxygen saturation `96.9%`, and sleep duration `4.1 h` in the sampled window. Those signals do not force a bad-readiness conclusion, but the sleep context supports trimming the next workout rather than absorbing extra stress casually."
+        }
+      ]
     }
   ]
 }
