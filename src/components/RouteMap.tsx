@@ -67,6 +67,7 @@ export function RouteMap({
   className,
   generatedAt,
   hasRouteStreams,
+  initialMode = "route",
   polyline,
   routePath,
   title,
@@ -75,6 +76,7 @@ export function RouteMap({
   className?: string;
   generatedAt: string;
   hasRouteStreams: boolean;
+  initialMode?: RouteColorMode;
   polyline: string;
   routePath?: string | null;
   title: string;
@@ -136,7 +138,7 @@ export function RouteMap({
     };
   }, [activityId, canLoadRouteStreams, generatedAt, hmrEpoch, routePath]);
 
-  const [preferredMode, setPreferredMode] = useState<RouteColorMode>("route");
+  const [preferredMode, setPreferredMode] = useState<RouteColorMode>(initialMode);
   const streamedCoordinates = routeStreams?.latlng ?? null;
   const summaryCoordinates = useMemo<RouteCoordinate[]>(() => decodePolyline(polyline), [polyline]);
   const baseCoordinates = streamedCoordinates && streamedCoordinates.length > 1 ? streamedCoordinates : summaryCoordinates;

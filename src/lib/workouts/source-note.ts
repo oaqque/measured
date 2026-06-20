@@ -7,6 +7,7 @@ import {
   type WorkoutNoteAnalysisSection,
   type WorkoutMediaEmbed,
   type WorkoutNoteMarkdownSection,
+  type WorkoutPlannedRouteRef,
   type WorkoutNoteSourceDocument,
   type WorkoutNoteSourceSection,
 } from "./schema";
@@ -129,6 +130,7 @@ export function convertLegacyMarkdownWorkoutNote(fileName: string, fileContent: 
       stravaId: data.stravaId,
       activityRefs: data.activityRefs,
       media: data.media,
+      plannedRoute: data.plannedRoute,
       sections,
     },
     fileName,
@@ -329,6 +331,10 @@ function normalizeWorkoutNoteSourceDocument(value: unknown, fileName: string): W
     throw new Error(`${fileName}: media must be an object`);
   }
 
+  if (candidate.plannedRoute !== undefined && !isPlainObject(candidate.plannedRoute)) {
+    throw new Error(`${fileName}: plannedRoute must be an object`);
+  }
+
   return {
     schemaVersion: WORKOUT_NOTE_SOURCE_SCHEMA_VERSION,
     title: candidate.title as string,
@@ -342,7 +348,30 @@ function normalizeWorkoutNoteSourceDocument(value: unknown, fileName: string): W
     ...(typeof candidate.stravaId === "number" ? { stravaId: candidate.stravaId } : {}),
     ...(isPlainObject(candidate.activityRefs) ? { activityRefs: candidate.activityRefs as WorkoutNoteSourceDocument["activityRefs"] } : {}),
     ...(isPlainObject(candidate.media) ? { media: normalizeWorkoutMediaEmbed(candidate.media, fileName) } : {}),
+    ...(isPlainObject(candidate.plannedRoute)
+      ? { plannedRoute: normalizeWorkoutPlannedRouteRef(candidate.plannedRoute, fileName) }
+      : {}),
     sections: sections.map((section, index) => normalizeWorkoutNoteSourceSection(section, fileName, index)),
+  };
+}
+
+function normalizeWorkoutPlannedRouteRef(value: unknown, fileName: string): WorkoutPlannedRouteRef {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`${fileName}: plannedRoute must be an object`);
+  }
+
+  const candidate = value as Record<string, unknown>;
+  if (typeof candidate.path !== "string" || candidate.path.trim().length === 0) {
+    throw new Error(`${fileName}: plannedRoute.path must be a non-empty string`);
+  }
+
+  const routePath = candidate.path.trim().replaceAll("\\", "/");
+  if (routePath.startsWith("/") || routePath.split("/").includes("..")) {
+    throw new Error(`${fileName}: plannedRoute.path must be relative to data/training`);
+  }
+
+  return {
+    path: routePath,
   };
 }
 

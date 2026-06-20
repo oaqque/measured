@@ -31,6 +31,7 @@ Optional top-level fields:
 | `actualDistance` | string | no | Manual actual distance snapshot, for example `8.2 km`. Use only when you want a note-level override instead of provider-derived data. |
 | `activityRefs` | object | no | Map of provider ids linked to this note, for example Strava and Apple Health. |
 | `stravaId` | positive integer | no | Legacy Strava link field. Keep reading it for back-compat, but prefer `activityRefs.strava` for new multi-provider notes. |
+| `plannedRoute` | object | no | Public planned-course route reference for map/elevation display on planned notes. |
 
 ## Section Model
 
@@ -162,6 +163,23 @@ Example:
 - Use the numeric Strava activity ID only for legacy notes that still rely on the older field.
 - Prefer `activityRefs.strava` for new linkage.
 - The build layer treats `stravaId` as a migration alias for `activityRefs.strava`.
+
+### `plannedRoute`
+
+- Use this when a planned note needs a publishable course map before any completed provider activity exists.
+- `plannedRoute.path` must be relative to `data/training` and point under `routes/`.
+- Route source files should expose a `routeStreams` object with aligned `latlng`, `altitude`, and `distance` arrays. The build publishes these streams to `/generated/workout-routes/<note-slug>.json`.
+- Keep private provider exports in `vault/**`. Planned routes should be curated public course traces only.
+
+Example:
+
+```json
+{
+  "plannedRoute": {
+    "path": "routes/2026-06-21-parramatta-half-marathon.json"
+  }
+}
+```
 
 ## Planned Note Example
 
