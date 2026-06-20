@@ -4,13 +4,69 @@
   "allDay": true,
   "type": "single",
   "date": "2026-06-19",
-  "completed": false,
+  "completed": "2026-06-18T21:37:55Z",
   "eventType": "run",
   "expectedDistance": "5 km",
+  "stravaId": 18977489259,
+  "activityRefs": {
+    "strava": "18977489259",
+    "appleHealth": "A18E90F1-FF0A-43EB-91A5-D7D207F3FBE1"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- 5 km easy run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was planned as a simple `5 km` easy run two days before Parramatta, but it became `11.064 km` in `58:55` moving time and `59:26` elapsed, with `69.2 m` Strava elevation gain, `156.5 bpm` average HR, and `171 bpm` max HR.\n- The effort was controlled compared with Tuesday-Wednesday, but the distance was the problem: this was more than double the planned run and came after Thursday's over-hot shakeout, so it changed the race-week freshness picture."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- Monday-Friday running now totals `43.056 km` before the half marathon, versus about `34 km` planned before race day. That extra `9 km` is not catastrophic, but it removes some margin because Wednesday, Thursday, and Friday all carried more cost than intended.\n- The immediate priority is to stop adding load. Saturday should stay non-running, basketball should be skipped if possible, and the Parramatta warm-up should be used as the final readiness check before deciding whether the `1:44` stretch is still live."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, this is a mixed signal: `11 km` at `5:20 /km` with a `5:15 /km` GAP shows plenty of aerobic strength, but doing it on Friday of race week is not ideal. The race is still viable, but the execution should bias controlled early pacing over proving fitness in the first half.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, this supports durability and aerobic depth, but it also repeats the discipline lesson. Marathon training will benefit from runs like this only when they are planned, fueled, and placed away from race-week taper constraints."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:20 /km`; Strava GAP was about `5:15 /km`, and measured local GAP was also about `5:15 /km` with `high` reliability and near-full route coverage.\n- The route stream progressed rather than simply floated: `0-3 km` averaged about `5:26 /km` at `146.3 bpm`, `3-6 km` about `5:17 /km` at `156.1 bpm`, `6-9 km` about `5:09 /km` at `161.7 bpm`, then `9-11.064 km` about `5:17 /km` at `164.9 bpm`."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `156.5 bpm` with a `171 bpm` max; Apple Health measured about `156.0 bpm` average HR and `170 bpm` max.\n- Against the current LTHR app bands, the stream spent about `5:45` in Z1, `22:19` in Z2, `24:04` in Z3, and `7:18` in Z4, with no Z5/Z6 time. That is controlled aerobic-to-steady work, but still more load than a race-week easy 5 km needed."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `58:55` from `59:26` elapsed, a `0:31` gap.\n- Route moving flags mark about `1:05` of non-moving or low-movement samples, but not enough to change the read. This was mostly continuous aerobic running with a gradually rising HR."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `69.2 m` elevation gain, while the measured route model found about `76.4 m` ascent and `76.7 m` descent.\n- The route was mildly rolling throughout, and wind gusts were high, but the GAP still sits close to raw pace. The main race-week cost is the extra duration and distance, not a single hard climb."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health generated `714` during-run HR samples and `1,387` cadence-backed step samples. Cadence averaged `178.1 spm`, with a working range of `126.7` to `192.0 spm`, and total workout steps were `10,584`.\n- Cadence stayed efficient while HR rose, so this looks like an intentional comfortable progression rather than a fatigue shuffle. That is good mechanics, but still too much volume this close to the race."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Recovery Context",
+          "markdown": "- Conditions added some cost: overcast, about `17.2 C`, `14.6 C` apparent temperature, `63%` humidity, no precipitation, `18.1 kph` wind, and `41.4 kph` gusts. Shoes were `Saucony Speed 4`.\n- Apple Health recovery context was available: recent resting HR averaged about `48.0 bpm`, HRV `70.4 ms`, VO2 max `57.0 ml/kg/min`, respiratory rate `17.3 br/min`, blood oxygen `97.0%`, and sleep duration `4.5 h`. Those readiness signals are not alarming, but the low sleep average reinforces the case for protecting Saturday."
+        }
+      ]
     }
   ]
 }
