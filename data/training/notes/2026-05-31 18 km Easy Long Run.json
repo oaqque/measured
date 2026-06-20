@@ -4,13 +4,69 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-31",
-  "completed": false,
+  "completed": "2026-05-31T05:46:39Z",
   "eventType": "run",
   "expectedDistance": "18 km",
+  "activityRefs": {
+    "strava": "18724252004",
+    "appleHealth": "748A4DA7-BE42-4A3B-8088-24E3BB4DD228"
+  },
+  "stravaId": 18724252004,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 18 km easy long run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was planned as an `18 km` easy long run, but the completed run was bigger and sharper: Strava recorded `20.033 km` in `1:46:39` moving time, `1:50:27` elapsed time, `193.4 m` elevation gain, `157.1 bpm` average HR, and `174 bpm` max HR.\n- It should count as a quality long run rather than a pure easy long run. The middle `10 km` from `5-15 km` averaged about `4:56 /km` at `164.7 bpm`, and the generated best-effort table ranks this run `#1` for `15 km`, `#2` for `20 km`, `#2` for `10 km`, `#4` for `3 km`, and `#4` for `5 km`."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The week finished at `47.449 km` across four completed runs, below the planned `60 km`, but that understates the cost because Thursday was hard steady, Friday was over-distance, and Sunday became a quality long run.\n- Do not chase the missed Monday and Wednesday mileage into the next week. After this Sunday load and Monday basketball, the `2026-06-02` `16 km` threshold and half-marathon-pace session should be conditional: run it only if the legs feel recovered, and cut it to controlled aerobic work if they do not."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, this is a strong endurance and speed-endurance signal: holding a fast middle block inside `20 km` supports the fitness direction, but it also borrows from the next hard session.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, the durability signal is useful. The long-term caution is pacing discipline: marathon training needs repeatable long runs, not accidental race-effort segments every time the legs feel good."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:19 /km`; Strava GAP was about `5:13 /km`, while measured local GAP was about `5:14 /km` with `medium` reliability and full route coverage.\n- The route stream shows four distinct phases: `0-5 km` at about `5:47 /km` and `145.0 bpm`, `5-10 km` at `5:05 /km` and `160.9 bpm`, `10-15 km` at `4:47 /km` and `168.8 bpm`, then `15-20.033 km` at `6:19 /km` and `154.8 bpm` across the hilliest finish."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `157.1 bpm` with a `174 bpm` max; Apple Health matched the same start window at `156.0 bpm` average HR and `174 bpm` max.\n- Using the current LTHR app bands, the route stream spent about `16:06` in Z1, `33:34` in Z2, `26:45` in Z3, `31:16` in Z4, and `2:46` in Z5, with no Z6 time. That is too much Z3-Z5 exposure for this to be called easy."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `1:46:39` from `1:50:27` elapsed, so the elapsed gap was `3:48`.\n- Route moving flags show at least `1:17` stopped, including early stops near the start and another short stop around `18.7 km`. The pauses do not materially distort the read; the main story is still the fast middle block and hilly final section."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `193.4 m` elevation gain, while the measured route model found `187.7 m` ascent and `194.2 m` descent.\n- The final `2.033 km` carried about `80.2 m` of ascent and slowed to roughly `7:20 /km`, so the late pace drop is better read as terrain plus accumulated load rather than simple collapse."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health logged `19,128` total steps, implying about `173.2 spm` across the full workout; the generated cadence series has `242` derived points and a `196 spm` max.\n- After excluding start-stop values below `100 spm`, cadence rose with the faster middle: about `174.0 spm` for the opening section, `182.2 spm` from `5-10 km`, `182.8 spm` from `10-15 km`, and `173.5 spm` for the final hilly section."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Recovery Context",
+          "markdown": "- Conditions were good for running: clear sky, about `15.9 C` average temperature, `13.5 C` apparent temperature, `54%` humidity, no recorded precipitation, `11.2 kph` wind, and `32.8 kph` gusts.\n- Shoes were `Adidas Adizero EVO SL Red`, not retired, and this appears to be their first logged workout in the generated shoe graph at `20 km`.\n- Apple Health recovery context was available: recent resting HR averaged `49.7 bpm`, HRV `65.9 ms`, VO2 max `54.7 ml/kg/min`, respiratory rate `16.4 br/min`, blood oxygen `97.1%`, and sleep duration `4.9 h` in the sampled window. The low sleep context makes the next quality session a recovery-dependent decision rather than something to force."
+        }
+      ]
     }
   ]
 }
