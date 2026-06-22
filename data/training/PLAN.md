@@ -140,8 +140,8 @@ From `2026-04-21` through `2026-08-30`, treat the morning mobility routine in `n
 ```json plan-analysis-timeline
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-18",
-  "sourceSummary": "Built from Strava activity history through the cache synced at 2026-05-17T20:44:04Z, the receiver-backed Apple Health snapshot generated at 2026-05-17T20:28:23Z, workout notes, goal notes, and changelog history through 2026-05-18.",
+  "updatedAt": "2026-06-22",
+  "sourceSummary": "Built from Strava activity history through the cache synced at 2026-06-22T00:52:25Z, the receiver-backed Apple Health snapshot generated at 2026-06-21T06:28:55Z, workout notes, goal notes, and changelog history through 2026-06-21.",
   "entries": [
     {
       "id": "2026-01-12-week-restart",
@@ -546,6 +546,161 @@ From `2026-04-21` through `2026-08-30`, treat the morning mobility routine in `n
         "futureHighVolumeWeekKm": 80
       },
       "analysis": "The current block remains viable for Parramatta because the week banked threshold and steady work without the HR instability that caused earlier concern. The problem is that the long-run step from `14.104 km` back to `18 km` still has to be proven, and the next planned week jumps to `76 km`, which is large relative to the completed `61.003 km`.\n\nThe right response is not to chase the `6.997 km` deficit on Monday. Monday should stay genuinely easy around the planned `7 km`, and basketball should decide whether Tuesday's `16 km` half-marathon-pace workout is full, softened, or shortened. If something has to give, trim optional Friday/Saturday volume or gym load before sacrificing Tuesday quality or Sunday's long-run execution. For Sydney, this is still a cleaner path than panic mileage: long-run repeatability is the limiter, not one missing Friday recovery run."
+    },
+    {
+      "id": "2026-05-24-week-front-loaded-intervals",
+      "date": "2026-05-24",
+      "period": {
+        "start": "2026-05-18",
+        "end": "2026-05-24"
+      },
+      "category": "weekly summary",
+      "title": "Interval week got big early, then lost the long run",
+      "summary": "59.056 km across five runs against a 75 to 76 km target; the 21.113 km interval run landed, but Thursday and Sunday were missed.",
+      "metrics": {
+        "plannedDistanceLowerKm": 75,
+        "plannedDistanceUpperKm": 76,
+        "completedDistanceKm": 59.056,
+        "deficitToLowerKm": 15.944,
+        "runs": 5,
+        "plannedRuns": 7,
+        "distanceWeightedAverageHeartRateBpm": 149.8,
+        "totalElevationGainMeters": 443,
+        "intervalRunKm": 21.113,
+        "intervalAverageHeartRateBpm": 152.2,
+        "fridayRecoveryRunKm": 10.053,
+        "saturdayRunKm": 10.642,
+        "sundayLongRunPlannedKm": 18
+      },
+      "analysis": "The planned `75 to 76 km` Parramatta build week became front-loaded rather than complete. Monday was genuinely easy at `7.178 km` and `139.2 bpm`, Tuesday became the interrupted `10.070 km` aerobic substitute, and Wednesday expanded into a `21.113 km` interval session with `5 x 4 min` hard reps plus several best-effort flags. That made the week's quality real before Thursday was skipped.\n\nThe issue was downstream shape. Friday and Saturday both ran long at `10.053 km` and `10.642 km`, but the Sunday `18 km` long run did not land, leaving `59.056 km` across five runs. For Parramatta, this still added a strong quality stimulus; for Sydney, it kept pointing to the same limiter as the May 18 outlook: long-run repeatability and weekend restraint after basketball mattered more than squeezing extra distance into support days."
+    },
+    {
+      "id": "2026-05-31-week-low-volume-high-cost",
+      "date": "2026-05-31",
+      "period": {
+        "start": "2026-05-25",
+        "end": "2026-05-31"
+      },
+      "category": "weekly summary",
+      "title": "Lower volume still carried hidden quality",
+      "summary": "47.449 km across four runs against a planned 60 km, but Thursday and Sunday made the week more expensive than the total suggests.",
+      "metrics": {
+        "plannedDistanceKm": 60,
+        "completedDistanceKm": 47.449,
+        "deficitKm": 12.551,
+        "runs": 4,
+        "plannedRuns": 6,
+        "distanceWeightedAverageHeartRateBpm": 154.2,
+        "totalElevationGainMeters": 383.2,
+        "thresholdSubstituteKm": 7.041,
+        "steadyRunKm": 10.318,
+        "steadyAverageHeartRateBpm": 160.6,
+        "longRunPlannedKm": 18,
+        "longRunActualKm": 20.033,
+        "longRunAverageHeartRateBpm": 157.1
+      },
+      "analysis": "The `60 km` week shrank to `47.449 km` across four runs because Monday and Wednesday were missed and Tuesday's threshold became a `7.041 km` progressive aerobic-to-steady substitute. It was not a clean down week: Thursday's `10.318 km` steady run became the week's main quality session at `160.6 bpm` average HR, and Friday added `10.057 km` instead of the planned `6 km`.\n\nSunday then turned the `18 km` easy long run into `20.033 km` with `193.4 m` of climbing and a hard middle `10 km` around `4:56 /km` at `164.7 bpm`. The weekly distance was below plan, but the intensity distribution was not especially light. The correct read for the next block was to protect recovery before resuming half-marathon-specific work, not to chase the missing `12.551 km`."
+    },
+    {
+      "id": "2026-06-07-week-sunday-salvaged-durability",
+      "date": "2026-06-07",
+      "period": {
+        "start": "2026-06-01",
+        "end": "2026-06-07"
+      },
+      "category": "weekly summary",
+      "title": "Weekday structure collapsed, Sunday salvaged durability",
+      "summary": "35.809 km across three runs against a planned 78 km; the 21.631 km Sunday long run was the clear positive.",
+      "metrics": {
+        "plannedDistanceKm": 78,
+        "completedDistanceKm": 35.809,
+        "deficitKm": 42.191,
+        "runs": 3,
+        "plannedRuns": 7,
+        "distanceWeightedAverageHeartRateBpm": 145.1,
+        "totalElevationGainMeters": 291.6,
+        "wednesdayRunKm": 6.013,
+        "thursdayRunKm": 8.165,
+        "longRunPlannedKm": 20,
+        "longRunActualKm": 21.631,
+        "longRunAverageHeartRateBpm": 142.6
+      },
+      "analysis": "The week did not resemble the planned `78 km` half-marathon-specific structure. Monday, Tuesday, Friday, and Saturday did not produce run volume, Wednesday was cut to `6.013 km`, and Thursday became only `8.165 km` rather than the planned medium-long marathon-pace session.\n\nThe positive was Sunday's `21.631 km` long run at `142.6 bpm` average HR with `184.0 m` of climbing. That run preserved the durability thread and showed that longer easy running was still available when the week was not already overloaded. For Parramatta, the missing weekday quality narrowed the sharpening window; for Sydney, the long-run signal mattered more than the low total because it showed aerobic control was still present."
+    },
+    {
+      "id": "2026-06-14-week-quality-compressed",
+      "date": "2026-06-14",
+      "period": {
+        "start": "2026-06-08",
+        "end": "2026-06-14"
+      },
+      "category": "weekly summary",
+      "title": "Quality compressed into the middle of the week",
+      "summary": "65.290 km across five runs against an 80 km target, with two substantial quality days before a shortened long run.",
+      "metrics": {
+        "plannedDistanceKm": 80,
+        "completedDistanceKm": 65.29,
+        "deficitKm": 14.71,
+        "runs": 5,
+        "plannedRuns": 6,
+        "distanceWeightedAverageHeartRateBpm": 156,
+        "totalElevationGainMeters": 395.8,
+        "halfMarathonPaceSubstituteKm": 10.883,
+        "hardWorkoutKm": 18.066,
+        "hardWorkoutAverageHeartRateBpm": 169.1,
+        "progressionRunKm": 16.036,
+        "progressionRunAverageHeartRateBpm": 156.1,
+        "longRunPlannedKm": 22,
+        "longRunActualKm": 15.179
+      },
+      "analysis": "This was not the neat `80 km` week on the table, but it was not light. Tuesday's planned half-marathon-pace session became a `10.883 km` aerobic run, then Wednesday carried the real quality: `18.066 km` at `169.1 bpm` average HR with an extended hard block around half-marathon pace. Thursday correctly converted to `5.126 km` recovery, but Friday then became a `16.036 km` progression rather than the planned recovery run.\n\nSaturday was changed to a hike-only cross-training day, and Sunday's planned `22 km` long run stopped at `15.179 km` after the compressed midweek load and time on feet. The total, `65.290 km`, was short of plan, but the cost profile was race-specific and fairly sharp. That supported the Parramatta checkpoint, while also warning that the Sydney build cannot rely on repeated compressed intensity weeks if the later `80 km`-plus weeks are meant to be sustainable."
+    },
+    {
+      "id": "2026-06-21-week-parramatta-checkpoint",
+      "date": "2026-06-21",
+      "period": {
+        "start": "2026-06-15",
+        "end": "2026-06-21"
+      },
+      "category": "race checkpoint",
+      "title": "Parramatta hit the target after a too-busy race week",
+      "summary": "64.570 km across six runs including a 1:42:35 Parramatta Half Marathon, beating the 1:45:00 target.",
+      "metrics": {
+        "plannedDistanceKm": 55.1,
+        "completedDistanceKm": 64.57,
+        "surplusKm": 9.47,
+        "runs": 6,
+        "plannedRuns": 6,
+        "distanceWeightedAverageHeartRateBpm": 160.6,
+        "mondayToFridayKm": 43.056,
+        "mondayToFridayPlannedKm": 34,
+        "raceTargetSeconds": 6300,
+        "raceElapsedSeconds": 6155,
+        "raceMovingTimeSeconds": 6151,
+        "raceGpsDistanceKm": 21.514,
+        "raceAverageHeartRateBpm": 171.3,
+        "raceMaxHeartRateBpm": 186
+      },
+      "analysis": "The Parramatta goal was achieved clearly: the race came in at `1:42:35` elapsed and `1:42:31` moving, beating the `1:45:00` hard target by about `2:25`. The race execution also mattered, because the provider-backed analysis describes a negative-split performance rather than simply hanging on.\n\nThe caution is the race-week path. Monday to Friday reached `43.056 km` against roughly `34 km` planned, with Wednesday progressing harder than easy, Thursday's shakeout averaging `161.5 bpm`, and Friday more than doubling from `5 km` planned to `11.064 km`. The week finished at `64.570 km`, so the checkpoint validates speed and resilience but also raises the recovery requirement. For Sydney, Parramatta is a positive sign, not permission to roll straight into make-up marathon volume."
+    },
+    {
+      "id": "2026-06-22-current-block-sydney-transition",
+      "date": "2026-06-22",
+      "category": "current block",
+      "title": "Sydney build starts with recovery, not compensation",
+      "summary": "Parramatta confirms the speed checkpoint; the next constraint is absorbing race week before chasing July volume.",
+      "metrics": {
+        "daysToSydney": 69,
+        "sydneyTargetSeconds": 12600,
+        "parramattaTargetSeconds": 6300,
+        "parramattaElapsedSeconds": 6155,
+        "raceWeekCompletedKm": 64.57,
+        "postRaceWeekPlannedKm": 45,
+        "followingWeekPlannedKm": 76,
+        "firstJulyBuildWeekKm": 84,
+        "peakPlannedWeekKm": 100
+      },
+      "analysis": "The block has changed jobs. Before Parramatta, the question was whether the `1:45:00` half-marathon checkpoint was realistic. After `1:42:35`, the speed answer is yes. The remaining Sydney question is durability: can the build absorb a hard half-marathon, restore cheap easy running, and then scale marathon-specific volume without turning every support day into hidden quality?\n\nThat makes the `2026-06-22` to `2026-06-28` recovery-transition week important even though its planned `45 km` is modest. It should absorb the `64.570 km` race week and protect the next ramp to `76 km`, then `84 km`, then the later `92`, `96`, and `100 km` planned weeks. For the `3:30:00` Sydney Marathon target, the limiting question is no longer whether half-marathon pace exists; it is whether long runs, fueling practice, marathon-pace work, basketball, and the gym split can coexist without compressing too much intensity into the same few days."
     }
   ]
 }
