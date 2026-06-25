@@ -4,13 +4,64 @@
   "allDay": true,
   "type": "single",
   "date": "2026-06-25",
-  "completed": false,
+  "completed": "2026-06-25T00:23:06Z",
   "eventType": "run",
   "expectedDistance": "10 km",
+  "activityRefs": {
+    "strava": "19056353680",
+    "appleHealth": "E0F9B9B8-25B3-49AC-A72C-71CAD7E73FEC"
+  },
+  "stravaId": 19056353680,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 10 km steady run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This matched the planned distance almost exactly but not the planned steady stimulus. The plan called for a `10 km` steady run; the completed run was `9.984 km` in `1:01:25` moving time and `1:01:54` elapsed, with `95.8 m` elevation gain, `142.7 bpm` average HR, and `156 bpm` max HR.\n- That is better classified as easy aerobic volume than steady work. In the post-Parramatta recovery week, that is probably the right miss: the run restored normal distance without adding threshold-adjacent cost."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The week is now `22.540 km` complete across three runs against `24 km` planned through Thursday, with no concerning HR cost. The planned `45 km` week is still available, but there is no need to force Friday if recovery is lagging.\n- Friday's `6 km` should stay genuinely recovery-paced or be shortened, because the useful work of this week is absorbing Parramatta and arriving ready for Sunday's `15 km` easy long run."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-08-30` Sydney Marathon `3:30:00` target, this run is a good sign for the transition block: nearly `10 km` with low HR and no hidden intensity is the kind of cheap volume needed before the July ramp.\n- It does not prove marathon-pace readiness, but it does support the more important immediate goal: rebuilding frequency and volume without carrying race-week intensity forward."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `6:09 /km`, and Strava GAP was about `6:03 /km` on a hillier route. The GAP confirms the route was somewhat rolling, but still not a steady-effort workout.\n- The first `5 km` averaged about `6:04 /km` at `142.7 bpm`; the second `5 km` slowed to about `6:20 /km` at the same `142.7 bpm` while carrying more climbing. That is controlled effort, not a fade."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `142.7 bpm` with a `156 bpm` max; Apple Health recorded about `142.3 bpm` average HR and the same `156 bpm` max.\n- The zone profile was firmly easy: about `46:12` in Z1 and `15:41` in Z2, with no Z3 or higher time in the Strava HR stream."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `1:01:25` from `1:01:54` elapsed, a `0:29` gap.\n- The route stream was `99.3%` moving, so the easy intensity read is reliable."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `95.8 m` elevation gain, and the stream shows the second half included more climbing than the first half. That explains why pace slowed while HR stayed flat.\n- The hilly profile makes this more useful as aerobic durability than the raw `6:09 /km` pace alone suggests."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Data Quality",
+          "markdown": "- Conditions were damp but cool: light drizzle, about `13.9 C`, `13.5 C` apparent temperature, `85%` humidity, `0.3 mm` precipitation, `6.2 kph` wind, and `19.4 kph` gusts.\n- Shoes were `HOKA Bondi 9`. Strava and Apple Health agreed closely on distance, time, and HR; both sources had streams, and the core data quality is high."
+        }
+      ]
     }
   ]
 }
