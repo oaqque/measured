@@ -10,7 +10,7 @@
   "sections": [
     {
       "kind": "program",
-      "markdown": "- 14 km medium-long run with 6 km at marathon pace"
+      "markdown": "- 14 km medium-long run with `6 km` at marathon pace.\n- Start with `3 km` easy at about `5:55-6:25 /km`.\n- Build with `2 km` steady at about `5:25-5:40 /km`.\n- Main block: `6 km` around goal marathon pace, targeting `4:58-5:05 /km` by effort or GAP. Do not chase faster than `4:55 /km` on flat ground.\n- Cool down `3 km` easy at about `6:00-6:30 /km`.\n- Effort guardrail: the marathon-pace block should feel controlled and repeatable, not threshold. If HR is rising into the low `170s` early in the block, back off toward `5:05-5:12 /km`.\n- If Tuesday threshold or Wednesday legs left real fatigue, keep the `14 km` medium-long run but reduce the quality to `3-4 km` at `5:05-5:12 /km`, or skip the marathon-pace block entirely."
     }
   ]
 }
