@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Achilles Recovery No Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-07-11",
+  "completed": false,
+  "eventType": "mobility",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- No run.\n- Keep Saturday as a tendon-protection day between the Friday check and Sunday's optional long run.\n- Easy walking and recovery-mode mobility are fine if symptoms are stable.\n- Skip strides, hops, hill walking, and any optional lower-leg loading."
+    }
+  ]
+}

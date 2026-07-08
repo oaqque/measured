@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Light Tendon Rehab and Mobility",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-07-08",
+  "completed": false,
+  "eventType": "strength",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- No heavy legs session.\n- Light tendon rehab and mobility only: easy ankle range, foot activation, glute bridge work, and pain-free isometric calf holds if they settle the Achilles rather than irritate it.\n- Skip loaded calf raises, plyometrics, heavy squats, heavy hinge work, deep split squats, and soreness-chasing accessories.\n- Keep symptoms stable or better by the next morning; if this makes the Achilles more noticeable, stop and treat Thursday as another no-run day."
+    }
+  ]
+}

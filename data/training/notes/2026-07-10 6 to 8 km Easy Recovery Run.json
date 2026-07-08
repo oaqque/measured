@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "6 to 8 km Easy Recovery Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-07-10",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "6 to 8 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 6 to 8 km easy recovery run only if Thursday's test run and the next morning are symptom-stable or better.\n- Keep this flatter and easier than normal aerobic pace: about `6:10-6:45 /km`, with HR mostly below about `150-155 bpm`.\n- No strides, hills, pickups, or catching up on the missed Tuesday/Thursday quality.\n- Cut to `4-5 km` or take a no-run day if the Achilles is more noticeable than it was before Thursday's test.\n- The goal is to prove repeatability, not fitness."
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Achilles Recovery No Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-07-06",
+  "completed": false,
+  "eventType": "mobility",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- No run.\n- Treat the calf tightness and next-day Achilles soreness after Sunday's long run as the main training signal.\n- Keep any walking relaxed and flat. Skip hops, strides, hills, and loaded calf work.\n- If basketball is already locked in, keep it controlled and stop if the Achilles changes your movement."
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Achilles Recovery No Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-07-08",
+  "completed": false,
+  "eventType": "mobility",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- No run.\n- Use today as the last full no-run day before a possible Thursday return-to-run test.\n- Continue only gentle mobility and easy walking if the Achilles keeps improving.\n- Tomorrow's run is optional and depends on waking with no more than trace stiffness or soreness."
+    }
+  ]
+}

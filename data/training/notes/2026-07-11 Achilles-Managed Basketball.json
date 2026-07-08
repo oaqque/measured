@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Achilles-Managed Basketball",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-07-11",
+  "completed": false,
+  "eventType": "basketball",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- Prefer skipping Saturday basketball this week while the Achilles is settling.\n- If you play, treat it as a controlled shootaround only: no hard cuts, sprints, contests, jumping volume, or extra games.\n- Stop at the first sign that the Achilles is changing your push-off or landing mechanics.\n- If basketball happens at anything beyond controlled shootaround, cap Sunday at short easy running or replace it with rest."
+    }
+  ]
+}
