@@ -140,8 +140,8 @@ From `2026-04-21` through `2026-08-30`, treat the morning mobility routine in `n
 ```json plan-analysis-timeline
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-22",
-  "sourceSummary": "Built from Strava activity history through the cache synced at 2026-06-22T00:52:25Z, the receiver-backed Apple Health snapshot generated at 2026-06-21T06:28:55Z, workout notes, goal notes, and changelog history through 2026-06-21.",
+  "updatedAt": "2026-07-08",
+  "sourceSummary": "Built from Strava activity history through the cache synced on 2026-07-08, the receiver-backed Apple Health snapshot generated at 2026-07-08T05:44:44Z, workout notes, goal notes, and changelog history through 2026-07-08.",
   "entries": [
     {
       "id": "2026-01-12-week-restart",
@@ -701,6 +701,34 @@ From `2026-04-21` through `2026-08-30`, treat the morning mobility routine in `n
         "peakPlannedWeekKm": 100
       },
       "analysis": "The block has changed jobs. Before Parramatta, the question was whether the `1:45:00` half-marathon checkpoint was realistic. After `1:42:35`, the speed answer is yes. The remaining Sydney question is durability: can the build absorb a hard half-marathon, restore cheap easy running, and then scale marathon-specific volume without turning every support day into hidden quality?\n\nThat makes the `2026-06-22` to `2026-06-28` recovery-transition week important even though its planned `45 km` is modest. It should absorb the `64.570 km` race week and protect the next ramp to `76 km`, then `84 km`, then the later `92`, `96`, and `100 km` planned weeks. For the `3:30:00` Sydney Marathon target, the limiting question is no longer whether half-marathon pace exists; it is whether long runs, fueling practice, marathon-pace work, basketball, and the gym split can coexist without compressing too much intensity into the same few days."
+    },
+    {
+      "id": "2026-07-05-first-marathon-build-week",
+      "date": "2026-07-05",
+      "period": {
+        "start": "2026-06-29",
+        "end": "2026-07-05"
+      },
+      "category": "weekly summary",
+      "title": "First Sydney build week proved durability, not cheap volume",
+      "summary": "68.469 km across five runs against a 76 km target; Tuesday and Sunday carried more intensity than planned.",
+      "metrics": {
+        "plannedDistanceKm": 76,
+        "completedDistanceKm": 68.469,
+        "deficitKm": 7.531,
+        "runs": 5,
+        "plannedRuns": 7,
+        "distanceWeightedAverageHeartRateBpm": 156.3,
+        "totalElevationGainMeters": 364.8,
+        "thresholdRunKm": 16.057,
+        "thresholdAverageHeartRateBpm": 165.1,
+        "marathonEffortRunKm": 14.075,
+        "marathonEffortAverageHeartRateBpm": 158.5,
+        "longRunPlannedKm": 18,
+        "longRunActualKm": 22.367,
+        "longRunAverageHeartRateBpm": 155.3
+      },
+      "analysis": "This was the first major Sydney Marathon build week after Parramatta, and it was a real re-entry into marathon work rather than another recovery bridge. The plan asked for `76 km`; the week delivered `68.469 km` across five runs. That is short on paper, but the shape matters more than the deficit. Monday was short but too warm aerobically, Tuesday hit `16.057 km` but became a hard continuous threshold-to-10K-style block, Wednesday was the clean aerobic day at `10.031 km` and `142.1 bpm`, Thursday landed as controlled marathon-effort/steady medium-long work, and Sunday overdelivered the long-run stimulus at `22.367 km` with a progressive second half.\n\nThe positive signal is durability. Coming only eight days after the Parramatta Half Marathon, the week still produced a threshold-length workout, a medium-long marathon-effort run, and a long run beyond `22 km`. That supports the Sydney Marathon build because the speed question is no longer the immediate limiter. The caution is distribution. The missed Friday and Saturday easy runs should not be treated as a `7.531 km` hole to fill, because the week already replaced easy volume with hidden quality: Tuesday carried Z5/Z6 time and Sunday became a quality long run rather than the prescribed easy `18 km`. The next block should preserve the durability signal while restoring cheaper easy running; otherwise the planned `84 km`, `92 km`, and later peak weeks will become expensive faster than they become sustainable."
     }
   ]
 }
