@@ -4,13 +4,64 @@
   "allDay": true,
   "type": "single",
   "date": "2026-07-05",
-  "completed": false,
+  "completed": "2026-07-05T01:01:51Z",
   "eventType": "run",
   "expectedDistance": "18 km",
+  "activityRefs": {
+    "strava": "19183658285",
+    "appleHealth": "EC101F07-58CD-476D-BD4E-EA33D9C7BF0C"
+  },
+  "stravaId": 19183658285,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 18 km easy long run.\n- Target pace: about `5:55-6:25 /km`, guided by effort and HR rather than forcing pace.\n- Start the first `5 km` conservatively around `6:05-6:30 /km` so the run stays genuinely aerobic.\n- HR guardrail: keep most of the run in Z2, ideally under about `156 bpm`; brief drift toward `160 bpm` late is acceptable, but do not sit above that early.\n- No planned marathon-pace block and no hard fast finish. If the last `3 km` naturally settles around `5:40-5:55 /km` while HR stays controlled, that is fine; otherwise keep it easy.\n- Fueling practice: take one gel around `40-45 minutes`, then water. Consider a second gel around `75-80 minutes` if the run will go beyond `1:45`.\n- If Saturday basketball was hard or HR drifts above `160 bpm` before `10 km`, shorten to `14-16 km` and preserve the next build week."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This missed the easy-long-run prescription in both distance and intensity. The plan was `18 km` easy at about `5:55-6:25 /km`; the completed run was `22.367 km` in `1:57:17` moving time and `1:57:21` elapsed, averaging `5:15 /km` with `155.3 bpm` average HR and `181 bpm` max HR.\n- It was a strong progressive quality long run, not an easy long run. The first half was controlled at `5:28 /km` and `146.6 bpm`, but the second half accelerated to `5:01 /km` at `164.8 bpm`, with the last `2.354 km` around `4:54 /km` at `171.2 bpm`."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The week finished at `68.469 km` across five runs against the planned `76 km`. The missing Friday/Saturday easy volume is not the issue; Sunday's extra `4.367 km` and faster second half replaced that missing distance with substantially higher load.\n- Do not chase the weekly `7.531 km` deficit. The next few days should absorb the long-run cost before any new threshold or marathon-pace work."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the Sydney Marathon `3:30:00` goal, this is an encouraging durability signal: `22.367 km` with a fast close shows the engine is moving toward marathon-specific strength.\n- The risk is distribution. The target requires repeatable long runs and marathon-pace work, not turning every long run into a hard progression. This was useful as a quality long run, but the next long run should return closer to the prescribed easy cost unless it is explicitly planned as quality."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:15 /km`, with Strava GAP about `5:12 /km`. The pace progression was clear: `0-5 km` at `5:27 /km`, `5-10 km` at `5:30 /km`, `10-15 km` at `5:05 /km`, `15-20 km` at `5:05 /km`, and `20 km-finish` at `4:54 /km`.\n- The final two full kilometres were `4:52 /km` and `4:56 /km`, so the close was marathon-to-half-marathon effort, not a relaxed easy finish."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `155.3 bpm` with a `181 bpm` max; Apple Health matched at about `155.3 bpm` average HR and `181 bpm` max.\n- Zone time was mixed rather than easy: about `25:07` in Z1, `36:47` in Z2, `26:36` in Z3, `18:42` in Z4, and `9:41` in Z5. The first half was cheap enough; the second half made this a meaningful quality load."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `1:57:17` from `1:57:21` elapsed, only a `0:04` gap.\n- The route stream marked `996` of `1000` samples as moving, so the negative split and late HR rise are real execution features."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `103.2 m` elevation gain, while the route stream accumulated about `152.2 m` ascent and `152.6 m` descent.\n- GAP was only about `3 s/km` faster than raw pace overall. Terrain mattered a little, but the main story is the deliberate second-half acceleration."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Data Quality",
+          "markdown": "- Conditions were overcast and breezy: about `14.1 C`, `11.9 C` apparent temperature, `64.5%` humidity, no recorded precipitation, `9.9 kph` wind, and `30.6 kph` gusts.\n- Shoes were `Adidas Adizero EVO SL Red`. Strava and Apple Health agreed closely, and both sources had streams. Recent Apple Health context showed resting HR falling back to the high `40s` after the run, but sleep was inconsistent across the week; use that as recovery context, not as an excuse for the workout cost."
+        }
+      ]
     }
   ]
 }

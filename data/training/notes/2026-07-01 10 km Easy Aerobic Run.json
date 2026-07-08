@@ -4,13 +4,64 @@
   "allDay": true,
   "type": "single",
   "date": "2026-07-01",
-  "completed": false,
+  "completed": "2026-06-30T22:01:52Z",
   "eventType": "run",
   "expectedDistance": "10 km",
+  "activityRefs": {
+    "strava": "19130318758",
+    "appleHealth": "DAF3A033-DA0B-4BD9-9A62-2A2D160757BA"
+  },
+  "stravaId": 19130318758,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 10 km easy aerobic run.\n- Target pace: about `5:55-6:30 /km`; let it drift slower if Tuesday's threshold work or Monday basketball is still in the legs.\n- HR guardrail: keep this mostly Z1/Z2, ideally under about `156 bpm`; if HR climbs while pace is unchanged, slow down rather than progressing.\n- Keep the route simple and continuous. No strides, no fast finish, and no make-up kilometres.\n- If Tuesday was reduced or the legs feel beaten up, keep the run but shorten to `8-9 km` at the same easy effort."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This matched the planned easy-aerobic purpose well. The prescription was `10 km`; the completed run was `10.031 km` in `1:00:08` moving time and `1:01:43` elapsed, with `99.8 m` Strava elevation gain, `142.1 bpm` average HR, and `156 bpm` max HR.\n- After Tuesday's harder-than-written threshold day, this was the right answer: distance on plan, pace controlled, and HR almost entirely below Z3."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The week reached `32.027 km` through Wednesday against `33 km` planned. The small distance gap is irrelevant; the useful outcome is that aerobic volume continued without adding another hard run.\n- This kept Thursday's marathon-pace medium-long run available, but only if Thursday stayed controlled rather than becoming another threshold session."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the Sydney Marathon build, this is the kind of support run the block needs: enough volume to build durability, low enough HR to let the key sessions remain key.\n- It does not prove marathon-specific fitness on its own, but it protects the bigger pattern: threshold, aerobic support, marathon-effort work, and long-run development inside the same week."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `6:00 /km`, with Strava GAP about `5:54 /km` on a rolling route.\n- The run was steady: the first half averaged `6:00 /km` at `139.4 bpm`, and the second half averaged `6:09 /km` at `144.2 bpm`. The small late HR lift was acceptable given the climbing and the prior day's work."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `142.1 bpm` with a `156 bpm` max; Apple Health recorded about `141.6 bpm` average HR and the same `156 bpm` max.\n- The zone profile was clean: about `44:23` in Z1, `15:59` in Z2, and only `0:08` in Z3, with no Z4 or higher time. That is a true easy-aerobic recovery response."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `1:00:08` from `1:01:43` elapsed, a `1:35` gap.\n- The route stream marked `992` of `1000` samples as moving. The elapsed gap is visible but not large enough to change the training interpretation."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `99.8 m` elevation gain, and the route stream accumulated about `114.2 m` of ascent and `119.0 m` of descent.\n- GAP being `6 s/km` quicker than raw pace supports the same read: the raw `6:00 /km` pace understates the aerobic control slightly because the route was rolling."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Data Quality",
+          "markdown": "- Conditions were mild and windy: overcast, about `14.8 C`, `13.2 C` apparent temperature, `83.5%` humidity, no recorded precipitation, `14.4 kph` wind, and `28.8 kph` gusts.\n- Shoes were `Adidas Adizero EVO SL Red`. Strava and Apple Health matched the same workout closely, and both sources had streams."
+        }
+      ]
     }
   ]
 }
