@@ -4,13 +4,64 @@
   "allDay": true,
   "type": "single",
   "date": "2026-06-29",
-  "completed": false,
+  "completed": "2026-06-29T02:02:06Z",
   "eventType": "run",
   "expectedDistance": "7 km",
+  "activityRefs": {
+    "strava": "19105421443",
+    "appleHealth": "0AA0DE3E-6BBB-4CA2-B2C7-54B59EBA0CE0"
+  },
+  "stravaId": 19105421443,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 7 km easy run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was planned as a `7 km` easy run to open the first Sydney Marathon-specific build week after the post-Parramatta transition week. The completed run was shorter at `5.939 km` in `33:12` moving time and `33:30` elapsed, with `38.6 m` elevation gain, `154.6 bpm` average HR, and `169 bpm` max HR.\n- The shorter distance was probably the right miss, but the intensity was not fully easy. The run was smooth and controlled, yet the HR stream spent more time in Z3/Z4 than an easy Monday should, especially with Monday basketball still on the same day and Tuesday's `16 km` threshold session next."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The week starts with `5.939 km` against the planned `76 km`, leaving only `1.061 km` missing from Monday's planned run. Do not chase that gap around basketball or Tuesday quality.\n- The immediate priority is to keep the Monday night court load from turning Tuesday into a compromised threshold day. If legs feel heavy after basketball, keep Tuesday's session controlled by effort rather than trying to force both the full `16 km` and sharp threshold pace."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-08-30` Sydney Marathon `3:30:00` target, this run is a useful but small aerobic contribution to the volume ramp. The positive sign is that pace stayed steady despite a hillier second half.\n- The risk signal is intensity discipline. The marathon block needs repeatable volume more than moderately hard easy days; keeping Monday easy matters because Tuesday, Thursday, and Sunday carry the key marathon-specific work."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:35 /km`, with Strava GAP about `5:31 /km`. The first half averaged `5:34 /km`; the second half averaged `5:35 /km`, so pace control was stable.\n- The quickest full kilometre was km `4` at `5:25 /km`, and the slowest was km `2` at `5:47 /km`. This reads as a steady lunch run rather than a surge-heavy session."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `154.6 bpm` with a `169 bpm` max; Apple Health recorded about `154.0 bpm` average HR and the same `169 bpm` max.\n- The HR stream was higher than ideal for an easy run: about `2:45` in Z1, `11:43` in Z2, `15:31` in Z3, and `2:53` in Z4. The second half averaged `158.9 bpm` versus `150.3 bpm` in the first half while pace stayed similar, so the session carried more aerobic cost than the title implies."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `33:12` from `33:30` elapsed, an `0:18` gap.\n- The route stream marked `991` of `999` samples as moving, so the pace and HR read is reliable and not driven by stop-start artifacts."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `38.6 m` elevation gain. The second half carried more climbing (`37.4 m` stream ascent versus `15.6 m` in the first half) while pace stayed almost unchanged.\n- That late climbing explains some of the HR lift, but not enough to call the run low-cost recovery."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Readiness Weather And Data Quality",
+          "markdown": "- Apple Health showed about `5:38` sleep before the run, resting HR at `52 bpm`, recent HRV samples ranging from about `23.9` to `88.5 ms`, and a VO2 max estimate of `56.0`. Use that as context only: the workout data itself is the stronger signal.\n- Conditions were mild and damp: light drizzle, about `16.6 C`, `16.5 C` apparent temperature, `73%` humidity, `0.1 mm` precipitation, `4.6 kph` wind, and `14.8 kph` gusts. Shoes were `Saucony Speed 4`; Strava and Apple Health matched closely on start time, distance, and HR."
+        }
+      ]
     }
   ]
 }

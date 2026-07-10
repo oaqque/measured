@@ -4,13 +4,52 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-23",
-  "completed": false,
+  "completed": "2026-05-22T22:47:35Z",
   "eventType": "basketball",
   "expectedDistance": "0 km",
+  "activityRefs": {
+    "appleHealth": "9AFDF670-1213-49FC-9C1C-69C34C84FA0C"
+  },
   "sections": [
     {
       "kind": "program",
       "markdown": "- Basketball, Saturday morning.\n- Treat this as hard court load, not a casual recovery session.\n- Keep the session controlled enough that Sunday long-run quality is still protected."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This matched the planned Saturday basketball slot. Apple Health recorded `1:43:25`, `4.308 km`, `125.9 bpm` average HR, and `177 bpm` max HR, starting at `08:47:35 AEST`.\n- The session did not happen in isolation: it followed the over-distance `10.642 km` morning run, so the combined morning load was about `14.950 km` of recorded movement over `2:43:53` elapsed time."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- Basketball adds stop-start court load, cutting, and HR spikes on top of a running week that is already at `59.056 km`. Monday and Saturday basketball together add about `7.990 km` of Apple Health-recorded court movement this week.\n- Treat Sunday's `18 km` long run as optional-to-full rather than mandatory. If the legs feel heavy or calves/Achilles feel loaded, reducing it to `12-14 km` easy is the better training decision than forcing the weekly total."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target and the `2026-08-30` Sydney Marathon `3:30:00` target, basketball can support general athleticism and resilience, but it also carries tissue load that does not show up cleanly in running kilometres.\n- The useful long-term pattern is to keep basketball while protecting the key run sessions. This week already has enough stimulus; the next gain comes from absorbing it, not adding more intensity."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Apple Health during-workout HR had `1033` samples, averaging `124.8 bpm` with a `173.5 bpm` sample max; the workout summary max was `177 bpm`.\n- Using the current LTHR app bands over the sampled HR series, basketball spent about `1:00:44` in Z1, `17:34` in Z2, `9:54` in Z3, `4:54` in Z4, and `0:18` in Z5, with no Z6 time. The average looks easy, but the peaks confirm real court intensity."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health cadence is not useful for this basketball read: only `11` samples were available, averaging `45.5 spm` with values down to `0`.\n- Use the distance, duration, and HR profile for this session instead of cadence."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Data Quality And Recovery Context",
+          "markdown": "- This session is Apple Health-only. There are no Strava route streams, no basketball-specific GPS route projection, and no weather payload available.\n- Apple Health recovery context was available: recent resting HR averaged `48.9 bpm`, HRV averaged `68.8 ms`, VO2 max averaged `53.4 ml/kg/min`, respiratory rate averaged `16.9 br/min`, blood oxygen averaged `96.9%`, and sleep duration averaged `5.2 h` in the sampled window.\n- The key coaching read is load sequencing: a progressive `10.642 km` run plus `1:43:25` basketball is a substantial Saturday even though the basketball average HR was moderate."
+        }
+      ]
     }
   ]
 }

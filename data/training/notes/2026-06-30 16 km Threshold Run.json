@@ -4,13 +4,64 @@
   "allDay": true,
   "type": "single",
   "date": "2026-06-30",
-  "completed": false,
+  "completed": "2026-06-29T22:04:46Z",
   "eventType": "run",
   "expectedDistance": "16 km",
+  "activityRefs": {
+    "strava": "19116801616",
+    "appleHealth": "BC1C935A-514F-48D2-97BA-ED7CB3791AC9"
+  },
+  "stravaId": 19116801616,
   "sections": [
     {
       "kind": "program",
-      "markdown": "- 16 km run including 5 x 1 km threshold work"
+      "markdown": "- 16 km total with `5 x 1 km` threshold work.\n- Warm up `3 km` easy at about `5:55-6:25 /km`, then add `4 x 20 seconds` relaxed strides with full easy jog recovery.\n- Main set: `5 x 1 km` at threshold effort, targeting `4:48-4:55 /km`. Touch `4:45 /km` only if it feels smooth; do not race the reps.\n- Recover with `2:00` easy jog after each of the first `4` reps, roughly `6:20-6:50 /km`.\n- Cool down easy to `16 km` total at about `6:00-6:30 /km`.\n- Effort guardrail: breathing should stay controlled through rep `3`; if HR is already above the mid-`170s` before rep `3`, or Monday basketball left the legs flat, reduce to `4 x 1 km` or convert to `12-14 km` easy aerobic.\n- Success is even reps and a clean cooldown, not the fastest possible threshold pace."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This matched the planned distance almost exactly: `16.057 km` completed for a `16 km` prescription, in `1:24:36` moving time and `1:24:46` elapsed, with `70.0 m` Strava elevation gain, `165.1 bpm` average HR, and `185 bpm` max HR.\n- It did not match the intended `5 x 1 km` threshold structure. The route stream shows about `3 km` of warm-up, then a long continuous fast block from roughly kilometres `4-10` rather than clear `2:00` easy jog recoveries. That makes the session more like a hard continuous threshold-to-10K-effort block than a controlled repeat workout."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- After Monday's `5.939 km` easy run, the week reached `21.996 km` of running through Tuesday against `23 km` planned. The volume was on track, but the intensity cost was higher than planned.\n- Wednesday should be genuine aerobic absorption. Do not use the successful distance execution as permission to stack another hard day; the useful next step is controlled easy volume and no extra lower-body soreness."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-08-30` Sydney Marathon `3:30:00` target, the positive signal is that `16 km` with substantial fast running is now available early in the marathon block.\n- The caution is repeatability. Marathon training needs threshold work that can coexist with Thursday marathon-pace work and Sunday long running; this version was effective, but too much Z5/Z6 time makes it a session to absorb rather than a pattern to repeat every week."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:16 /km`, with Strava GAP about `5:14 /km`. The fastest kilometres were km `10` at `4:37 /km`, km `6` at `4:40 /km`, and km `9` at `4:48 /km`.\n- The middle third was the real work: about `5.328 km` at `4:55 /km` average and `175.0 bpm` average HR. The last third settled to `5:39 /km`, which is consistent with cooling down after an expensive continuous block."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `165.1 bpm` with a `185 bpm` max; Apple Health matched closely at about `165.0 bpm` average and `185 bpm` max.\n- The HR-zone distribution was too high for a neat threshold-repeat read: about `37:18` in Z3, `14:45` in Z4, `18:37` in Z5, and `4:31` in Z6. The work was productive, but it was harder than the written guardrails."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `1:24:36` from `1:24:46` elapsed, only a `0:10` gap.\n- The stream marked `996` of `1000` samples as moving, so the continuous-fast-block read is reliable and not a watch-pause artifact."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `70.0 m` elevation gain, while the route stream accumulated about `100.4 m` of ascent and `106.4 m` of descent.\n- GAP and raw pace were close enough that terrain does not explain the intensity. This was primarily hard because the middle block was fast and continuous."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Data Quality",
+          "markdown": "- Conditions were cool but humid: overcast, about `10.8 C`, `10.2 C` apparent temperature, `99.5%` humidity, no recorded precipitation, `5.2 kph` wind, and `14.4 kph` gusts.\n- Shoes were `Adidas Adizero EVO SL Red`. Strava and Apple Health agreed closely on start time, distance, and HR; both had streams, and data quality is high."
+        }
+      ]
     }
   ]
 }

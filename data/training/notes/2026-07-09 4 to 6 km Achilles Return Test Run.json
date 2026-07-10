@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "4 to 6 km Achilles Return Test Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-07-09",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "4 to 6 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 4 to 6 km easy return-to-run test only if the Achilles is no worse than trace soreness or stiffness on waking.\n- Flat route only. No hills, strides, surges, marathon pace, or threshold work.\n- Pace guide: start around `6:30-7:00 /km`; only let it settle toward `6:05-6:30 /km` if the tendon feels unchanged and the stride is normal.\n- HR guardrail: keep this in Z1 to low Z2, ideally under about `150 bpm`.\n- Run-walk is acceptable, for example `4 min` easy jog / `1 min` walk for `30-40 min`.\n- Stop immediately if pain rises above mild awareness, changes your stride, gets sharper as you warm up, or lingers after stopping.\n- If Thursday morning is not clearly improved, replace this with 30 to 45 minutes easy walking or rest."
+    }
+  ]
+}

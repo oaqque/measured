@@ -50,6 +50,10 @@ export interface WorkoutMediaEmbed {
   title?: string;
 }
 
+export interface WorkoutPlannedRouteRef {
+  path: string;
+}
+
 export interface WorkoutNoteMarkdownSection {
   kind: "markdown";
   heading: string;
@@ -114,6 +118,7 @@ export interface WorkoutNoteSourceDocument {
   stravaId?: number;
   activityRefs?: WorkoutActivityRefMap;
   media?: WorkoutMediaEmbed;
+  plannedRoute?: WorkoutPlannedRouteRef;
   sections: WorkoutNoteSourceSection[];
 }
 
@@ -330,6 +335,7 @@ export interface WorkoutsData {
   goals: PlanDocument;
   heartRate: PlanDocument;
   morningMobility: PlanDocument;
+  metaanalysis: PlanDocument[];
   bestEfforts: WorkoutBestEffortsSummary;
   goalNotes: GoalNote[];
   plan: PlanDocument;

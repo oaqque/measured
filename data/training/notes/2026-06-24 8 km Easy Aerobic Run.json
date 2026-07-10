@@ -4,13 +4,59 @@
   "allDay": true,
   "type": "single",
   "date": "2026-06-24",
-  "completed": false,
+  "completed": "2026-06-24T02:10:55Z",
   "eventType": "run",
   "expectedDistance": "8 km",
+  "activityRefs": {
+    "strava": "19043917984",
+    "appleHealth": "72288577-2878-4EB9-AEFD-D995AD78EC00"
+  },
+  "stravaId": 19043917984,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 8 km easy aerobic run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was scheduled as an `8 km` easy aerobic run, but the completed run was a shorter `6.093 km` in `38:02` moving time and `38:06` elapsed. That is a `1.907 km` under-distance execution, but the intensity matched the post-race purpose.\n- Strava recorded `146.9 bpm` average HR, `156 bpm` max HR, and `41.0 m` elevation gain. Given the race was only three days earlier, cutting the distance while keeping the run easy was a good recovery-transition outcome."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The week is `12.556 km` complete across Tuesday and Wednesday running against `14 km` planned through Wednesday, with Monday basketball already adding hard court load. There is no need to recover the missing `1.907 km` before Thursday.\n- Thursday can still be a `10 km` run by distance, but it should be readiness-led rather than forced steady work. If HR rises early, keep it aerobic and let the week stay a true post-race bridge."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-08-30` Sydney Marathon `3:30:00` target, the value here is restraint. The plan's current block says Sydney starts with recovery rather than compensation, and this run follows that principle.\n- A shorter easy aerobic day after Parramatta helps preserve the option to build from `45 km` this week toward `76 km` next week without carrying race residue into the first marathon-specific ramp."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `6:15 /km`, with Strava GAP at about `6:12 /km`. The raw pace and GAP are close enough that terrain does not change the interpretation.\n- The stream was steady: the first half averaged about `6:15 /km` at `145.6 bpm`, and the second half averaged about `6:14 /km` at `148.3 bpm`."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `146.9 bpm` with a `156 bpm` max; Apple Health recorded about `146.6 bpm` average HR and the same `156 bpm` max.\n- The LTHR-zone profile was clean for an easy aerobic run: about `11:54` in Z1, `26:03` in Z2, and only `0:09` in Z3, with no Z4 or higher time."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `38:02` from `38:06` elapsed, only a `0:04` gap.\n- The route stream was `99.7%` moving, so this reads as a continuous controlled run."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Data Quality",
+          "markdown": "- Conditions were clear and cool: about `15.1 C`, `13.2 C` apparent temperature, `59%` humidity, no precipitation, `7.8 kph` wind, and `23.4 kph` gusts.\n- Shoes were `Saucony Speed 4`. Strava and Apple Health agreed closely on distance, time, and HR, and both sources had streams."
+        }
+      ]
     }
   ]
 }

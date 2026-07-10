@@ -38,6 +38,7 @@ import { getTodayDateKey, parseDateKey, resolveDefaultFocusDate } from "@/lib/ca
 import {
   allChangelogEntries,
   allGoalNotes,
+  allMetaanalysisDocuments,
   allWorkouts,
   bestEffortsSummary,
   filterWorkouts,
@@ -132,8 +133,9 @@ export default function App() {
 
     addDocument(welcomeDocument.sourcePath, welcomeDocument.title, welcomeDocument.body, "Welcome");
     addDocument(goalsDocument.sourcePath, goalsDocument.title, goalsDocument.body, "Goals");
-    addDocument(heartRateDocument.sourcePath, heartRateDocument.title, heartRateDocument.body, "Metaanalysis");
-    addDocument(morningMobilityDocument.sourcePath, morningMobilityDocument.title, morningMobilityDocument.body, "Metaanalysis");
+    for (const document of allMetaanalysisDocuments) {
+      addDocument(document.sourcePath, document.title, document.body, "Metaanalysis");
+    }
     addDocument(trainingPlan.sourcePath, trainingPlan.title, trainingPlan.body, "Plan");
 
     for (const goal of allGoalNotes) {
@@ -155,6 +157,12 @@ export default function App() {
 
     ids.set("HEART_RATE.md", createGraphDocumentNodeId(heartRateDocument.sourcePath));
     ids.set("MORNING_MOBILITY.md", createGraphDocumentNodeId(morningMobilityDocument.sourcePath));
+    for (const document of allMetaanalysisDocuments) {
+      ids.set(
+        document.sourcePath.split("/").at(-1) ?? document.sourcePath,
+        createGraphDocumentNodeId(document.sourcePath),
+      );
+    }
     return ids;
   }, [graphDocumentsById]);
   const selectedGraphWorkout = graphOpenedNodeId ? getWorkoutBySlug(graphOpenedNodeId) : null;
@@ -399,6 +407,13 @@ export default function App() {
 
     if (normalizedHref === "WELCOME.md") {
       navigateToView("welcome");
+      return true;
+    }
+
+    const documentNodeId = graphDocumentIdByPath.get(normalizedHref);
+    if (documentNodeId) {
+      setGraphOpenedNodeId(documentNodeId);
+      navigateToView("graph");
       return true;
     }
 

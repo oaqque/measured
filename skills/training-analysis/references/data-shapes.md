@@ -9,6 +9,7 @@ Use this file when creating or editing training source data under `data/training
 - `data/training/GOALS.md`: current goal hierarchy and goal overview
 - `data/training/goals/*.md`: one detailed goal note per goal
 - `data/training/notes/*.json`: one workout note per file
+- `data/training/routes/*.json`: curated public planned-course route streams for note map/elevation display
 - `data/training/changelog/*.md`: one changelog entry per file
 
 ## Plan Analysis Timeline Shape
@@ -76,6 +77,7 @@ Optional top-level fields:
 - `actualDistance`
 - `activityRefs`
 - `stravaId`
+- `plannedRoute`
 
 Canonical example:
 
@@ -141,6 +143,7 @@ Rules:
 - `actualDistance` is a manual override only.
 - `activityRefs` is the preferred provider linkage map.
 - `stravaId` is the legacy Strava linkage field.
+- `plannedRoute.path` must be relative to `data/training` and point under `routes/`; use it only for publishable planned-course traces, not private provider caches.
 - `sections` preserves note order.
 - Use `{"kind":"program","markdown":"..."}` for the workout prescription.
 - Use `{"kind":"analysis","sections":[...]}` for structured analysis.

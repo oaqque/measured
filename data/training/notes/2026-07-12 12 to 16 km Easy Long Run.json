@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "12 to 16 km Easy Long Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-07-12",
+  "completed": false,
+  "eventType": "run",
+  "expectedDistance": "12 to 16 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 12 to 16 km easy long run only if Thursday and Friday were symptom-stable and Saturday did not aggravate the Achilles.\n- Keep this genuinely easy: about `6:05-6:45 /km`, HR mostly Z2 and ideally below about `156 bpm`.\n- Flat or gently rolling route. Avoid steep climbs, fast descents, late progression, and marathon-pace work.\n- Start with the mindset that `12 km` is enough. Extend toward `16 km` only if the tendon is quiet, the stride is normal, and HR stays controlled.\n- Fuel normally if the run goes past about `75 min`, but do not use fueling practice as a reason to extend.\n- If there is any morning-after reaction from Thursday or Friday, replace this with rest or 45 to 60 minutes easy walking."
+    }
+  ]
+}

@@ -4,9 +4,12 @@
   "allDay": true,
   "type": "single",
   "date": "2026-06-22",
-  "completed": false,
+  "completed": "2026-06-22T09:35:55Z",
   "eventType": "basketball",
   "expectedDistance": "0 km",
+  "activityRefs": {
+    "appleHealth": "821A46A4-9E11-4F93-AAE6-C07E92D89131"
+  },
   "sections": [
     {
       "kind": "program",

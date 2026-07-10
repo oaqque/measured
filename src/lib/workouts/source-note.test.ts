@@ -155,4 +155,57 @@ activityRefs:
       title: "Recovery playlist",
     });
   });
+
+  it("parses planned route references from source documents", () => {
+    const document = parseWorkoutNoteSourceDocument(
+      "2026-06-21 Parramatta Half Marathon.json",
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          title: "Parramatta Half Marathon",
+          allDay: true,
+          type: "single",
+          date: "2026-06-21",
+          completed: false,
+          eventType: "race",
+          plannedRoute: {
+            path: "routes/2026-06-21-parramatta-half-marathon.json",
+          },
+          sections: [
+            {
+              kind: "program",
+              markdown: "- Race controlled.",
+            },
+          ],
+        },
+        null,
+        2,
+      ),
+    );
+
+    expect(document.plannedRoute).toEqual({
+      path: "routes/2026-06-21-parramatta-half-marathon.json",
+    });
+  });
+
+  it("rejects planned route references outside the training data tree", () => {
+    expect(() =>
+      parseWorkoutNoteSourceDocument(
+        "2026-06-21 Parramatta Half Marathon.json",
+        JSON.stringify({
+          schemaVersion: 1,
+          title: "Parramatta Half Marathon",
+          allDay: true,
+          type: "single",
+          date: "2026-06-21",
+          completed: false,
+          eventType: "race",
+          plannedRoute: {
+            path: "../vault/private.json",
+          },
+          sections: [],
+        }),
+      ),
+    ).toThrow("plannedRoute.path must be relative to data/training");
+  });
 });

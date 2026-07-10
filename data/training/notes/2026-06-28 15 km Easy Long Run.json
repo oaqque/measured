@@ -4,13 +4,64 @@
   "allDay": true,
   "type": "single",
   "date": "2026-06-28",
-  "completed": false,
+  "completed": "2026-06-27T21:58:13Z",
   "eventType": "run",
   "expectedDistance": "15 km",
+  "activityRefs": {
+    "strava": "19091462662",
+    "appleHealth": "3A781894-D1D7-4B27-A7DE-6BA22CEBD2B7"
+  },
+  "stravaId": 19091462662,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 15 km easy long run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This matched the planned `15 km` easy long run by distance: Strava recorded `15.021 km` in `1:24:01` moving time and `1:24:12` elapsed, with `69.6 m` elevation gain, `157.1 bpm` average HR, and `166 bpm` max HR.\n- The execution was controlled and progressive, but not truly easy. Most of the Strava HR stream sat in Z3, so the best classification is an aerobic/steady long run rather than cheap recovery volume."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- This brings the post-Parramatta week to `37.561 km` of running across Tuesday, Wednesday, Thursday, and Sunday, against the planned `45 km` week. The remaining gap is almost entirely Friday's missed `6 km` recovery run plus small under-distance earlier in the week.\n- There is no need to chase that deficit. The useful outcome is that the long run was completed cleanly after race week; the next priority is making the following volume ramp feel controlled rather than carrying this Z3 long-run cost forward."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-08-30` Sydney Marathon `3:30:00` target, the encouraging sign is durability: the final `5 km` was the quickest block by both raw pace and GAP, with only a small HR lift.\n- The caution is intensity discipline. A `15 km` long run at `157 bpm` average can be fine as a one-off post-race bridge, but repeated long runs this high would make the July marathon-specific build more expensive than it needs to be."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:36 /km`, with Strava GAP about `5:32 /km`. The first `5 km` averaged `5:40 /km` with `5:37 /km` GAP, kilometres `6-10` averaged `5:38 /km` with `5:36 /km` GAP, and kilometres `11-15` averaged `5:29 /km` with `5:23 /km` GAP.\n- The fastest raw kilometre was km `14` at `5:21 /km`; the slowest was km `3` at `5:49 /km`. That is a mild negative split rather than a late fade."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `157.1 bpm` with a `166 bpm` max; Apple Health recorded `157.3 bpm` average HR and the same `166 bpm` max.\n- The Strava HR stream was mostly upper aerobic: about `1:31` in Z1, `22:09` in Z2, `58:37` in Z3, and `1:23` in Z4, with no Z5 or higher time. That distribution is the reason this should not be treated as a low-cost easy long run."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `1:24:01` from `1:24:12` elapsed, only a `0:11` gap.\n- The route stream marked `995` of `1000` samples as moving, so the pace and HR trends read as a continuous run rather than a stop-start artifact."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `69.6 m` elevation gain. GAP was slightly faster than raw pace overall, and the final `5 km` improved more by GAP than by raw pace.\n- That makes the closing progression more useful than the raw `5:29 /km` block alone suggests, but it also reinforces that the run drifted toward steady aerobic effort."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Data Quality",
+          "markdown": "- Conditions were wet and cool: moderate drizzle, about `11.1 C`, `10.4 C` apparent temperature, `99%` humidity, `0.9 mm` precipitation, `6.5 kph` wind, and `15.1 kph` gusts.\n- Shoes were `Saucony Speed 4`. Strava and Apple Health agreed closely on start time, distance, and HR; Strava had full HR/route/moving streams, and Apple Health had matching aggregate data plus route streams."
+        }
+      ]
     }
   ]
 }

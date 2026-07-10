@@ -35,6 +35,7 @@ interface WorkoutsPayload {
   goals: PlanDocument;
   heartRate: PlanDocument;
   morningMobility: PlanDocument;
+  metaanalysis?: PlanDocument[] | null;
   goalNotes: GoalNote[];
   plan: PlanDocument;
   changelog: ChangelogEntry[];
@@ -129,8 +130,13 @@ function buildGraphSources(payload: WorkoutsPayload): GraphSourceNode[] {
 
   pushDocument(payload.welcome.title, payload.welcome.body, payload.welcome.sourcePath, "welcome");
   pushDocument(payload.goals.title, payload.goals.body, payload.goals.sourcePath, "goals");
-  pushDocument(payload.heartRate.title, payload.heartRate.body, payload.heartRate.sourcePath, "metaanalysis");
-  pushDocument(payload.morningMobility.title, payload.morningMobility.body, payload.morningMobility.sourcePath, "metaanalysis");
+  const metaanalysisDocuments =
+    payload.metaanalysis && payload.metaanalysis.length > 0
+      ? payload.metaanalysis
+      : [payload.heartRate, payload.morningMobility];
+  for (const document of metaanalysisDocuments) {
+    pushDocument(document.title, document.body, document.sourcePath, "metaanalysis");
+  }
   pushDocument(payload.plan.title, payload.plan.body, payload.plan.sourcePath, "plan");
 
   for (const goal of payload.goalNotes) {

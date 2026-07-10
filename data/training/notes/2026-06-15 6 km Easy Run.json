@@ -4,13 +4,44 @@
   "allDay": true,
   "type": "single",
   "date": "2026-06-15",
-  "completed": false,
+  "completed": "2026-06-14T21:55:56Z",
   "eventType": "run",
   "expectedDistance": "6 km",
+  "activityRefs": {
+    "strava": "18923163065",
+    "appleHealth": "3B685DD1-A62A-486D-A2ED-4EA0398AA0ED"
+  },
+  "stravaId": 18923163065,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 6 km easy run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This matched the intended easy aerobic purpose, with a small volume overshoot. The planned `6 km` became `7.785 km` in `44:02` moving time and `44:05` elapsed, with `37.2 m` elevation gain, `142.9 bpm` average HR, and `155 bpm` max HR.\n- The route stream shows a controlled natural progression rather than a hidden workout: the first `3.889 km` averaged about `5:48 /km` at `139.8 bpm`, and the next `3.890 km` averaged about `5:32 /km` at `146.5 bpm`."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- Race week has started with `7.785 km` against the planned Monday `6 km`, so the extra `1.785 km` is harmless only if the rest of the week stays disciplined. Monday basketball should count as the day's hard load if it happens.\n- Tuesday's `10 km` sharp run should stay neuromuscular and relaxed, not become another aerobic test. The goal is to keep legs responsive for Parramatta on Sunday rather than add fitness this week."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, this is a good race-week opener because HR stayed easy and the faster second half did not become costly.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, it supports the broader durability pattern after a `65.290 km` prior week, but the priority now is freshness. The marathon block benefits more from racing Parramatta well than from adding extra low-value kilometres now."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Provider And Context",
+          "markdown": "- Strava activity `18923163065` and Apple Health workout `3B685DD1-A62A-486D-A2ED-4EA0398AA0ED` match the same June 15 local run. Apple Health measured `7.785 km`, `44:05`, `142.6 bpm` average HR, and `155 bpm` max HR, with `523` during-workout heart-rate samples.\n- Raw moving pace was `5:39 /km`; Strava GAP was about `5:36 /km`, so terrain made only a small difference. Stream moving flags were essentially clean, with only `5` non-moving samples out of `1000`.\n- Conditions were overcast at about `14.7 C`, `81%` humidity, no recorded precipitation, `5.6 kph` wind, and `9.7 kph` gusts. Shoes were `Saucony Speed 4`. The Apple Health step/running-speed projection existed but produced implausible aggregate cadence values, so cadence was not used as a coaching claim."
+        }
+      ]
     }
   ]
 }

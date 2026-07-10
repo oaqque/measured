@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "title": "Achilles Recovery No Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-07-07",
+  "completed": false,
+  "eventType": "mobility",
+  "expectedDistance": "0 km",
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- No run.\n- Drop the planned threshold and half-marathon-pace work rather than moving it later in the week.\n- Use easy walking only if symptoms are improving. Stop if the Achilles gets sharper, warmer, or more noticeable as you move.\n- Keep the morning mobility routine in recovery mode and skip pogo hops."
+    }
+  ]
+}

@@ -4,6 +4,7 @@ const TOP_LEVEL_DOCUMENT_LABELS = new Map<string, string>([
   ["PLAN.md", "Training Plan"],
   ["HEART_RATE.md", "Heart Rate"],
   ["MORNING_MOBILITY.md", "Morning Mobility"],
+  ["VDOT.md", "VDOT"],
 ]);
 
 const FOLDER_LABELS = new Map<string, string>([

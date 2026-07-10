@@ -4,13 +4,44 @@
   "allDay": true,
   "type": "single",
   "date": "2026-06-07",
-  "completed": false,
+  "completed": "2026-06-07T00:13:53Z",
   "eventType": "run",
   "expectedDistance": "20 km",
+  "activityRefs": {
+    "strava": "18817773195",
+    "appleHealth": "4D0C4368-A45C-4FDD-AAFE-473B11EE0AA1"
+  },
+  "stravaId": 18817773195,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 20 km easy long run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This matched the planned purpose well: the scheduled `20 km` easy long run became `21.631 km` in `2:05:59` moving time and `2:09:44` elapsed, with `184.0 m` elevation gain, `142.6 bpm` average HR, and `180 bpm` max HR.\n- The over-distance was modest for a long run, and the intensity stayed genuinely easy overall. The first `10 km` averaged about `5:48 /km` at `141.5 bpm`, the next `8 km` about `5:47 /km` at `143.5 bpm`, and the final `3.616 km` slowed to `6:21 /km` while still only averaging `143.0 bpm` because that section carried about `89.4 m` of ascent."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The week finished at `35.809 km` of running from the June 3, June 4, and June 7 runs, far below the planned `78 km`, but Sunday gave the week a real endurance anchor.\n- Do not chase the missing weekday mileage into the following week. The next quality session can happen only if Monday basketball and this long run are absorbed cleanly."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the Parramatta Half Marathon, this is a good durability signal: more than `21 km` was covered at controlled HR without turning the session into a race effort.\n- For the Sydney Marathon, this is the best run of the June 3-7 block because it supports long-run durability directly. The limiting factor remains weekly consistency around the long run, not the long run itself."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Provider And Context",
+          "markdown": "- Strava activity `18817773195` and Apple Health workout `4D0C4368-A45C-4FDD-AAFE-473B11EE0AA1` agree on the same run, with Apple Health recording `21.631 km` and `141.9 bpm` average HR.\n- Raw moving pace was `5:49 /km`; Strava GAP was about `5:43 /km`. HR-zone time by the current LTHR app bands was about `1:39:41` in Z1 and `26:39` in Z2, with only tiny high-HR spikes, so the `180 bpm` max should not dominate the read.\n- Conditions were good: clear sky, about `14.4 C` average temperature, `13.0 C` apparent temperature, `66%` humidity, no recorded precipitation, and `18.4 kph` gusts. Shoes were `Adidas Adizero EVO SL Red`."
+        }
+      ]
     }
   ]
 }

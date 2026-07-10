@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "title": "5 km Easy Shakeout Run",
+  "allDay": true,
+  "type": "single",
+  "date": "2026-06-18",
+  "completed": "2026-06-17T23:07:31Z",
+  "eventType": "run",
+  "expectedDistance": "5 km",
+  "stravaId": 18964988869,
+  "activityRefs": {
+    "strava": "18964988869",
+    "appleHealth": "71072424-9F13-49BB-A415-520B34A663F0"
+  },
+  "sections": [
+    {
+      "kind": "program",
+      "markdown": "- 5 km easy shakeout run\n- Keep this genuinely easy; no steady block.\n- If the legs feel flat after Wednesday's over-distance progression, skip the run and keep only light mobility.\n- Optional relaxed strides belong only if the legs feel springy, not as a workout replacement."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was planned as a `5 km` easy shakeout with no steady block, but the completed run was closer to a short controlled workout: Strava recorded `5.037 km` in `25:30` moving time and `25:35` elapsed, with `30.2 m` elevation gain, `161.5 bpm` average HR, and a `177 bpm` max.\n- It matched the planned distance, but not the intended cost. The route stream held roughly `5:03-5:08 /km` almost the whole way, and HR climbed from `145.7 bpm` in the first kilometre to `171.3 bpm` over the final kilometre, so this should not be treated as a relaxed race-week shakeout."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- In isolation this was only `5 km`, but it landed the morning after Wednesday's over-distance progression and two days before Parramatta. The useful response would have been to make Friday very short or skip extra volume; instead Friday became an `11.064 km` run, so the cumulative race-week load is now the concern.\n- Through Friday, race-week running is `43.056 km` before the half marathon, about `9 km` above the planned Monday-Friday run volume. Saturday should stay non-running, and basketball should be skipped if possible or kept very controlled if unavoidable."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, the pace itself is a useful sharpness sign, but the execution is a freshness warning. A shakeout at `161.5 bpm` average HR two days after a hard-ish Wednesday is not the taper behaviour that best supports an A-goal race.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, this reinforces a pattern to manage in the marathon block: the fitness is there to turn easy days into steady work, but the long-term gain comes from keeping support runs cheap enough that key sessions and races stay repeatable."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:04 /km`; Strava GAP was about `5:03 /km`, while measured local GAP was about `5:00 /km` with `medium` reliability and full route coverage.\n- The kilometre pattern was too even and too quick to read as just relaxed strides: about `5:03`, `5:04`, `5:08`, `4:58`, then `5:04 /km` for the final `1.037 km`."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `161.5 bpm` with a `177 bpm` max; Apple Health closely matched it at about `161.2 bpm` average and `177 bpm` max.\n- Against the current LTHR app bands, the stream spent about `2:12` in Z1, `3:09` in Z2, `11:02` in Z3, `7:14` in Z4, and `1:58` in Z5. That is a steady-to-threshold cost profile, not an easy shakeout."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `25:30` from `25:35` elapsed, only a `0:05` gap.\n- Route moving flags show about `0:06` of non-moving time, so the elevated HR and pace read are not a pause artifact. This was essentially continuous running."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `30.2 m` elevation gain; the measured route model found about `29.7 m` ascent and `29.4 m` descent.\n- Terrain was present but not enough to explain the intensity. The GAP values being close to raw pace means the main issue was effort selection, not hills."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health generated `304` during-run HR samples and `600` cadence-backed step samples. Cadence averaged `178.7 spm`, with a working range of `112` to `204 spm`, and total workout steps were `4,573`.\n- Cadence was crisp for a shakeout, which supports the read that the legs had pop but the run was allowed to become too purposeful for race-week freshness."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Recovery Context",
+          "markdown": "- Conditions were manageable but not completely still: overcast, about `16.2 C`, `14.7 C` apparent temperature, `73%` humidity, no precipitation, `13.3 kph` wind, and `25.9 kph` gusts. Shoes were `Saucony Speed 4`.\n- Apple Health recovery context was available: recent resting HR averaged about `47.9 bpm`, HRV `74.9 ms`, VO2 max `57.0 ml/kg/min`, respiratory rate `18.0 br/min`, blood oxygen `97.0%`, and sleep duration `4.4 h`. The low sleep context is another reason the shakeout should have stayed cheaper."
+        }
+      ]
+    }
+  ]
+}

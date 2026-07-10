@@ -62,7 +62,9 @@ const providerDisplayOrder: WorkoutProvider[] = ["strava", "appleHealth"];
 const appleHealthPublicIdSalt = normalizeNullableString(process.env.APPLE_HEALTH_PUBLIC_ID_SALT);
 const changelogDirName = "changelog";
 const goalsDirName = "goals";
+const metaanalysisDirName = "metaanalysis";
 const notesDirName = "notes";
+const routesDirName = "routes";
 const planAnalysisTimelineSectionPattern =
   /\n*## Analysis Timeline\s*\n+```(?:json\s+)?plan-analysis-timeline\s*\n([\s\S]*?)\n```\s*$/u;
 
@@ -161,26 +163,36 @@ interface LegacyGeneratedWorkoutShape {
   hasStravaStreams?: boolean;
 }
 
+interface WorkoutNoteInput {
+  fileName: string;
+  sourcePath: string;
+  document: WorkoutNoteSourceDocument;
+}
+
 async function main() {
-  const progress = createProgressTracker(8);
+  const progress = createProgressTracker(9);
   progress.step("Scanning training files");
   const dataDir = await resolveWorkoutsDir();
   const notesDir = path.join(dataDir, notesDirName);
   const goalsDir = path.join(dataDir, goalsDirName);
+  const metaanalysisDir = path.join(dataDir, metaanalysisDirName);
   const changelogDir = path.join(dataDir, changelogDirName);
   await assertNotesDirectory(notesDir);
   await assertGoalNotesDirectory(goalsDir);
+  await assertMetaanalysisDirectory(metaanalysisDir);
   const fileNames = listWorkoutNoteFileNames(await fs.readdir(notesDir));
   const goalFileNames = (await fs.readdir(goalsDir))
     .filter((fileName) => fileName.endsWith(".md"))
     .sort((left, right) => left.localeCompare(right));
-  const noteInputs = await Promise.all(
+  const metaanalysisFileNames = (await fs.readdir(metaanalysisDir))
+    .filter((fileName) => fileName.endsWith(".md"))
+    .sort((left, right) => left.localeCompare(right));
+  const noteInputs: WorkoutNoteInput[] = await Promise.all(
     fileNames.map(async (fileName) => {
       const filePath = path.join(notesDir, fileName);
       const fileContent = await fs.readFile(filePath, "utf8");
       return {
         fileName,
-        filePath,
         sourcePath: path.relative(dataDir, filePath).replaceAll("\\", "/"),
         document: parseWorkoutNoteSourceDocument(fileName, fileContent),
       };
@@ -194,6 +206,9 @@ async function main() {
       ] as const),
     ),
   );
+
+  progress.step("Loading planned routes");
+  const plannedRouteStreamsByPath = await readPlannedRouteStreams(dataDir, noteInputs);
 
   progress.step("Loading provider caches");
   const referencedActivityIds = collectReferencedActivityIds(noteInputs);
@@ -218,6 +233,7 @@ async function main() {
 
   const workouts: WorkoutNote[] = [];
   const goalNotes: GoalNote[] = [];
+  const metaanalysisDocuments: PlanDocument[] = [];
   let welcome: PlanDocument | null = null;
   let goals: PlanDocument | null = null;
   let heartRate: PlanDocument | null = null;
@@ -229,20 +245,31 @@ async function main() {
   goals = await readDocument(path.join(dataDir, "GOALS.md"), dataDir);
   heartRate = await readDocument(path.join(dataDir, "metaanalysis", "HEART_RATE.md"), dataDir);
   morningMobility = await readDocument(path.join(dataDir, "metaanalysis", "MORNING_MOBILITY.md"), dataDir);
+  for (const fileName of metaanalysisFileNames) {
+    metaanalysisDocuments.push(await readDocument(path.join(metaanalysisDir, fileName), dataDir));
+  }
   plan = await readDocument(path.join(dataDir, "PLAN.md"), dataDir);
 
   progress.step("Building workout payload");
+  const plannedRouteStreamsBySlug = new Map<string, WorkoutRouteStreams>();
   for (const noteInput of noteInputs) {
-    workouts.push(
-      buildWorkoutNote(
-        noteInput.fileName,
-        noteInput.document,
-        noteInput.sourcePath,
-        providerCaches,
-        existingWorkoutFallbacks.get(noteInput.sourcePath) ?? null,
-        mediaThumbnailsBySourcePath.get(noteInput.sourcePath) ?? null,
-      ),
+    const plannedRouteStreams = getPlannedRouteStreamsForDocument(
+      noteInput.document,
+      plannedRouteStreamsByPath,
     );
+    const workout = buildWorkoutNote(
+      noteInput.fileName,
+      noteInput.document,
+      noteInput.sourcePath,
+      providerCaches,
+      existingWorkoutFallbacks.get(noteInput.sourcePath) ?? null,
+      mediaThumbnailsBySourcePath.get(noteInput.sourcePath) ?? null,
+      plannedRouteStreams,
+    );
+    workouts.push(workout);
+    if (plannedRouteStreams) {
+      plannedRouteStreamsBySlug.set(workout.slug, plannedRouteStreams);
+    }
   }
 
   progress.step("Building goal payload");
@@ -299,6 +326,7 @@ async function main() {
     goals,
     heartRate,
     morningMobility,
+    metaanalysis: metaanalysisDocuments,
     bestEfforts,
     goalNotes,
     plan,
@@ -312,7 +340,7 @@ async function main() {
   await fs.rm(generatedWorkoutSourceDetailsPath, { force: true });
 
   progress.step("Writing generated assets");
-  await writeRouteStreamFiles(workouts, providerCaches);
+  await writeRouteStreamFiles(workouts, providerCaches, plannedRouteStreamsBySlug);
   await writeAppleHealthMeasurementFiles(
     workouts,
     providerCaches.appleHealth,
@@ -480,6 +508,83 @@ function collectReferencedActivityIds(
   }
 
   return references;
+}
+
+async function readPlannedRouteStreams(
+  dataDir: string,
+  noteInputs: WorkoutNoteInput[],
+): Promise<Map<string, WorkoutRouteStreams>> {
+  const routePaths = [
+    ...new Set(
+      noteInputs
+        .map((noteInput) => noteInput.document.plannedRoute?.path)
+        .filter((routePath): routePath is string => typeof routePath === "string" && routePath.length > 0),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
+  const routeStreamsByPath = new Map<string, WorkoutRouteStreams>();
+
+  for (const routePath of routePaths) {
+    const routeFilePath = resolvePlannedRouteFilePath(dataDir, routePath);
+    const fileContent = await fs.readFile(routeFilePath, "utf8");
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(fileContent) as unknown;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`${routePath}: planned route JSON is invalid: ${message}`);
+    }
+
+    if (!isPlainObject(parsed)) {
+      throw new Error(`${routePath}: planned route must be a JSON object`);
+    }
+    if (parsed.schemaVersion !== 1) {
+      throw new Error(`${routePath}: planned route schemaVersion must be 1`);
+    }
+
+    const routeStreams = normalizeRouteStreams(parsed.routeStreams);
+    const pointCount = routeStreams?.latlng?.length ?? 0;
+    if (
+      !routeStreams?.latlng ||
+      !routeStreams.altitude ||
+      !routeStreams.distance ||
+      routeStreams.altitude.length !== pointCount ||
+      routeStreams.distance.length !== pointCount
+    ) {
+      throw new Error(`${routePath}: planned route must include aligned latlng, altitude, and distance streams`);
+    }
+
+    routeStreamsByPath.set(routePath, routeStreams);
+  }
+
+  return routeStreamsByPath;
+}
+
+function getPlannedRouteStreamsForDocument(
+  document: WorkoutNoteSourceDocument,
+  plannedRouteStreamsByPath: Map<string, WorkoutRouteStreams>,
+) {
+  const routePath = document.plannedRoute?.path;
+  return routePath ? plannedRouteStreamsByPath.get(routePath) ?? null : null;
+}
+
+function resolvePlannedRouteFilePath(dataDir: string, routePath: string) {
+  const normalizedRoutePath = path.normalize(routePath.replaceAll("\\", "/"));
+  if (
+    path.isAbsolute(normalizedRoutePath) ||
+    normalizedRoutePath === routesDirName ||
+    !normalizedRoutePath.startsWith(`${routesDirName}${path.sep}`) ||
+    normalizedRoutePath.split(path.sep).includes("..")
+  ) {
+    throw new Error(`${routePath}: planned route path must be under ${routesDirName}/`);
+  }
+
+  const absoluteDataDir = path.resolve(dataDir);
+  const absoluteRoutePath = path.resolve(absoluteDataDir, normalizedRoutePath);
+  if (!absoluteRoutePath.startsWith(`${absoluteDataDir}${path.sep}`)) {
+    throw new Error(`${routePath}: planned route path must be relative to ${absoluteDataDir}`);
+  }
+
+  return absoluteRoutePath;
 }
 
 async function readSelectedActivitiesFromLargeJson(
@@ -833,6 +938,23 @@ async function assertGoalNotesDirectory(goalsDir: string) {
   }
 }
 
+async function assertMetaanalysisDirectory(metaanalysisDir: string) {
+  try {
+    const stats = await fs.stat(metaanalysisDir);
+    if (!stats.isDirectory()) {
+      throw new Error(`Metaanalysis path is not a directory: ${metaanalysisDir}`);
+    }
+  } catch (error) {
+    throw new Error(
+      [
+        `Unable to read metaanalysis directory: ${metaanalysisDir}`,
+        `Expected structure: <data-root>/${metaanalysisDirName}/*.md`,
+        error instanceof Error ? error.message : String(error),
+      ].join("\n"),
+    );
+  }
+}
+
 async function readDocument(filePath: string, rootPath: string) {
   const fileContent = await fs.readFile(filePath, "utf8");
   const sourcePath = path.relative(rootPath, filePath).replaceAll("\\", "/");
@@ -1028,6 +1150,7 @@ function buildWorkoutNote(
   providerCaches: Record<WorkoutProvider, ProviderCacheSnapshot>,
   existingFallback: GeneratedWorkoutFallback | null,
   mediaThumbnailUrl: string | null,
+  plannedRouteStreams: WorkoutRouteStreams | null,
 ): WorkoutNote {
   const legacyStravaId = normalizeOptionalInteger(document.stravaId, fileName, "stravaId");
   const activityRefs = normalizeActivityRefs(document.activityRefs, fileName);
@@ -1064,13 +1187,14 @@ function buildWorkoutNote(
     (hasDeletedLinkedActivity ? null : validFallback?.actualDistanceKm) ??
     (importedFromStrava ? normalizeDistanceKm(notedExpectedDistance) : null);
   const slug = slugify(getWorkoutNoteBaseName(fileName));
-  const hasRouteStreams = Boolean(displaySource?.hasRouteStreams && displaySource.routePath);
+  const providerHasRouteStreams = Boolean(displaySource?.hasRouteStreams && displaySource.routePath);
+  const hasRouteStreams = providerHasRouteStreams || plannedRouteStreams !== null;
   const hasAppleHealthMeasurements = Boolean(activityRefs.appleHealth);
   const cachedStravaGradeAdjustedPace = activityRefs.strava
     ? providerCaches.strava.activities[activityRefs.strava]?.gradeAdjustedPace
     : null;
   const displayRouteStreams =
-    displaySource && hasRouteStreams
+    displaySource && providerHasRouteStreams
       ? normalizeRouteStreams(providerCaches[displaySource.provider].activities[displaySource.activityId]?.routeStreams)
       : null;
   const gradeAdjustedPace =
@@ -1692,29 +1816,28 @@ function normalizeRouteStreams(value: unknown): WorkoutRouteStreams | null {
 async function writeRouteStreamFiles(
   workouts: WorkoutNote[],
   providerCaches: Record<WorkoutProvider, ProviderCacheSnapshot>,
+  plannedRouteStreamsBySlug: Map<string, WorkoutRouteStreams>,
 ) {
   await fs.rm(legacyGeneratedRouteStreamsPath, { force: true });
   await fs.rm(generatedRouteStreamsDir, { force: true, recursive: true });
 
-  const hasAnyAvailableCache = WORKOUT_PROVIDERS.some((provider) => providerCaches[provider].cacheAvailable);
-  if (!hasAnyAvailableCache) {
-    return;
-  }
-
   const routeStreamsBySlug = new Map<string, WorkoutRouteStreams>();
   for (const workout of workouts) {
-    if (!workout.routePath || !workout.sources || !workout.activityRefs) {
+    if (!workout.routePath) {
       continue;
     }
 
-    const displaySource = selectDisplaySourceSummary(workout.sources, workout.activityRefs);
-    if (!displaySource || !displaySource.hasRouteStreams) {
-      continue;
+    let routeStreams: WorkoutRouteStreams | null = null;
+    if (workout.sources && workout.activityRefs) {
+      const displaySource = selectDisplaySourceSummary(workout.sources, workout.activityRefs);
+      if (displaySource?.hasRouteStreams) {
+        routeStreams = normalizeRouteStreams(
+          providerCaches[displaySource.provider].activities[displaySource.activityId]?.routeStreams,
+        );
+      }
     }
 
-    const routeStreams = normalizeRouteStreams(
-      providerCaches[displaySource.provider].activities[displaySource.activityId]?.routeStreams,
-    );
+    routeStreams ??= plannedRouteStreamsBySlug.get(workout.slug) ?? null;
     if (routeStreams) {
       routeStreamsBySlug.set(workout.slug, routeStreams);
     }

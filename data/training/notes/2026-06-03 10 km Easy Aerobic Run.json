@@ -4,13 +4,44 @@
   "allDay": true,
   "type": "single",
   "date": "2026-06-03",
-  "completed": false,
+  "completed": "2026-06-03T04:23:00Z",
   "eventType": "run",
   "expectedDistance": "10 km",
+  "activityRefs": {
+    "strava": "18765257964",
+    "appleHealth": "E7413C12-D2A1-4F75-9780-275175355925"
+  },
+  "stravaId": 18765257964,
   "sections": [
     {
       "kind": "program",
       "markdown": "- 10 km easy aerobic run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was planned as a `10 km` easy aerobic run, but it landed as a shortened `6.013 km` run in `32:08` with no elapsed-time gap, `52.2 m` elevation gain, `150.4 bpm` average HR, and `173 bpm` max HR.\n- The distance missed the aerobic-volume target, and the execution became more progressive than easy: the first `3 km` averaged about `5:31 /km` at `145.7 bpm`, while the final `3.008 km` averaged about `5:06 /km` at `155.9 bpm`."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- Treat this as light aerobic work with a small steady finish, not as the week's missing support volume.\n- Because the run was short but not completely soft, the next day should stay controlled rather than trying to recover the missing `4 km` inside the planned marathon-pace workout."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, this maintained rhythm without adding much specific fitness.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, the useful lesson is still repeatability: short aerobic substitutions are fine, but the marathon build needs the easy support kilometres to become more consistent."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Provider And Context",
+          "markdown": "- Strava and Apple Health agree on the same workout window: Strava activity `18765257964` and Apple Health workout `E7413C12-D2A1-4F75-9780-275175355925` both recorded about `6.013 km`.\n- Raw moving pace was `5:21 /km`; Strava GAP was about `5:17 /km`. Conditions were clear but windy, with about `19.1 C` average temperature, `15.4 C` apparent temperature, `46%` humidity, and `48.2 kph` gusts.\n- Shoes were `Adidas Adizero EVO SL Red`. Apple Health recovery context for the surrounding June 3-7 window was available and broadly stable: resting HR about `50 bpm`, HRV about `74.4 ms`, VO2 max about `56.0 ml/kg/min`, respiratory rate about `15.4 br/min`, blood oxygen about `97%`, and grouped sleep duration about `5.7 h` per day."
+        }
+      ]
     }
   ]
 }

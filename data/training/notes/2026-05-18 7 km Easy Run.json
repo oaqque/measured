@@ -4,13 +4,79 @@
   "allDay": true,
   "type": "single",
   "date": "2026-05-18",
-  "completed": false,
+  "completed": "2026-05-18T06:26:49Z",
   "eventType": "run",
   "expectedDistance": "7 km",
   "sections": [
     {
       "kind": "program",
       "markdown": "- 7 km easy run"
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This was planned as a `7 km` easy run at the start of the `2026-05-18 to 2026-05-24` build week. The completed run matched that intent closely at `7.178 km`, with Strava moving time `43:36`, elapsed time `44:24`, and Apple Health linked to the same workout window.\n- The execution was appropriately easy. Strava averaged `139.2 bpm` with a `155 bpm` max, Apple Health averaged `138.4 bpm` with a `154.5 bpm` max, and the route stream spent no time above Z2. This was a useful aerobic primer, not hidden quality work."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The week is now `7.178 km` complete against the planned `76 km`, with Monday's running volume landed without borrowing from Tuesday's `16 km` half-marathon-pace workout.\n- The fuller day-load picture includes the earlier push strength session and the later Monday basketball session. Apple Health recorded the push session as `1:06:11` with `71.8 bpm` average HR and `96 bpm` max HR, then basketball as `58:56`, `3.682 km`, `149.6 bpm` average HR, and a `193 bpm` max. Keep Tuesday's workout protected, and if Monday's push session already covered the week's push work, make Thursday's planned push session light or skip it rather than doubling the upper-body load."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-06-21` Parramatta Half Marathon `1:45:00` target, this did the job: aerobic volume was added without turning Monday into another hard run before the half-marathon-pace session.\n- For the `2026-08-30` Sydney Marathon `3:30:00` target, this is the kind of easy-volume compliance the bigger block needs. It is not a new fitness marker by itself; the value is that it starts a higher-volume week without compromising Tuesday, Thursday, or Sunday."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `6:04 /km`; elapsed pace was about `6:11 /km` after `0:48` of stoppage cost.\n- The first half averaged about `6:04 /km` and the second half about `6:08 /km`. The three thirds were about `6:09`, `6:01`, and `6:07 /km`, so the pacing stayed even enough for an easy run despite the rolling route."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `139.2 bpm` with a `155 bpm` max; Apple Health averaged `138.4 bpm` with a `154.5 bpm` max.\n- Using the current LTHR app bands, the route stream spent about `39:10` in Z1, `5:14` in Z2, and no time in Z3 or above. HR rose from about `136.2 bpm` in the first half to `141.2 bpm` in the second half, which is acceptable for the climbing profile and still firmly easy."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `43:36` out of `44:24` elapsed. The route stream shows about `0:38` stopped across `4` stop groups, with only one longer than `10 s`.\n- The stop cost is small enough that the pacing and HR read is reliable. This was a continuous easy run, not a fragmented session."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `79.0 m` of elevation gain, and the measured route model found `79.9 m` ascent with `79.4 m` descent and `high` reliability.\n- GAP shows the route was a little more demanding than raw pace: raw moving pace was `6:04 /km`, Strava GAP was `5:59 /km`, and measured local GAP was about `5:56 /km`. That supports reading the effort as easy-aerobic rather than judging it only from raw pace."
+        },
+        {
+          "kind": "appleHealthMeasurement",
+          "measurement": "cadence",
+          "markdown": "- Apple Health cadence averaged `166 spm` across `1028` samples, with a median of `170 spm` and a 10th-to-90th percentile range of about `156-176 spm`.\n- Cadence looks stable enough for an easy run with a short stopped section. There is no clear mechanics warning in the cadence data."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Hidden Intensity",
+          "markdown": "- Conditions were mildly awkward but not limiting: light drizzle, about `18.1 C` average temperature, `19.6 C` apparent temperature, `93%` humidity, `0.1 mm` precipitation, `6.3 kph` wind, and `13.7 kph` gusts.\n- Shoes were `HOKA Bondi 9`, not retired, with about `527.3 km` in Strava's gear record and `518.8 km` in the generated public shoe graph. Strava recorded several local segment achievements, including PRs on `North Road Upwards`, `Library Dash`, and `Tindarra Dash`, but those efforts sat around `139-144 bpm` average HR, so they read as route artefacts rather than hidden hard running."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Push Strength And Daily Load",
+          "markdown": "- The omitted strength context is now linked through the `2026-05-18` Push Strength Session note: Apple Health workout `4D439E1F-64D3-4441-8F99-A6724C34A1F0`, starting `09:24` local, lasted `1:06:11`, with `71.8 bpm` average HR and `96 bpm` max HR.\n- Apple Health does not expose a route, distance, stream, or sport-type label for that activity in the current cache, so the cardiovascular cost reads low, but the session still counts as push strength load. Treat it as relevant to the weekly gym split: if it was a full push session, Thursday's planned push should become light technique/accessory work or be skipped."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Recovery Context",
+          "markdown": "- Apple Health recovery context was available: recent resting HR averaged `48.9 bpm`, HRV averaged `62.3 ms`, VO2 max averaged `52.7 ml/kg/min`, and the sleep-duration projection averaged `4.5 h` in the sampled window.\n- The run was controlled enough to support the planned week. The only caution is cumulative load: low sleep plus Monday basketball makes Tuesday freshness the deciding signal, not this run's aerobic cost."
+        }
+      ]
     }
-  ]
+  ],
+  "stravaId": 18551339141,
+  "activityRefs": {
+    "strava": "18551339141",
+    "appleHealth": "697BDD00-EF44-4150-A810-D45671CE225F"
+  }
 }

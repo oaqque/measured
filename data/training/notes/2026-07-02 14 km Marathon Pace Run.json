@@ -4,13 +4,64 @@
   "allDay": true,
   "type": "single",
   "date": "2026-07-02",
-  "completed": false,
+  "completed": "2026-07-01T22:02:14Z",
   "eventType": "run",
   "expectedDistance": "14 km",
+  "activityRefs": {
+    "strava": "19143842827",
+    "appleHealth": "B7DEB8D4-682A-4DD5-BBB7-FB2CB5F70567"
+  },
+  "stravaId": 19143842827,
   "sections": [
     {
       "kind": "program",
-      "markdown": "- 14 km medium-long run with 6 km at marathon pace"
+      "markdown": "- 14 km medium-long run with `6 km` at marathon pace.\n- Start with `3 km` easy at about `5:55-6:25 /km`.\n- Build with `2 km` steady at about `5:25-5:40 /km`.\n- Main block: `6 km` around goal marathon pace, targeting `4:58-5:05 /km` by effort or GAP. Do not chase faster than `4:55 /km` on flat ground.\n- Cool down `3 km` easy at about `6:00-6:30 /km`.\n- Effort guardrail: the marathon-pace block should feel controlled and repeatable, not threshold. If HR is rising into the low `170s` early in the block, back off toward `5:05-5:12 /km`.\n- If Tuesday threshold or Wednesday legs left real fatigue, keep the `14 km` medium-long run but reduce the quality to `3-4 km` at `5:05-5:12 /km`, or skip the marathon-pace block entirely."
+    },
+    {
+      "kind": "analysis",
+      "sections": [
+        {
+          "kind": "intention",
+          "markdown": "- This matched the planned distance but softened the marathon-pace target. The prescription was `14 km` with `6 km` around `4:58-5:05 /km`; the completed run was `14.075 km` in `1:15:29` moving time and `1:15:36` elapsed, averaging `5:22 /km` overall with `158.5 bpm` average HR and `173 bpm` max HR.\n- The likely marathon-pace block from `5-11 km` averaged about `5:10 /km` at `164.2 bpm`. That is slower than goal marathon pace, but given Tuesday's higher-than-planned cost, it was a sensible marathon-effort/steady-medium-long execution."
+        },
+        {
+          "kind": "shortTermGoal",
+          "markdown": "- The week reached `46.102 km` through Thursday against `47 km` planned. The volume was almost exactly on script, but the quality distribution was already heavy: Tuesday hard continuous work plus Thursday medium-long steady work.\n- Friday and Saturday should stay genuinely easy or absent. The useful weekend goal is arriving at Sunday able to run long without turning every run into quality."
+        },
+        {
+          "kind": "longTermGoal",
+          "markdown": "- For the `2026-08-30` Sydney Marathon `3:30:00` target, this is still useful marathon-block work because it puts controlled faster running inside a medium-long day.\n- The limiter remains specificity: `5:10 /km` for the main block is not yet the `4:59 /km` target, but forcing `4:59 /km` here would have been the wrong trade if it compromised the long-run progression."
+        },
+        {
+          "kind": "personalNote",
+          "markdown": "- None provided."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "pace",
+          "markdown": "- Strava moving pace averaged `5:22 /km`, with Strava GAP about `5:20 /km`. The first `3 km` averaged about `5:44 /km`, the `3-5 km` build averaged about `5:08 /km`, the `5-11 km` block averaged about `5:10 /km`, and the final `3 km` cooled down around `5:30 /km`.\n- The block was smooth: kilometres `4-11` all sat between about `5:07` and `5:16 /km`, so the session was controlled even though it was slower than the written marathon-pace range."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "heartRate",
+          "markdown": "- Strava HR averaged `158.5 bpm` with a `173 bpm` max; Apple Health recorded about `158.6 bpm` average HR and the same `173 bpm` max.\n- The stream spent about `33:32` in Z3 and `21:02` in Z4, with only `0:13` in Z5. That fits steady/marathon-effort work more than threshold, which is the right direction for this day."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "moving",
+          "markdown": "- Strava moving time was `1:15:29` from `1:15:36` elapsed, only a `0:07` gap.\n- The route stream marked `994` of `1000` samples as moving, so the block pacing is reliable."
+        },
+        {
+          "kind": "stravaMeasurement",
+          "measurement": "elevation",
+          "markdown": "- Strava logged `53.2 m` elevation gain, while the route stream accumulated about `86.0 m` ascent and `87.8 m` descent.\n- GAP was only about `2 s/km` faster than raw pace overall, so the slower-than-target marathon block was mostly execution choice and fatigue context rather than terrain."
+        },
+        {
+          "kind": "markdown",
+          "heading": "Weather Gear And Data Quality",
+          "markdown": "- Conditions were clear but breezy: about `15.4 C`, `13.7 C` apparent temperature, `77%` humidity, no recorded precipitation, `15.0 kph` wind, and `33.5 kph` gusts.\n- Shoes were `Adidas Adizero EVO SL Red`. Provider agreement was high across distance, time, and HR."
+        }
+      ]
     }
   ]
 }

@@ -258,6 +258,7 @@ function WorkoutNarrativePanel({
   const imageUrl = workout.primaryImageUrl;
   const hasRoutePanel = routePolyline !== null || (hasRouteStreams && workout.routePath !== null);
   const routeMapKey = buildRouteMapKey(workout.routePath, generatedAt);
+  const routeInitialMode = workout.completed === null && hasRouteStreams ? "elevation" : undefined;
   const mediaEmbed = resolveWorkoutMediaEmbed(workout.media);
   const mediaItems: ReactNode[] = [];
 
@@ -290,6 +291,7 @@ function WorkoutNarrativePanel({
               activityId={null}
               generatedAt={generatedAt}
               hasRouteStreams={hasRouteStreams}
+              initialMode={routeInitialMode}
               key={routeMapKey}
               polyline={routePolyline ?? ""}
               routePath={workout.routePath}
@@ -326,6 +328,7 @@ function WorkoutNarrativePanel({
                 activityId={null}
                 generatedAt={generatedAt}
                 hasRouteStreams={hasRouteStreams}
+                initialMode={routeInitialMode}
                 key={routeMapKey}
                 polyline={routePolyline ?? ""}
                 routePath={workout.routePath}
